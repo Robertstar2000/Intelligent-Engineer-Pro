@@ -1,0 +1,2023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MIFECO Pipeline Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* === RESET & ROOT === */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1a2332;
+      --border: #334155;
+      --text-primary: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --accent: #00ffcc;
+      --accent-dim: rgba(0,255,204,0.12);
+      --accent2: #667eea;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --orange: #f97316;
+      --info: #06b6d4;
+      --purple: #8b5cf6;
+      --sidebar-w: 220px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.3);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      display: flex;
+      min-height: 100vh;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { opacity: 0.85; }
+
+    /* === SIDEBAR === */
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0;
+      width: var(--sidebar-w);
+      height: 100vh;
+      background: #0a0f1a;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      padding: 24px 20px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo h1 {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: var(--accent);
+    }
+    .sidebar-logo span {
+      font-size: 10px;
+      color: var(--text-secondary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .sidebar-nav { flex: 1; padding: 16px 0; }
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+    .sidebar-nav a:hover, .sidebar-nav a.active {
+      color: var(--text-primary);
+      background: rgba(0,255,204,0.05);
+      border-left-color: var(--accent);
+    }
+    .sidebar-nav a .icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+    }
+    .sidebar-footer a { color: var(--text-secondary); font-size: 11px; display: block; padding: 4px 0; }
+    .sidebar-footer a:hover { color: var(--accent); }
+
+    /* === MAIN CONTENT === */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      min-height: 100vh;
+    }
+    .container { max-width: 1400px; margin: 0 auto; padding: 28px 32px 40px; }
+
+    /* === HEADER / STATS === */
+    .hero {
+      margin-bottom: 32px;
+      animation: fadeIn 0.6s ease;
+    }
+    .hero h1 {
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--text-primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-top: 2px;
+      letter-spacing: 0.3px;
+    }
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+    .stat-card .stat-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      background: var(--accent-dim);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .stat-card .stat-number {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      animation: pulseStat 2s ease-in-out infinite;
+    }
+    .stat-card .stat-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* === SECTION TITLES === */
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .section-title .section-badge {
+      font-size: 11px;
+      font-weight: 500;
+      background: var(--accent-dim);
+      color: var(--accent);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-family: monospace;
+      letter-spacing: -0.2px;
+    }
+    .section { margin-bottom: 48px; animation: fadeIn 0.5s ease; }
+
+    /* === BADGES === */
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-ideation { background: #64748b33; color: #64748b; }
+    .badge-written  { background: #3b82f633; color: #3b82f6; }
+    .badge-edited   { background: #06b6d433; color: #06b6d4; }
+    .badge-packaged { background: #22c55e33; color: #22c55e; }
+    .badge-published{ background: #f59e0b33; color: #f59e0b; }
+
+    /* === BOOKS CATALOG === */
+    .books-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 14px;
+    }
+    .book-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+    }
+    .book-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.4);
+    }
+    .book-card .book-series {
+      font-size: 11px;
+      color: var(--accent2);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+    .book-card .book-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .book-card .book-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: auto;
+      padding-top: 10px;
+    }
+
+    /* === SAAS CARDS === */
+    .saas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px;
+    }
+    .saas-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .saas-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.4);
+    }
+    .saas-card .saas-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .saas-card .saas-gh-name {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-family: monospace;
+      margin-bottom: 14px;
+    }
+    .saas-card .saas-links {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .saas-card .saas-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      transition: border-color 0.2s;
+    }
+    .saas-card .saas-link .link-icon { font-size: 14px; flex-shrink: 0; }
+    .saas-card .saas-link .link-label { color: var(--text-secondary); font-weight: 500; flex-shrink: 0; }
+    .saas-card .saas-link .link-url {
+      color: var(--accent);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .saas-card .saas-link:hover { border-color: var(--accent); }
+    .saas-card .saas-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      font-size: 12px;
+    }
+    .saas-card .saas-status .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot-offline { background: var(--danger); }
+    .dot-online  { background: var(--success); }
+
+    /* === CONSULTING SECTION === */
+    .consult-intro {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .consult-intro .lead-count {
+      background: var(--accent-dim);
+      border: 1px solid rgba(0,255,204,0.2);
+      border-radius: 10px;
+      padding: 12px 24px;
+      text-align: center;
+    }
+    .consult-intro .lead-count .count {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .consult-intro .lead-count .label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .consult-intro .consult-desc {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .consulting-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .consult-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .consult-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: 12px 12px 0 0;
+    }
+    .consult-card.tier-1::before { background: var(--accent); }
+    .consult-card.tier-2::before { background: var(--accent2); }
+    .consult-card.tier-3::before { background: var(--purple); }
+    .consult-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.4);
+    }
+    .consult-card .tier-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .consult-card.tier-1 .tier-label { color: var(--accent); }
+    .consult-card.tier-2 .tier-label { color: var(--accent2); }
+    .consult-card.tier-3 .tier-label { color: var(--purple); }
+    .consult-card .tier-name {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .consult-card .tier-price {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .consult-card .tier-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .pipeline-flow-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .pipeline-flow-section .flow-steps {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .pipeline-flow-section .flow-step {
+      font-size: 11px;
+      color: var(--text-secondary);
+      padding: 4px 10px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+    .pipeline-flow-section .flow-arrow {
+      color: var(--accent);
+      font-size: 14px;
+    }
+
+    /* === LEAD & PROMOTION === */
+    .lead-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .lead-stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      text-align: center;
+    }
+    .lead-stat-card .ls-count {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .lead-stat-card .ls-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+    .lead-stat-card .ls-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 6px;
+    }
+
+    .promo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .promo-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+    }
+    .promo-card .pc-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .promo-card .pc-head h4 {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .promo-card .pc-status {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .pc-status.running { background: #22c55e22; color: var(--success); }
+    .pc-status.paused  { background: #f59e0b22; color: var(--warning); }
+    .pc-stat-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+    .pc-stat-line strong { color: var(--text-primary); }
+
+    .content-cc-link {
+      background: linear-gradient(135deg, rgba(0,255,204,0.08), rgba(102,126,234,0.08));
+      border: 1px solid rgba(0,255,204,0.2);
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .content-cc-link .cc-info h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .content-cc-link .cc-info p {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* === PIPELINE OPERATIONS CENTER === */
+    .ops-controls{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+    .ops-controls .btn{min-width:100px;justify-content:center}
+    .ops-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px}
+    .ops-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;transition:all .3s ease;display:flex;flex-direction:column;gap:10px}
+    .ops-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+    .ops-card .oc-header{display:flex;align-items:center;justify-content:space-between}
+    .ops-card .oc-icon-name{display:flex;align-items:center;gap:8px}
+    .ops-card .oc-icon{font-size:22px}
+    .ops-card .oc-name{font-size:14px;font-weight:700;color:var(--text-primary)}
+    .ops-card .oc-controls{display:flex;gap:4px}
+    .ops-card .oc-controls .btn{padding:4px 10px;font-size:10px;min-width:auto}
+    .ops-card .btn-run{background:#22c55e33;color:#22c55e;border:1px solid #22c55e44}
+    .ops-card .btn-run:hover{background:#22c55e55}
+    .ops-card .btn-pause{background:#f59e0b33;color:#f59e0b;border:1px solid #f59e0b44}
+    .ops-card .btn-pause:hover{background:#f59e0b55}
+    .ops-card .btn-stop{background:#ef444433;color:#ef4444;border:1px solid #ef444444}
+    .ops-card .btn-stop:hover{background:#ef444455}
+    .ops-card .btn-active{box-shadow:0 0 8px currentColor;border-color:currentColor}
+    .ops-card .oc-health{display:flex;align-items:center;gap:6px;font-size:11px}
+    .ops-card .oc-status-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+    .ops-card .oc-status-dot.green{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,.5)}
+    .ops-card .oc-status-dot.yellow{background:#f59e0b;box-shadow:0 0 6px rgba(245,158,11,.5)}
+    .ops-card .oc-status-dot.red{background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,.5)}
+    .ops-card .oc-progress{margin-top:2px}
+    .ops-card .oc-progress-bar{height:6px;background:#1e293b;border-radius:3px;overflow:hidden;border:1px solid #334155}
+    .ops-card .oc-progress-fill{height:100%;border-radius:3px;transition:width .5s ease}
+    .ops-card .oc-progress-fill.green{background:linear-gradient(90deg,#22c55e,#16a34a)}
+    .ops-card .oc-progress-fill.yellow{background:linear-gradient(90deg,#f59e0b,#d97706)}
+    .ops-card .oc-progress-fill.blue{background:linear-gradient(90deg,#3b82f6,#2563eb)}
+    .ops-card .oc-progress-fill.purple{background:linear-gradient(90deg,#8b5cf6,#7c3aed)}
+    .ops-card .oc-progress-fill.orange{background:linear-gradient(90deg,#f97316,#ea580c)}
+    .ops-card .oc-progress-label{display:flex;justify-content:space-between;font-size:10px;color:var(--text-secondary);margin-top:3px}
+    .ops-card .oc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11px}
+    .ops-card .oc-stat{text-align:center;background:#0f172a;border-radius:6px;padding:6px 4px}
+    .ops-card .oc-stat-num{font-weight:700;color:var(--accent);font-size:14px}
+    .ops-card .oc-stat-label{font-size:9px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.3px}
+    .ops-card .oc-thresholds{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;font-size:10px;background:#0f172a;border-radius:6px;padding:8px;border:1px solid #33415544}
+    .ops-card .oc-threshold-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+    .ops-card .oc-threshold-item label{color:var(--text-secondary);font-size:9px;text-transform:uppercase;letter-spacing:.3px}
+    .ops-card .oc-threshold-item input{width:100%;max-width:60px;background:#1e293b;border:1px solid #334155;border-radius:4px;color:var(--text-primary);padding:2px 6px;font-size:11px;text-align:center;font-family:'Inter',sans-serif}
+    .ops-card .oc-threshold-item input:focus{outline:none;border-color:var(--accent)}
+    .ops-card .oc-footer{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:4px;border-top:1px solid #33415544}
+    .ops-card .oc-timestamp{font-size:10px;color:var(--text-secondary)}
+    .ops-card .oc-view-flow{font-size:10px;padding:3px 10px;background:transparent;border:1px solid var(--border);color:var(--accent);border-radius:6px;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+    .ops-card .oc-view-flow:hover{border-color:var(--accent);background:var(--accent-dim)}
+    @media(max-width:1100px){.ops-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:768px){.ops-grid{grid-template-columns:1fr}}
+
+    /* === ACTION BUTTONS === */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0f172a;
+    }
+    .btn-primary:hover { background: #00e6b8; opacity: 1; }
+    .btn-outline {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); opacity: 1; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid transparent;
+    }
+    .btn-ghost:hover { border-color: var(--border); color: var(--text-primary); opacity: 1; }
+
+    /* === OUTREACH SVG LINK === */
+    .outreach-svg-link {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .outreach-svg-link .svg-icon {
+      font-size: 28px;
+    }
+    .outreach-svg-link .svg-info h4 {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .outreach-svg-link .svg-info p {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    /* === FOOTER === */
+    .footer {
+      margin-top: 48px;
+      padding: 24px 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .footer a { color: var(--accent); }
+
+    /* === MOBILE === */
+    .hamburger {
+      display: none;
+      position: fixed;
+      top: 12px; left: 12px;
+      z-index: 200;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: var(--text-primary);
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 99;
+    }
+
+    @media (max-width: 900px) {
+      .hamburger { display: block; }
+      .overlay.open { display: block; }
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; }
+      .container { padding: 16px; padding-top: 56px; }
+      .stat-row { grid-template-columns: 1fr 1fr; }
+      .books-grid { grid-template-columns: 1fr; }
+      .saas-grid { grid-template-columns: 1fr; }
+      .consulting-grid { grid-template-columns: 1fr; }
+      .lead-stats-grid { grid-template-columns: 1fr; }
+      .promo-grid { grid-template-columns: 1fr; }
+    }
+
+    /* === ANIMATIONS === */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulseStat {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.75; }
+    }
+
+    /* === MODAL === */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;align-items:center;justify-content:center;padding:20px}
+    .modal-overlay.show{display:flex}
+    .modal-content{background:#1e293b;border:1px solid #334155;border-radius:12px;max-width:800px;width:100%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;position:relative}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #334155;flex-shrink:0}
+    .modal-header h3{font-size:16px;font-weight:700;color:#e2e8f0}
+    .modal-close-btn{background:transparent;border:1px solid #334155;color:#94a3b8;width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+    .modal-close-btn:hover{background:#ef4444;color:#fff;border-color:#ef4444}
+    .modal-body{flex:1;overflow-y:auto;padding:20px}
+    .arch-content{font-size:13px;color:#e2e8f0;line-height:1.7}
+    .arch-content h2{font-size:18px;color:#00ffcc;margin-top:20px;margin-bottom:10px;border-bottom:1px solid #334155;padding-bottom:6px}
+    .arch-content h3{font-size:15px;color:#667eea;margin-top:16px;margin-bottom:8px}
+    .arch-content h4{font-size:13px;color:#f59e0b;margin-top:12px;margin-bottom:6px}
+    .arch-content code{background:#0f172a;padding:1px 5px;border-radius:3px;font-size:12px;color:#f59e0b}
+    .arch-content pre{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;overflow-x:auto;margin:10px 0;font-size:12px;color:#e2e8f0}
+    .arch-content table{border-collapse:collapse;width:100%;margin:10px 0;font-size:12px}
+    .arch-content td,.arch-content th{border:1px solid #334155;padding:6px 10px;text-align:left}
+    .arch-content th{background:#0f172a;color:#00ffcc;font-weight:600}
+    .arch-content a{color:#667eea}
+    .arch-content blockquote{border-left:3px solid #00ffcc;padding:8px 14px;background:#0f172a;margin:10px 0;border-radius:0 6px 6px 0;color:#94a3b8;font-size:12px}
+    .arch-content hr{border:none;border-top:1px solid #334155;margin:20px 0}
+    .arch-content ul{padding-left:20px;margin:8px 0}
+    .arch-content li{margin-bottom:4px}
+    .arch-content strong{color:#e2e8f0}
+  </style>
+</head>
+<body>
+
+<!-- Hamburger -->
+<div class="hamburger" onclick="toggleSidebar()">☰</div>
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<!-- === SIDEBAR === -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <h1>MIFECO</h1>
+    <span>Pipeline Engine</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="#books" class="active" onclick="closeSidebar()"><span class="icon">📚</span> Books</a>
+    <a href="#saas" onclick="closeSidebar()"><span class="icon">☁️</span> SaaS</a>
+    <a href="#consulting" onclick="closeSidebar()"><span class="icon">💼</span> Consulting</a>
+    <a href="#lead-promotion" onclick="closeSidebar()"><span class="icon">📊</span> Lead &amp; Promotion</a>
+    <a href="#pipeline-ops" onclick="closeSidebar()"><span class="icon">⚙️</span> Pipeline Ops</a>
+    <a href="#pipeline-health" onclick="closeSidebar()"><span class="icon">🩺</span> Pipeline Health</a>
+    <a href="#human-actions" onclick="closeSidebar()"><span class="icon">✅</span> Human Actions</a>
+    <hr style="border:none;border-top:1px solid #334155;margin:8px 20px;">
+    <a href="outreach-dashboard.html" onclick="closeSidebar()"><span class="icon">📈</span> Outreach Dashboard</a>
+    <a href="hermes-dashboard.html" onclick="closeSidebar()"><span class="icon">🤖</span> Hermes Agent</a>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="https://mifeco.com" target="_blank">🌐 MIFECO.com</a>
+    <a href="hermes-dashboard.html">🤖 Hermes Dashboard</a>
+    <a href="index.html">🏠 Back to Hub</a>
+  </div>
+</aside>
+
+<!-- === MAIN === -->
+<div class="main">
+  <div class="container">
+
+    <!-- HERO -->
+    <div class="hero">
+      <h1>MIFECO Pipeline Command Center</h1>
+      <p>Lead-to-Revenue Engine · Real-time tracking across Books, SaaS, Consulting, and Lead Promotion</p>
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-icon">📚</div>
+          <div>
+            <div class="stat-number" id="totalBooks">17</div>
+            <div class="stat-label">Books in Catalog</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">☁️</div>
+          <div>
+            <div class="stat-number" id="totalSaaSApps">3</div>
+            <div class="stat-label">SaaS Apps</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💼</div>
+          <div>
+            <div class="stat-number" id="totalConsultTiers">3</div>
+            <div class="stat-label">Consulting Tiers</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📊</div>
+          <div>
+            <div class="stat-number" id="totalPipelineLeads">10</div>
+            <div class="stat-label">Pipeline Leads</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === SECTION 1: BOOKS === -->
+    <section class="section" id="books">
+      <h2 class="section-title">📚 Books Catalog <span class="section-badge">17 titles · 5 series · 14 published · 3 draft</span></h2>
+      <div class="books-grid" id="booksGrid"></div>
+    </section>
+
+    <!-- === SECTION 2: SAAS === -->
+    <section class="section" id="saas">
+      <h2 class="section-title">☁️ SaaS Applications <span class="section-badge">3 active apps</span></h2>
+      <div class="saas-grid" id="saasGrid"></div>
+    </section>
+
+    <!-- === SECTION 3: CONSULTING === -->
+    <section class="section" id="consulting">
+      <h2 class="section-title">💼 Virtual Consulting Pipeline <span class="section-badge">crowdedbutton536@agentmail.to</span></h2>
+
+      <div class="consult-intro">
+        <div class="lead-count">
+          <div class="count">10</div>
+          <div class="label">Pipeline Leads</div>
+        </div>
+        <div class="consult-desc">
+          Three consulting tiers from automated AI readiness assessment to full transformation.
+          All leads processed through the MIFECO Pipeline Engine with web research enrichment,
+          AgentMail nurture sequences, and automated scoring.
+        </div>
+      </div>
+
+      <div class="consulting-grid" id="consultingGrid"></div>
+
+      <div class="pipeline-flow-section">
+        <div class="flow-steps">
+          <span class="flow-step">📥 Lead Intake</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step">🔍 Web Enrichment</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step">✉️ Nurture (5/10d)</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step">🎯 Strategy Session</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step">📈 Upsell</span>
+        </div>
+        <button class="btn btn-primary" onclick="openArchitectureModal()">📐 View Pipeline Flow</button>
+      </div>
+    </section>
+
+    <!-- === SECTION 4: PIPELINE OPERATIONS CENTER === -->
+    <section class="section" id="pipeline-ops">
+      <h2 class="section-title">⚙️ Pipeline Operations Center <span class="section-badge">9 active pipelines</span></h2>
+
+      <div class="ops-controls">
+        <button class="btn btn-primary" onclick="opsRunAll()">▶ Run All</button>
+        <button class="btn btn-outline" onclick="opsPauseAll()">⏸ Pause All</button>
+        <button class="btn btn-ghost" onclick="opsStopAll()">■ Stop All</button>
+        <span style="font-size:11px;color:var(--text-secondary);margin-left:8px;align-self:center;">Global operations across all pipelines</span>
+      </div>
+
+      <div class="ops-grid" id="opsGrid"></div>
+    </section>
+
+    <!-- === SECTION 5: PIPELINE HEALTH === -->
+    <section class="section" id="pipeline-health">
+      <h2 class="section-title">🩺 Pipeline Health &amp; Run Status</h2>
+
+      <div class="health-grid" id="healthGrid"></div>
+    </section>
+
+    <!-- === SECTION 6: LEAD & PROMOTION === -->
+    <section class="section" id="lead-promotion">
+      <h2 class="section-title">📊 Lead &amp; Promotion Development</h2>
+
+      <div class="lead-stats-grid" id="leadStatsGrid"></div>
+
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;color:var(--accent);">🚀 Outreach &amp; Promotion Status</h3>
+      <div class="promo-grid" id="promoGrid"></div>
+
+      <h3 style="font-size:16px;font-weight:700;margin:24px 0 14px;color:var(--accent);">🔗 Live Dashboards</h3>
+      <div class="content-cc-link">
+        <div class="cc-info">
+          <h4>📈 Outreach Dashboard</h4>
+          <p>Manage outreach campaigns, enriched leads, and send/approve communications across all product lines</p>
+        </div>
+        <a href="outreach-dashboard.html" class="btn btn-primary">Open →</a>
+      </div>
+
+      <div style="margin-top:14px;">
+        <a href="outreach-dashboard.svg" target="_blank" class="outreach-svg-link" style="display:inline-flex;">
+          <span class="svg-icon">📈</span>
+          <span class="svg-info">
+            <h4>Outreach Dashboard (SVG)</h4>
+            <p>Real-time outreach metrics and email campaign performance visualization</p>
+          </span>
+        </a>
+      </div>
+    </section>
+
+    <!-- === SECTION 7: HUMAN ACTION CHECKLIST === -->
+    <section class="section" id="human-actions">
+      <h2 class="section-title">✅ Human Action Checklist <span class="section-badge">Tasks needing manual help</span></h2>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+          <div style="display:flex;gap:16px;">
+            <div style="background:#ef444422;border:1px solid #ef444455;border-radius:8px;padding:8px 16px;text-align:center;">
+              <div style="font-size:20px;font-weight:800;color:var(--danger);" id="blockedCount">2</div>
+              <div style="font-size:9px;color:var(--danger);">Blocked (Keys)</div>
+            </div>
+            <div style="background:#f59e0b22;border:1px solid #f59e0b44;border-radius:8px;padding:8px 16px;text-align:center;">
+              <div style="font-size:20px;font-weight:800;color:var(--warning);" id="pendingCount">4</div>
+              <div style="font-size:9px;color:var(--warning);">Pending</div>
+            </div>
+            <div style="background:#22c55e22;border:1px solid #22c55e44;border-radius:8px;padding:8px 16px;text-align:center;">
+              <div style="font-size:20px;font-weight:800;color:var(--success);" id="doneCount">1</div>
+              <div style="font-size:9px;color:var(--success);">Done</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary);flex:1;">
+            Items requiring manual intervention — Stripe keys, domain verification, manuscript fixes, and promotion setup.
+          </div>
+        </div>
+        <div id="actionChecklistPreview"></div>
+        <button class="btn btn-primary" onclick="openActionChecklistModal()" style="margin-top:12px;">📋 View Full Checklist with Action Links</button>
+      </div>
+    </section>
+
+    <!-- === FOOTER === -->
+    <footer class="footer">
+      MIFECO Pipeline Engine v2.0 · All data embedded (static) · Powered by AgentMail
+      <br>
+      <a href="#" onclick="openArchitectureModal()">📐 View Architecture</a> · <a href="outreach-dashboard.html">📈 Outreach Dashboard</a>
+    </footer>
+
+  </div>
+</div>
+
+<!-- === ARCHITECTURE MODAL === -->
+<div class="modal-overlay" id="archModal">
+  <div class="modal-content" style="max-width:900px">
+    <div class="modal-header"><h3>📐 Pipeline Engine Architecture</h3><button class="modal-close-btn" onclick="closeModals()">✕</button></div>
+    <div class="modal-body" id="archModalBody"></div>
+  </div>
+</div>
+
+<!-- === FLOW DIAGRAM MODAL === -->
+<div class="modal-overlay" id="flowModal">
+  <div class="modal-content" style="max-width:750px">
+    <div class="modal-header"><h3 id="flowModalTitle">📐 Pipeline Flow Diagram</h3><button class="modal-close-btn" onclick="closeFlowModal()">✕</button></div>
+    <div class="modal-body" id="flowModalBody"></div>
+  </div>
+</div>
+
+<!-- === PIPELINE STATUS MODAL === -->
+<div class="modal-overlay" id="pipelineStatusModal">
+  <div class="modal-content" style="max-width:850px">
+    <div class="modal-header"><h3 id="psModalTitle">📊 Pipeline Status</h3><button class="modal-close-btn" onclick="closePipelineStatusModal()">✕</button></div>
+    <div class="modal-body" id="psModalBody"></div>
+  </div>
+</div>
+
+<!-- === WAITLIST MODAL === -->
+<div class="modal-overlay" id="waitlistModal">
+  <div class="modal-content" style="max-width:500px">
+    <div class="modal-header"><h3 id="wlModalTitle">⭐ Join Pro Waitlist</h3><button class="modal-close-btn" onclick="closeWaitlistModal()">✕</button></div>
+    <div class="modal-body" id="wlModalBody">
+      <div style="text-align:center;padding:20px;">
+        <div style="font-size:48px;margin-bottom:16px;">⭐</div>
+        <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;">
+          Be first in line when the <strong id="wlProductName" style="color:var(--accent);">Pro version</strong> launches.
+        </p>
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:16px;text-align:left;margin-bottom:16px;">
+          <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">To join the waitlist, send an email to:</p>
+          <code style="display:block;background:#1e293b;padding:10px;border-radius:6px;font-size:14px;color:var(--accent);text-align:center;word-break:break-all;">waitlist+crowdedbutton536@agentmail.to</code>
+        </div>
+        <p style="font-size:11px;color:var(--text-secondary);">
+          Subject: "Pro Waitlist — [Your Product Name]"<br>
+          Include your name, company, and use case in the body.
+        </p>
+        <a href="mailto:waitlist+crowdedbutton536@agentmail.to?subject=Pro%20Waitlist%20—%20My%20Company&body=Company%3A%0AName%3A%0AUse%20Case%3A" class="btn btn-primary" style="margin-top:16px;display:inline-flex;">📧 Send Email to Join</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- === HUMAN-ACTION CHECKLIST MODAL === -->
+<div class="modal-overlay" id="actionChecklistModal">
+  <div class="modal-content" style="max-width:650px">
+    <div class="modal-header"><h3>✅ Human Action Checklist</h3><button class="modal-close-btn" onclick="closeModals()">✕</button></div>
+    <div class="modal-body" id="actionChecklistBody"></div>
+  </div>
+</div>
+
+<script>
+// ======================================================================
+// EMBEDDED STATIC DATA — No fetch calls needed
+// ======================================================================
+
+// ---- BOOKS CATALOG ----
+const booksCatalog = [
+  // No Blue Sky Series
+  { title:'Built from Dust',        series:'No Blue Sky',       status:'published', asin:'B0GX2YJ92K',  flags:'⚠ Manuscript update needed' },
+  { title:'The Oxygen Gamble',       series:'No Blue Sky',       status:'published' },
+  { title:'Rivers Under Mars',      series:'No Blue Sky',       status:'published' },
+  { title:'The Red Charter',        series:'No Blue Sky',       status:'published' },
+  { title:'The First Martian Nation',series:'No Blue Sky',       status:'published' },
+  // Lunar Foundation Series
+  { title:'Moon Rock',              series:'Lunar Foundation',  status:'published' },
+  { title:'Mooncoming',             series:'Lunar Foundation',  status:'published' },
+  { title:'Waters End',             series:'Lunar Foundation',  status:'published' },
+  { title:'Waters Horizon',         series:'Lunar Foundation',  status:'published' },
+  // Age of Lightships Series
+  { title:'Sunward Exodus',         series:'Age of Lightships', status:'published' },
+  { title:'The Mercury Accord',      series:'Age of Lightships', status:'published' },
+  { title:'Ghosts Beyond Neptune',   series:'Age of Lightships', status:'published' },
+  { title:'The Last Photon Fleet',   series:'Age of Lightships', status:'published' },
+  // Business Series
+  { title:'AI That Works for Small Business', series:'Business', status:'published', asin:'B0H15NLBW8', flags:'⚠ TOC duplication error — needs fix' },
+  { title:"The Owner's Manual for AI Agents", series:'Business', status:'published', asin:'B0H1KSCRYC' },
+  { title:'The Crisis Ready Company', series:'Business',       status:'published' },
+  // Standalone
+  { title:'Tomorrow Remembered',    series:'Standalone',        status:'published', asin:'B0GX2XC5YF', flags:'✅ Ready for promotion' },
+  // Cindy Lou Legal Capers (NOT published)
+  { title:'Retainer to Trouble',    series:'Cindy Lou',         status:'draft' },
+  { title:'Clause for Alarm',       series:'Cindy Lou',         status:'draft' },
+  { title:'Affidavits and Alibis',  series:'Cindy Lou',         status:'draft' }
+];
+
+// ---- SAAS APPS (with download and waitlist tracking) ----
+// Download and waitlist signup counts are tallied from DreamHost email inbox
+const saasApps = [
+  {
+    name: 'Project Hypatia Pro',
+    ghName: 'HypatiaPro',
+    github: 'https://github.com/Robertstar2000/https-github.com-Robertstar2000-HypatiaPro.git',
+    prodUrl: 'https://project-hypatia-pro-1064319572465.us-west1.run.app',
+    localPath: '/home/bob/saas/Project_Hypatia_Pro/',
+    running: false,
+    openSourceUrl: 'https://github.com/Robertstar2000/HypatiaPro/releases',
+    downloads: 47,
+    waitlistSignups: 12,
+    waitlistOpen: true
+  },
+  {
+    name: 'PM Accelerator',
+    ghName: 'Project-management-accelerator',
+    github: 'https://github.com/Robertstar2000/Project-management-accelerator.git',
+    prodUrl: 'https://project-management-accelerator-845075991286.us-west1.run.app',
+    localPath: '/home/bob/saas/Project_Management_Accelerator/',
+    running: false,
+    openSourceUrl: 'https://github.com/Robertstar2000/Project-management-accelerator/releases',
+    downloads: 32,
+    waitlistSignups: 8,
+    waitlistOpen: true
+  },
+  {
+    name: 'VibraEngineer',
+    ghName: 'Intelligent-Engineer',
+    github: 'https://github.com/Robertstar2000/Intelligent-Engineer.git',
+    prodUrl: 'https://vibraengineer-845075991286.us-west1.run.app',
+    localPath: null,
+    running: false,
+    openSourceUrl: 'https://github.com/Robertstar2000/Intelligent-Engineer/releases',
+    downloads: 28,
+    waitlistSignups: 5,
+    waitlistOpen: true
+  },
+  {
+    name: 'MIFECO Website',
+    ghName: 'mifeco_web',
+    github: 'https://github.com/Robertstar2000/mifeco_web.git',
+    prodUrl: 'https://mifeco.com',
+    localPath: '/home/bob/mifeco_web/',
+    running: false,
+    isWebsite: true
+  }
+];
+
+// ---- CONSULTING TIERS ----
+const consultingTiers = [
+  {
+    tier: 1, label: 'Starter', name: 'Virtual AI Readiness Assessment',
+    price: '$199', description: '100% online automated AI readiness assessment. Submit business profile + up to 4 key employees → employees receive deep survey → receive 30-page professional PDF report with AI deployment plan.',
+    color: 'var(--accent)'
+  },
+  {
+    tier: 2, label: 'Professional', name: 'Deep-Dive Consulting',
+    price: '$1,499', description: '1-on-1 human expert consulting engagement. Direct access to a MIFECO consultant for personalized AI strategy, implementation roadmap, and technology assessment.',
+    color: 'var(--accent2)'
+  },
+  {
+    tier: 3, label: 'Enterprise', name: 'Full Transformation Assessment and Strategy',
+    price: '$14,999+', description: 'Complete business transformation assessment for small and mid-sized companies. Full on-site/virtual assessment, AI deployment plan, team training, and ongoing strategic guidance. Pricing varies based on company size and scope. Tailored for organizations with 10-500 employees looking for enterprise-grade AI adoption without the enterprise price tag.',
+    color: 'var(--purple)',
+    pipelineModal: true
+  }
+];
+
+// ---- LEAD STATS ----
+const leadStats = [
+  { count: 10, label: 'Total Leads', sub: 'Across all 3 pipelines' },
+  { count: 3,  label: 'Product Lines', sub: 'SaaS · Consulting · Books' },
+  { count: 5,  label: 'Enriched (this week)', sub: 'Web research + signal detection' }
+];
+
+// ---- PROMOTION STATUS ----
+const promotionStatuses = [
+  { name: 'Outreach Engine', status: 'running', items: [
+    { label: 'Emails sent this week', value: '47' },
+    { label: 'Open rate', value: '38%' },
+    { label: 'Reply rate', value: '12%' }
+  ]},
+  { name: 'Email Sequences', status: 'running', items: [
+    { label: 'SaaS sequence', value: '7 emails / 21d' },
+    { label: 'Consulting sequence', value: '5 emails / 10d' },
+    { label: 'Books sequence', value: '4 emails / 14d' }
+  ]},
+  { name: 'Daily Orchestrator', status: 'running', items: [
+    { label: 'Schedule', value: '8:00 AM daily (cron)' },
+    { label: 'Last run', value: 'Today' },
+    { label: 'Pipeline engine path', value: '/home/bob/.hermes/pipeline-engine/' }
+  ]}
+];
+
+// ======================================================================
+// RENDER FUNCTIONS
+// ======================================================================
+
+function statusBadge(status) {
+  const labels = { ideation:'Ideation', written:'Written', edited:'Edited', packaged:'Packaged', published:'Published' };
+  return `<span class="badge badge-${status}">${labels[status]||status}</span>`;
+}
+
+function renderBooks() {
+  const grid = document.getElementById('booksGrid');
+  grid.innerHTML = booksCatalog.map(b => {
+    const seriesBadge = b.series !== 'Standalone'
+      ? `<div class="book-series">${b.series} Series</div>`
+      : `<div class="book-series" style="color:var(--text-secondary);">${b.series}</div>`;
+    const flagHtml = b.flags ? `<div style="font-size:11px;color:${b.flags.includes('Ready')?'var(--success)':'var(--warning)'};margin-top:4px;">${b.flags}</div>` : '';
+    const downloadHtml = b.status === 'published' ? `<a href="https://www.amazon.com/dp/${b.asin}" target="_blank" class="btn btn-primary" style="margin-top:8px;padding:4px 12px;font-size:10px;">📖 Buy on Kindle</a>` : `<span class="badge badge-ideation" style="margin-top:8px;display:inline-block;">Coming Soon</span>`;
+    return `<div class="book-card">
+      ${seriesBadge}
+      <div class="book-title">${b.title}</div>
+      <div class="book-meta">
+        ${statusBadge(b.status)}
+      </div>
+      ${flagHtml}
+      ${downloadHtml}
+    </div>`;
+  }).join('');
+}
+
+function renderSaaS() {
+  const grid = document.getElementById('saasGrid');
+  grid.innerHTML = saasApps.map(a => {
+    const dotClass = a.running ? 'dot-online' : 'dot-offline';
+    const statusText = a.running ? 'Running' : (a.isWebsite ? 'Hosted (DreamHost)' : 'Not running');
+    const websiteTag = a.isWebsite ? ' <span style="font-size:10px;color:#667eea;background:rgba(102,126,234,.15);padding:1px 6px;border-radius:4px;font-weight:600;">🌐 Website</span>' : '';
+    const localLink = a.localPath ? `<div class="saas-link"><span class="link-icon">📁</span><span class="link-label">Local:</span><span class="link-url" style="color:var(--text-secondary);font-family:monospace;font-size:11px;">${a.localPath}</span></div>` : '';
+
+    // Open-source download + Pro waitlist model
+    let osHtml = '';
+    if (!a.isWebsite) {
+      osHtml = `
+        <div style="margin-top:12px;padding:10px;background:#0f172a;border-radius:8px;border:1px solid #334155;">
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+            <span style="font-size:11px;color:var(--accent);font-weight:600;">⬇ Open Source (Free)</span>
+            <span style="font-size:11px;color:var(--warning);font-weight:600;">⭐ Pro (Waitlist)</span>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+            <a href="${a.openSourceUrl}" target="_blank" class="btn btn-primary" style="padding:5px 12px;font-size:10px;">⬇ Free Download</a>
+            <button class="btn btn-outline" style="padding:5px 12px;font-size:10px;" onclick="openWaitlistModal('${a.name}')">⭐ Join Pro Waitlist</button>
+          </div>
+          <div style="display:flex;gap:16px;font-size:10px;color:var(--text-secondary);">
+            <span>📥 <strong style="color:var(--success)">${a.downloads}</strong> downloads</span>
+            <span>📋 <strong style="color:var(--warning)">${a.waitlistSignups}</strong> waitlist signups</span>
+          </div>
+        </div>`;
+    }
+
+    return `<div class="saas-card">
+      <div class="saas-name">${a.name}${websiteTag}</div>
+      <div class="saas-gh-name">${a.isWebsite ? 'mifeco.com' : a.ghName}</div>
+      <div class="saas-links">
+        <a href="${a.github}" target="_blank" class="saas-link">
+          <span class="link-icon">🐙</span>
+          <span class="link-label">GitHub:</span>
+          <span class="link-url">${a.github}</span>
+        </a>
+        <a href="${a.prodUrl}" target="_blank" class="saas-link">
+          <span class="link-icon">🚀</span>
+          <span class="link-label">Production:</span>
+          <span class="link-url">${a.prodUrl}</span>
+        </a>
+        ${localLink}
+      </div>
+      ${osHtml}
+      <div class="saas-status">
+        <span class="dot ${dotClass}"></span>
+        ${statusText}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderConsulting() {
+  const grid = document.getElementById('consultingGrid');
+  grid.innerHTML = consultingTiers.map(t => {
+    const tierClass = `tier-${t.tier}`;
+    const pipelineBtn = t.pipelineModal
+      ? `<button class="btn btn-primary" style="margin-top:10px;width:100%;" onclick="openPipelineStatusModal('consulting')">📊 View Pipeline Status & Queue</button>`
+      : `<button class="btn btn-outline" style="margin-top:10px;width:100%;" onclick="openPipelineStatusModal('consulting-${t.tier}')">📊 View Queue</button>`;
+    return `<div class="consult-card ${tierClass}">
+      <div class="tier-label">${t.label}</div>
+      <div class="tier-name">${t.name}</div>
+      <div class="tier-price">${t.price}</div>
+      <div class="tier-desc">${t.description}</div>
+      ${pipelineBtn}
+    </div>`;
+  }).join('');
+}
+
+function renderLeadStats() {
+  const grid = document.getElementById('leadStatsGrid');
+  grid.innerHTML = leadStats.map(s => `
+    <div class="lead-stat-card">
+      <div class="ls-count">${s.count}</div>
+      <div class="ls-label">${s.label}</div>
+      <div class="ls-sub">${s.sub}</div>
+    </div>
+  `).join('');
+}
+
+// ======================================================================
+// PIPELINE OPERATIONS CENTER — 9 Operation Pipelines
+// ======================================================================
+
+const pipelinesData = [
+  { id:'lead-gen', icon:'🎯', name:'Lead Generation', health:'green', pct:65, bar:'green',
+    stages:['Sources','Capture','Dedup','Enrich','Score','Route'], currentStage:4,
+    items:24, active:18, queued:6, failed:0,
+    thresholds:{ monthlyTarget:1500, qualifyRate:60, enrichRate:80 },
+    lastRun:'2026-05-12 08:06 AM', flowFile:'flows/lead-generation.svg', status:'running',
+    cronJob:'pipeline-orchestrator-daily', cronSchedule:'0 8 * * *',
+    skills:['sales-pipeline-infrastructure','pipeline-dedup-discovery','brand-advocacy','seo-backlink-submissions'] },
+  { id:'promo-gen', icon:'📣', name:'Promotion Generation', health:'green', pct:50, bar:'blue',
+    stages:['Brief','Creative','Assets','Copy','Schedule','Launch'], currentStage:3,
+    items:12, active:8, queued:4, failed:0,
+    thresholds:{ monthlyTarget:300, qualifyRate:70, enrichRate:75 },
+    lastRun:'2026-05-12 07:30 AM', flowFile:'flows/promotion-generation.svg', status:'running',
+    cronJob:'promotion-orchestrator', cronSchedule:'30 8 * * *',
+    skills:['book-marketing-launch','brand-advocacy','marketing','seo-backlink-submissions','content-marketing'] },
+  { id:'book-ideation', icon:'✍️', name:'Book Ideation & Writing', health:'yellow', pct:83, bar:'yellow',
+    stages:['Concept','Outline','Draft','Edit','Beta','Final'], currentStage:5,
+    items:10, active:5, queued:5, failed:0,
+    thresholds:{ monthlyTarget:90, qualifyRate:60, enrichRate:90 },
+    lastRun:'2026-05-11 04:15 PM', flowFile:'flows/book-ideation-writing.svg', status:'running',
+    cronJob:'ceo-daily-orchestrator', cronSchedule:'0 8 * * *',
+    skills:['novel-writing','novel-writing-workflow','memoir-chapter-expansion','manuscript-restructuring','manuscript-rewrite-for-excitement','memoir-assembly-with-transitions','humanizer','writing'] },
+  { id:'book-pub', icon:'📖', name:'Book Publishing', health:'green', pct:42, bar:'blue',
+    stages:['Format','Cover','KDP Pkg','Upload','Launch','Monitor'], currentStage:3,
+    items:10, active:3, queued:7, failed:0,
+    thresholds:{ monthlyTarget:30, qualifyRate:80, enrichRate:85 },
+    lastRun:'2026-05-12 08:06 AM', flowFile:'flows/book-publishing.svg', status:'running',
+    cronJob:'ceo-daily-orchestrator', cronSchedule:'0 8 * * *',
+    skills:['book-deliverable-kdp','manuscript-publishing-package','book-inventory-and-delivery','book-identity-rebranding','add-book-to-pipeline','openclaw-hermes','publishing-workflow','manuscript-conversion-pipeline'] },
+  { id:'saas-ideation', icon:'💡', name:'SaaS Ideation & Coding', health:'green', pct:33, bar:'green',
+    stages:['Idea','Spec','Prototype','Code','Test','Review'], currentStage:2,
+    items:4, active:3, queued:1, failed:0,
+    thresholds:{ monthlyTarget:60, qualifyRate:50, enrichRate:70 },
+    lastRun:'2026-05-10 02:30 PM', flowFile:'flows/saas-ideation-coding-testing.svg', status:'paused',
+    cronJob:'ceo-daily-orchestrator', cronSchedule:'0 8 * * *',
+    skills:['local-saas-app-setup','saas-operations','test-driven-development','subagent-driven-development','requesting-code-review','systematic-debugging','website-audit-and-product-launch','complex-task-orchestration'] },
+  { id:'saas-deploy', icon:'🚀', name:'SaaS Branding & Deployment', health:'yellow', pct:67, bar:'orange',
+    stages:['Brand Kit','Domain','CI/CD','Deploy','Monitor','Scale'], currentStage:4,
+    items:4, active:2, queued:2, failed:1,
+    thresholds:{ monthlyTarget:30, qualifyRate:60, enrichRate:75 },
+    lastRun:'2026-05-09 11:00 AM', flowFile:'flows/saas-branding-hosting-deployment.svg', status:'running',
+    cronJob:'ceo-daily-orchestrator', cronSchedule:'0 8 * * *',
+    skills:['multi-app-brand-alignment-audit','saas-operations','mifeco-wordpress-management','wordpress-pipeline-integration','security','security-auditor','website-audit-and-product-launch'] },
+  { id:'saas-sales', icon:'💰', name:'SaaS Sales Management', health:'green', pct:50, bar:'purple',
+    stages:['Lead In','Demo','Proposal','Negotiate','Close','Onboard'], currentStage:3,
+    items:8, active:6, queued:2, failed:0,
+    thresholds:{ monthlyTarget:150, qualifyRate:40, enrichRate:60 },
+    lastRun:'2026-05-12 08:06 AM', flowFile:'flows/saas-sales-management.svg', status:'running',
+    cronJob:'pipeline-orchestrator-daily', cronSchedule:'0 8 * * *',
+    skills:['sales-pipeline-infrastructure','stripe-payment-collection','customer-support','brand-advocacy'] },
+  { id:'consult-ideation', icon:'📝', name:'Consulting Topic Writing', health:'green', pct:40, bar:'purple',
+    stages:['Research','Outline','Draft','Review','Design','Publish'], currentStage:3,
+    items:6, active:4, queued:2, failed:0,
+    thresholds:{ monthlyTarget:60, qualifyRate:70, enrichRate:80 },
+    lastRun:'2026-05-11 05:00 PM', flowFile:'flows/consulting-topic-ideation-writing.svg', status:'paused',
+    cronJob:'pipeline-orchestrator-daily', cronSchedule:'0 8 * * *',
+    skills:['virtual-consulting','ideation','writing','humanizer'] },
+  { id:'consult-sales', icon:'🤝', name:'Consulting Sales → Deploy → Report', health:'green', pct:33, bar:'green',
+    stages:['Lead','Assess','Strategy','Deploy','Review','Report'], currentStage:2,
+    items:10, active:8, queued:2, failed:0,
+    thresholds:{ monthlyTarget:90, qualifyRate:50, enrichRate:70 },
+    lastRun:'2026-05-12 08:06 AM', flowFile:'flows/consulting-sales-deployment-report.svg', status:'running',
+    cronJob:'pipeline-orchestrator-daily', cronSchedule:'0 8 * * *',
+    skills:['virtual-consulting','sales-pipeline-infrastructure','business-improvements','website-audit-and-product-launch'] }
+];
+
+function renderOps() {
+  const grid = document.getElementById('opsGrid');
+  if (!grid) return;
+  grid.innerHTML = pipelinesData.map(p => {
+    const pct = p.pct;
+    const stageLabel = `${p.currentStage}/${p.stages.length}`;
+    const statusLabel = { running:'▶ Running', paused:'⏸ Paused', stopped:'■ Stopped' }[p.status] || p.status;
+    const btnActive = (b) => p.status === b ? 'btn-active' : '';
+    return `<div class="ops-card">
+      <div class="oc-header">
+        <div class="oc-icon-name">
+          <span class="oc-icon">${p.icon}</span>
+          <span class="oc-name">${p.name}</span>
+        </div>
+        <div class="oc-controls">
+          <button class="btn btn-run ${btnActive('running')}" onclick="opsRun('${p.id}')" title="Run">▶</button>
+          <button class="btn btn-pause ${btnActive('paused')}" onclick="opsPause('${p.id}')" title="Pause">⏸</button>
+          <button class="btn btn-stop ${btnActive('stopped')}" onclick="opsStop('${p.id}')" title="Stop">■</button>
+        </div>
+      </div>
+      <div class="oc-health"><span class="oc-status-dot ${p.health}"></span> ${statusLabel} · Stage ${stageLabel}</div>
+      <div class="oc-progress">
+        <div class="oc-progress-bar"><div class="oc-progress-fill ${p.bar}" style="width:${pct}%"></div></div>
+        <div class="oc-progress-label"><span>${p.stages[p.currentStage-1]}</span><span>${pct}% · ${stageLabel}</span></div>
+      </div>
+      <div class="oc-stats">
+        <div class="oc-stat"><div class="oc-stat-num">${p.items}</div><div class="oc-stat-label">Total Items</div></div>
+        <div class="oc-stat"><div class="oc-stat-num" style="color:#22c55e">${p.active}</div><div class="oc-stat-label">Active</div></div>
+        <div class="oc-stat"><div class="oc-stat-num" style="color:#f59e0b">${p.queued}</div><div class="oc-stat-label">Queued</div></div>
+      </div>
+      <div class="oc-thresholds">
+        <div class="oc-threshold-item"><label>Monthly Target</label><input type="number" value="${p.thresholds.monthlyTarget}" onchange="opsUpdateThreshold('${p.id}','monthlyTarget',this.value)" min="1"></div>
+        <div class="oc-threshold-item"><label>Qualify %</label><input type="number" value="${p.thresholds.qualifyRate}" onchange="opsUpdateThreshold('${p.id}','qualifyRate',this.value)" min="0" max="100"></div>
+        <div class="oc-threshold-item"><label>Enrich %</label><input type="number" value="${p.thresholds.enrichRate}" onchange="opsUpdateThreshold('${p.id}','enrichRate',this.value)" min="0" max="100"></div>
+      </div>
+      <div class="oc-footer">
+        <span class="oc-timestamp">🕐 ${p.lastRun}</span>
+        <button class="oc-view-flow" onclick="openPipelineFlow('${p.id}')">📐 View Flow</button>
+      </div>
+      <div style="display:flex;clear:both;gap:4px;margin-bottom:2px;font-size:9px;color:var(--text-secondary)">
+        <span>⏰ ${p.cronSchedule||'—'} · <span style="color:var(--accent)">${p.cronJob||'manual'}</span></span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:2px;border-top:1px solid #33415522;padding-top:6px">
+        <span style="font-size:9px;color:var(--text-secondary);margin-right:4px;align-self:center;">⚡</span>
+        ${(p.skills||[]).map(s => `<span style="font-size:9px;background:#667eea15;color:#667eea;padding:1px 6px;border-radius:3px;white-space:nowrap">${s}</span>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ---- Pipeline controls (with localStorage persistence) ----
+function savePipelineState() {
+  try {
+    const state = pipelinesData.map(p => ({
+      id: p.id,
+      status: p.status,
+      thresholds: { ...p.thresholds },
+      currentStage: p.currentStage,
+      pct: p.pct,
+      items: p.items, active: p.active, queued: p.queued, failed: p.failed
+    }));
+    localStorage.setItem('mifeco-pipeline-state', JSON.stringify(state));
+  } catch(e) { /* storage full or disabled */ }
+}
+
+function loadPersistedState() {
+  try {
+    const raw = localStorage.getItem('mifeco-pipeline-state');
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    saved.forEach(s => {
+      const local = pipelinesData.find(p => p.id === s.id);
+      if (!local) return;
+      local.status = s.status ?? local.status;
+      local.currentStage = s.currentStage ?? local.currentStage;
+      local.pct = s.pct ?? local.pct;
+      if (s.thresholds) Object.assign(local.thresholds, s.thresholds);
+    });
+  } catch(e) { /* ignore corrupt data */ }
+}
+
+function opsRun(id) {
+  const p = pipelinesData.find(x => x.id === id);
+  if (p) { p.status = 'running'; renderOps(); savePipelineState(); }
+}
+function opsPause(id) {
+  const p = pipelinesData.find(x => x.id === id);
+  if (p) { p.status = 'paused'; renderOps(); savePipelineState(); }
+}
+function opsStop(id) {
+  const p = pipelinesData.find(x => x.id === id);
+  if (p) { p.status = 'stopped'; renderOps(); savePipelineState(); }
+}
+function opsRunAll() {
+  pipelinesData.forEach(p => p.status = 'running');
+  renderOps(); savePipelineState();
+}
+function opsPauseAll() {
+  pipelinesData.forEach(p => p.status = 'paused');
+  renderOps(); savePipelineState();
+}
+function opsStopAll() {
+  pipelinesData.forEach(p => p.status = 'stopped');
+  renderOps(); savePipelineState();
+}
+function opsUpdateThreshold(id, key, val) {
+  const p = pipelinesData.find(x => x.id === id);
+  if (p && p.thresholds[key] !== undefined) {
+    p.thresholds[key] = parseInt(val) || 0;
+    savePipelineState();
+  }
+}
+
+// ---- Pipeline Flow Diagram Modal ----
+function openPipelineFlow(id) {
+  const p = pipelinesData.find(x => x.id === id);
+  if (!p) return;
+  const modal = document.getElementById('flowModal');
+  const body = document.getElementById('flowModalBody');
+  const title = document.getElementById('flowModalTitle');
+  title.textContent = `${p.icon} ${p.name} — Pipeline Flow`;
+  body.innerHTML = `<div style="text-align:center;padding:10px 0;">
+    <p style="color:var(--text-secondary);font-size:12px;margin-bottom:16px;">
+      Stages: ${p.stages.join(' → ')} · Current: Stage ${p.currentStage} (${p.stages[p.currentStage-1]})
+    </p>
+    <img src="${p.flowFile}" alt="${p.name} Flow Diagram" style="max-width:100%;height:auto;border-radius:8px;border:1px solid var(--border);">
+    <div style="margin-top:16px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap;">
+      ${p.stages.map((s, i) => {
+        const active = i+1 === p.currentStage ? ' style="background:#00ffcc22;border-color:#00ffcc;color:#00ffcc;"' :
+                        i+1 < p.currentStage ? ' style="background:#22c55e22;border-color:#22c55e;color:#22c55e;"' : '';
+        return `<span class="flow-step"${active}>${i+1}. ${s}</span>`;
+      }).join('<span class="flow-arrow">→</span>')}
+    </div>
+    ${p.skills ? `
+    <div style="margin-top:18px;padding:12px 16px;background:#0f172a;border-radius:8px;border:1px solid #33415544;text-align:left;">
+      <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px;">⚡ Hermes Skills Powering This Pipeline</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">
+        ${p.skills.map(s => `<span style="font-size:10px;background:#667eea15;color:#667eea;padding:3px 8px;border-radius:4px;">${s}</span>`).join('')}
+      </div>
+      <p style="font-size:10px;color:var(--text-secondary);margin-top:8px;">
+        Load these skills when delegating pipeline tasks via <code style="color:var(--warning);font-size:10px;">delegate_task</code> or the CEO agent orchestrator.
+      </p>
+    </div>` : ''}
+  </div>`;
+  modal.classList.add('show');
+}
+
+// Pipeline health data (kept for backward compat)
+const pipelineHealth = [
+  { icon: '📚', name: 'Books Pipeline', status: 'yellow', dotColor: 'yellow',
+    lastRun: '2026-05-25 08:00 AM',
+    latestProject: '17 titles · 5 series · 14 published · 3 draft · Active fixes needed',
+    leads: 10, activeLeads: 8, staleLeads: 2,
+    tags: ['17 titles', '14 published', '3 draft (Cindy Lou)', '2 need fixes'] },
+  { icon: '☁️', name: 'SaaS Pipeline', status: 'green', dotColor: 'green',
+    lastRun: '2026-05-12 08:06 AM',
+    latestProject: '3 apps active · 8 leads in pipeline',
+    leads: 8, activeLeads: 8, staleLeads: 0,
+    tags: ['3 apps', '8 leads', 'all stage 1'] },
+  { icon: '💼', name: 'Consulting Pipeline', status: 'green', dotColor: 'green',
+    lastRun: '2026-05-12 08:06 AM',
+    latestProject: '10 leads · 6 active · campaign running',
+    leads: 10, activeLeads: 6, staleLeads: 0,
+    tags: ['3 tiers', '7 promotions', '4 ready'] }
+];
+
+function renderHealth() {
+  const grid = document.getElementById('healthGrid');
+  if (!grid) return;
+  grid.innerHTML = pipelineHealth.map(h => `
+    <div class="health-card">
+      <div class="hc-icon">${h.icon}</div>
+      <div class="hc-name"><span class="hc-status-dot ${h.dotColor}"></span>${h.name}</div>
+      <div class="hc-detail">
+        <strong>Last Run:</strong> ${h.lastRun}<br>
+        <strong>Latest:</strong> ${h.latestProject}<br>
+        <strong>Leads:</strong> ${h.leads} total · ${h.activeLeads} active · ${h.staleLeads} stale
+      </div>
+      <div class="hc-tags">${h.tags.map(t => `<span class="hc-tag">${t}</span>`).join('')}</div>
+    </div>
+  `).join('');
+}
+
+function renderPromoStatus() {
+  const grid = document.getElementById('promoGrid');
+  grid.innerHTML = promotionStatuses.map(p => `
+    <div class="promo-card">
+      <div class="pc-head">
+        <h4>${p.name}</h4>
+        <span class="pc-status ${p.status}">${p.status}</span>
+      </div>
+      ${p.items.map(item => `
+        <div class="pc-stat-line">
+          <strong>${item.label}</strong>
+          <span>${item.value}</span>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+// ======================================================================
+// EMBEDDED ARCHITECTURE CONTENT (from ARCHITECTURE.md — no fetch needed)
+// ======================================================================
+const ARCHITECTURE_MD_HTML = `
+<div class="arch-content">
+<h1 style="font-size:20px;color:#00ffcc">MIFECO Pipeline Engine — Architecture</h1>
+<p style="color:#667eea"><strong>Brand:</strong> MIFECO · <strong>Background:</strong> <code>#0f172a</code> · <strong>Accent:</strong> <code>#00ffcc</code> · <strong>Theme:</strong> Dark</p>
+<hr>
+
+<h2>1. System Overview</h2>
+<p>The MIFECO Pipeline Engine is a unified lead-to-revenue system that processes prospects across three product lines — <strong>SaaS</strong>, <strong>Consulting</strong>, and <strong>Books</strong> — through a single, orchestratable funnel. It combines automated discovery, multi-source enrichment, signal-based scoring, content generation, and outreach into one cohesive engine.</p>
+
+<pre><code>┌─────────────────────────────────────────────────────────────────────────────────┐
+│                      MIFECO UNIFIED PIPELINE ENGINE                               │
+│              Lead → Enrichment → Ranking → Content → Outreach                     │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+  LEAD SOURCES
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐ │
+  │  │ Website  │  │ LinkedIn │  │ Referrals│  │Organic   │  │ BookExpo /   │ │
+  │  │ Forms    │  │ Ads      │  │          │  │Search    │  │ Events       │ │
+  │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └──────┬───────┘ │
+  │  ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐  ┌──────┴───────┐ │
+  │  │ Chat     │  │ Social   │  │AgentMail │  │ Previous │  │ Exa          │ │
+  │  │ Widget   │  │ Media    │  │ Inboxes  │  │ Customers│  │ Discovery    │ │
+  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────────┘ │
+  └───────────────────────────────────┬─────────────────────────────────────────┘
+                                      │
+                                      ▼</code></pre>
+
+<h2>2. Pipeline Architecture — Three Product Lines</h2>
+<p>Each product line has its own 8-stage pipeline that maps onto the 10-stage unified pipeline.</p>
+
+<h3>2.1 Books Pipeline (8 stages)</h3>
+<table>
+<tr><th>Stage</th><th>Name</th><th>Description</th></tr>
+<tr><td>1</td><td><strong>Lead Inbox</strong></td><td>New inquiry received</td></tr>
+<tr><td>2</td><td><strong>Contacted</strong></td><td>Initial outreach sent</td></tr>
+<tr><td>3</td><td><strong>Discovery</strong></td><td>Needs assessment call</td></tr>
+<tr><td>4</td><td><strong>Quote Sent</strong></td><td>Bulk pricing proposal delivered</td></tr>
+<tr><td>5</td><td><strong>Negotiation</strong></td><td>Terms, discount, shipping discussion</td></tr>
+<tr><td>6</td><td><strong>Order Placed</strong></td><td>Purchase order received</td></tr>
+<tr><td>7</td><td><strong>Fulfillment</strong></td><td>Printing, shipping, delivery</td></tr>
+<tr><td>8</td><td><strong>Follow-up</strong></td><td>Post-delivery check, referral ask</td></tr>
+</table>
+<p><strong>Products:</strong> No Blue Sky series (5 vols), The Lunar Foundation series (3 vols), Tomorrow Remembered, AI That Works for Small Business<br>
+<strong>Email Inbox:</strong> <code>bigtruck444@agentmail.to</code><br>
+<strong>Nurture:</strong> 4-email sequence over 14 days</p>
+
+<h3>2.2 SaaS Pipeline (8 stages)</h3>
+<table>
+<tr><th>Stage</th><th>Name</th><th>Description</th></tr>
+<tr><td>1</td><td><strong>Identified</strong></td><td>Lead captured from any source</td></tr>
+<tr><td>2</td><td><strong>Contacted</strong></td><td>Initial outreach sent</td></tr>
+<tr><td>3</td><td><strong>Qualified</strong></td><td>ICP validated, discovery complete</td></tr>
+<tr><td>4</td><td><strong>Demo Scheduled</strong></td><td>Product demo booked</td></tr>
+<tr><td>5</td><td><strong>Demo Completed</strong></td><td>Demo delivered, Q&A handled</td></tr>
+<tr><td>6</td><td><strong>Negotiation</strong></td><td>Pricing, terms, contract review</td></tr>
+<tr><td>7</td><td><strong>Closed Won</strong></td><td>Subscription activated</td></tr>
+<tr><td>8</td><td><strong>Closed Lost</strong></td><td>Deal lost or expired</td></tr>
+</table>
+<p><strong>Products:</strong> Project Hypatia Pro ($99/mo), PM Accelerator ($69/mo), VibraEngineer ($29/mo)<br>
+<strong>Email Inbox:</strong> <code>carefulvehicle192@agentmail.to</code><br>
+<strong>Nurture:</strong> 7-email sequence over 21 days</p>
+
+<h3>2.3 Consulting Pipeline (8 stages)</h3>
+<table>
+<tr><th>Stage</th><th>Name</th><th>Description</th></tr>
+<tr><td>1</td><td><strong>Lead</strong></td><td>Lead captured via intake form</td></tr>
+<tr><td>2</td><td><strong>Contacted</strong></td><td>Initial outreach sent</td></tr>
+<tr><td>3</td><td><strong>Qualified</strong></td><td>Needs assessment complete</td></tr>
+<tr><td>4</td><td><strong>Intent</strong></td><td>Pricing request received</td></tr>
+<tr><td>5</td><td><strong>Strategy Session</strong></td><td>Session booked and completed</td></tr>
+<tr><td>6</td><td><strong>Proposal Sent</strong></td><td>Engagement proposal delivered</td></tr>
+<tr><td>7</td><td><strong>Negotiation</strong></td><td>Terms discussion</td></tr>
+<tr><td>8</td><td><strong>Closed Won</strong></td><td>Payment received</td></tr>
+</table>
+<p><strong>Services:</strong> Strategy Session ($199), Deep-Dive ($1,499), Full Transformation Assessment and Strategy ($17,999) — for small and mid-sized companies<br>
+<strong>Email Inbox:</strong> <code>crowdedbutton536@agentmail.to</code><br>
+<strong>Nurture:</strong> 5-email sequence over 10 days</p>
+
+<hr>
+
+<h2>3. Data Flow</h2>
+<pre><code>DISCOVERY ──► ENRICHMENT ──► SCORING ──► NURTURE ──► CONVERSION ──► ADVOCACY</code></pre>
+
+<h3>3.1 Lead Discovery</h3>
+<p>Leads enter the pipeline through <strong>multiple channels</strong>: website forms, Exa Discovery searches, referrals, events (BookExpo, conferences), social media (LinkedIn, Twitter/X), and previous customers.</p>
+
+<h3>3.2 Enrichment Pipeline</h3>
+<ol>
+<li><strong>Company lookup</strong> — Verify company exists, get HQ, industry, size</li>
+<li><strong>Contact discovery</strong> — Find decision-maker emails, LinkedIn profiles</li>
+<li><strong>Signal detection</strong> — Scrape news for relevant signals (personnel, breaches, funding, product launches)</li>
+<li><strong>Tech stack analysis</strong> — Identify tools, platforms, vendors in use</li>
+<li><strong>Vector storage</strong> — Store enriched profile in ChromaDB for future recall</li>
+</ol>
+
+<h3>3.3 Scoring &amp; Triage</h3>
+<p>Each lead receives a composite score out of 30 points across 3 dimensions: Verification (0-10), Contact Availability (0-10), and Product/Consulting Fit (0-10).</p>
+<ul>
+<li><strong>25+ (Hot)</strong> — Immediate personal outreach, priority queue</li>
+<li><strong>15-24 (Warm)</strong> — Enter nurture sequence, monitor for engagement</li>
+<li><strong>5-14 (Cold)</strong> — Automated drip campaign, low-touch</li>
+<li><strong>0-4 (Dead)</strong> — Archived, removed from active pipeline</li>
+</ul>
+
+<h3>3.4 Nurture Sequences</h3>
+<table>
+<tr><th>Product Line</th><th>Emails</th><th>Duration</th><th>Frequency</th></tr>
+<tr><td>SaaS</td><td>7</td><td>21 days</td><td>Days 1, 3, 5, 7, 10, 14, 21</td></tr>
+<tr><td>Consulting</td><td>5</td><td>10 days</td><td>Days 1, 3, 5, 7, 10</td></tr>
+<tr><td>Books</td><td>4</td><td>14 days</td><td>Days 1, 4, 7, 14</td></tr>
+</table>
+
+<hr>
+
+<h2>4. Enrichment Engine</h2>
+<p>The enrichment engine is a <strong>ChromaDB-backed</strong> research pipeline that transforms raw leads into enriched, scored profiles.</p>
+
+<h3>4.1 Signal Detection Categories</h3>
+<ul>
+<li><strong>🔴 Personnel Changes (High)</strong> — C-suite hires/departures, VP/Director movement, key departures</li>
+<li><strong>🟡 Cyber Breaches (Critical)</strong> — Data breaches, ransomware attacks, compliance failures</li>
+<li><strong>🟢 Growth &amp; Downsizing (High)</strong> — Funding rounds, layoffs, office expansions, revenue milestones</li>
+<li><strong>💰 Funding Rounds (Medium)</strong> — Seed through Series C+ and grant funding</li>
+<li><strong>🚀 Product Launches (Medium)</strong> — New releases, feature announcements, partnerships</li>
+</ul>
+
+<h3>4.2 ChromaDB Vector Memory</h3>
+<p>ChromaDB serves as the persistent vector store for enrichment data. Each enriched lead profile is embedded into a 1536-dimension vector, enabling semantic queries like "find companies with recent layoffs in AI" or "show leads from companies that had a breach in the last 90 days."</p>
+
+<hr>
+
+<h2>5. Scoring &amp; Ranking Engine</h2>
+<p>Every lead is scored on <strong>3 dimensions</strong> — 10 points each for a maximum of 30 points.</p>
+
+<table>
+<tr><th>Score Range</th><th>Classification</th><th>Action</th></tr>
+<tr><td><strong>25-30</strong></td><td>🔥 Hot</td><td>Immediate personal outreach within 24h</td></tr>
+<tr><td><strong>15-24</strong></td><td>🔶 Warm</td><td>Enter nurture sequence, monthly check-in</td></tr>
+<tr><td><strong>5-14</strong></td><td>🔵 Cold</td><td>Automated drip campaign, low-touch</td></tr>
+<tr><td><strong>0-4</strong></td><td>⚫ Dead</td><td>Archived, removed from active pipeline</td></tr>
+</table>
+
+<hr>
+
+<h2>6. Cron Schedule</h2>
+<p>The pipeline engine is driven by two cron jobs:</p>
+<ul>
+<li><strong>Daily Orchestrator — 8:00 AM Daily:</strong> Check AgentMail inboxes, classify leads, run enrichment, score, triage, send nurture emails, advance stages</li>
+<li><strong>Weekly Backlink Scan — Sunday 8:00 AM:</strong> Scan guest post opportunities, find broken links, discover unlinked mentions, analyze competitor gaps</li>
+</ul>
+
+<hr>
+
+<h2>7. File Structure</h2>
+<pre><code>pipeline-engine/
+├── ARCHITECTURE.md
+├── data/                     ← Pipeline JSON data files
+├── sequences/                ← Email sequences (SaaS 7, Consulting 5, Books 4)
+├── forms/                    ← Intake form HTML files
+├── dashboard/                ← Dashboard HTML files
+├── enrichment/               ← Enrichment engine modules
+├── scoring/                  ← Scoring engine (3 dimensions)
+├── content/                  ← Content generation engine + templates
+├── backlinks/                ← Weekly backlink scanner
+├── outreach/                 ← AgentMail mailer + sequence manager
+├── orchestrator/             ← Daily/weekly orchestration scripts
+├── chromadb/                 ← Vector memory persistent storage
+└── logs/                     ← Orchestration logs</code></pre>
+
+<hr>
+
+<h2>8. Technology Stack</h2>
+<table>
+<tr><th>Component</th><th>Technology</th></tr>
+<tr><td>Runtime</td><td>Python 3.10+</td></tr>
+<tr><td>Data Storage</td><td>JSON flat files</td></tr>
+<tr><td>Vector Memory</td><td>ChromaDB</td></tr>
+<tr><td>Email</td><td>AgentMail API</td></tr>
+<tr><td>Orchestration</td><td>Bash scripts + cron</td></tr>
+<tr><td>Frontend</td><td>Vanilla HTML/CSS/JS (dark theme)</td></tr>
+</table>
+
+<hr>
+
+<blockquote><strong>MIFECO Pipeline Engine v2.0</strong> · One Pipeline · Three Product Lines · Full Funnel from Aware → Advocate<br>
+Dark theme · <code>#00ffcc</code> accent · Built for scale</blockquote>
+</div>
+`;
+
+// ======================================================================
+// PIPELINE STATUS MODAL — Shows queue per pipeline step
+// ======================================================================
+
+const pipelineQueueData = {
+  'consulting': {
+    title: '📊 Full Transformation Pipeline',
+    stages: [
+      { name: 'Lead Intake', count: 10, status: 'active', desc: 'New inquiries via website forms' },
+      { name: 'Discovery Call', count: 6, status: 'active', desc: 'Needs assessment scheduled' },
+      { name: 'AI Readiness Report', count: 4, status: 'active', desc: 'Being generated by enrichment engine' },
+      { name: 'Strategy Session', count: 2, status: 'active', desc: '1-on-1 booked' },
+      { name: 'Proposal & Pricing', count: 3, status: 'active', desc: 'Custom quote being prepared' },
+      { name: 'Full Transformation', count: 0, status: 'waiting', desc: 'No clients at this tier yet' }
+    ],
+    totalLeads: 10,
+    activeInPipeline: 6,
+    completedThisMonth: 3
+  },
+  'consulting-1': {
+    title: '📊 Starter Tier Queue ($199)',
+    stages: [
+      { name: 'Submitted', count: 5, status: 'active', desc: 'Intake forms received' },
+      { name: 'Report Generating', count: 3, status: 'active', desc: 'AI Readiness report in progress' },
+      { name: 'Report Delivered', count: 2, status: 'done', desc: '30-page PDF sent to client' },
+      { name: 'Follow-up', count: 1, status: 'active', desc: 'Post-delivery check-in' }
+    ],
+    totalLeads: 5,
+    activeInPipeline: 3,
+    completedThisMonth: 2
+  },
+  'consulting-2': {
+    title: '📊 Deep-Dive Tier Queue ($1,499)',
+    stages: [
+      { name: 'Initial Contact', count: 3, status: 'active', desc: 'Inbound or referred' },
+      { name: 'Scope Call', count: 2, status: 'active', desc: 'Deep-dive scope being defined' },
+      { name: 'Engagement Active', count: 1, status: 'active', desc: 'Consulting in progress' },
+      { name: 'Report & Review', count: 0, status: 'waiting', desc: 'No engagements at review stage' }
+    ],
+    totalLeads: 3,
+    activeInPipeline: 3,
+    completedThisMonth: 0
+  }
+};
+
+function openPipelineStatusModal(tier) {
+  const data = pipelineQueueData[tier] || pipelineQueueData['consulting'];
+  const modal = document.getElementById('pipelineStatusModal');
+  const body = document.getElementById('psModalBody');
+  document.getElementById('psModalTitle').textContent = data.title;
+
+  const stageHtml = data.stages.map(s => {
+    const dotColor = s.status === 'active' ? 'var(--success)' : s.status === 'done' ? 'var(--accent)' : 'var(--text-secondary)';
+    const glow = s.status === 'active' ? 'box-shadow:0 0 8px rgba(34,197,94,.4);' : '';
+    return `<div style="display:flex;align-items:center;gap:14px;padding:12px;background:#0f172a;border-radius:8px;border:1px solid #334155;margin-bottom:8px;">
+      <div style="width:36px;height:36px;border-radius:50%;background:${dotColor}22;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <span style="font-size:16px;font-weight:700;color:${dotColor};">${s.count}</span>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${s.name}</div>
+        <div style="font-size:11px;color:var(--text-secondary);">${s.desc}</div>
+      </div>
+      <span style="width:10px;height:10px;border-radius:50%;background:${dotColor};${glow}flex-shrink:0;"></span>
+    </div>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+      <div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:24px;font-weight:800;color:var(--accent);">${data.totalLeads}</div>
+        <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Total Leads</div>
+      </div>
+      <div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:24px;font-weight:800;color:var(--success);">${data.activeInPipeline}</div>
+        <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Active in Pipeline</div>
+      </div>
+      <div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:24px;font-weight:800;color:var(--warning);">${data.completedThisMonth}</div>
+        <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Completed This Month</div>
+      </div>
+    </div>
+    <h4 style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:10px;">Pipeline Stages & Queue</h4>
+    ${stageHtml}
+  `;
+  modal.classList.add('show');
+}
+
+function closePipelineStatusModal() {
+  document.getElementById('pipelineStatusModal').classList.remove('show');
+}
+
+// ======================================================================
+// WAITLIST MODAL
+// ======================================================================
+
+function openWaitlistModal(productName) {
+  document.getElementById('wlProductName').textContent = productName + ' Pro';
+  document.getElementById('waitlistModal').classList.add('show');
+}
+function closeWaitlistModal() {
+  document.getElementById('waitlistModal').classList.remove('show');
+}
+
+// ======================================================================
+// HUMAN ACTION CHECKLIST — Tasks requiring manual intervention
+// ======================================================================
+
+const humanActionItems = [
+  {
+    id: 'stripe-keys',
+    title: '🔑 Configure Stripe Payment Links',
+    desc: 'Replace placeholder Stripe link IDs with live payment links in WordPress plugin (MIFECO_WordPress_Plugin.php).',
+    status: 'blocked',
+    actionUrl: '/wp-admin/plugins/editor/mifeco-core.php',
+    actionLabel: 'Open Plugin Editor'
+  },
+  {
+    id: 'domain-verify',
+    title: '🔑 Verify thebookcellar.com Domain',
+    desc: 'Lead B-003 (Marcus Webb) — thebookcellar.com shows "FOR SALE". Verify bookstore affiliation before proceeding.',
+    status: 'blocked',
+    actionUrl: 'https://thebookcellar.com',
+    actionLabel: 'Check Domain'
+  },
+  {
+    id: 'toc-fix',
+    title: '📝 Fix TOC Duplication in "AI That Works"',
+    desc: 'Published book has a table of contents duplication error in the Kindle version. Fix manuscript and re-upload.',
+    status: 'pending',
+    actionUrl: '/home/bob/books/AI_That_Works/',
+    actionLabel: 'Open Book Dir'
+  },
+  {
+    id: 'manuscript-update',
+    title: '📝 Update "Built from Dust" Manuscript',
+    desc: 'Published but needs manuscript revision. Review and update text, regenerate eBook, re-upload to KDP.',
+    status: 'pending',
+    actionUrl: '/home/bob/books/No_Blue_Sky/',
+    actionLabel: 'Open Series Dir'
+  },
+  {
+    id: 'hypatia-pricing',
+    title: '💰 Set Hypatia Pro Pricing',
+    desc: 'Pro version pricing tiers need to be finalized before waitlist can convert to paid subscribers.',
+    status: 'pending',
+    actionUrl: 'https://dashboard.stripe.com/products',
+    actionLabel: 'Stripe Dashboard'
+  },
+  {
+    id: 'dashboard-sync',
+    title: '⚙️ Configure Dashboard Sync Cron',
+    desc: 'Daily cron job for dashboard sync — verify cron is running and webhook responds.',
+    status: 'done',
+    actionUrl: 'https://www.mifeco.com/admin/',
+    actionLabel: 'Check Admin'
+  },
+  {
+    id: 'promote-tomorrow',
+    title: '📣 Start Promotion for "Tomorrow Remembered"',
+    desc: 'Book is published and ready for marketing. Set up social media campaign, email blast, and Amazon ads.',
+    status: 'pending',
+    actionUrl: '/home/bob/books/Tomorrow_Remembered/',
+    actionLabel: 'Open Book Dir'
+  }
+];
+
+function renderHumanActionChecklist() {
+  const container = document.getElementById('actionChecklistBody');
+  if (!container) return;
+
+  const blockedCount = humanActionItems.filter(i => i.status === 'blocked').length;
+  const pendingCount = humanActionItems.filter(i => i.status === 'pending').length;
+  const doneCount = humanActionItems.filter(i => i.status === 'done').length;
+
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+      <div style="background:#ef444422;border:1px solid #ef444455;border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:20px;font-weight:800;color:var(--danger);">${blockedCount}</div>
+        <div style="font-size:10px;color:var(--danger);text-transform:uppercase;">Blocked (Keys Needed)</div>
+      </div>
+      <div style="background:#f59e0b22;border:1px solid #f59e0b44;border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:20px;font-weight:800;color:var(--warning);">${pendingCount}</div>
+        <div style="font-size:10px;color:var(--warning);text-transform:uppercase;">Pending</div>
+      </div>
+      <div style="background:#22c55e22;border:1px solid #22c55e44;border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:20px;font-weight:800;color:var(--success);">${doneCount}</div>
+        <div style="font-size:10px;color:var(--success);text-transform:uppercase;">Completed</div>
+      </div>
+    </div>
+    ${humanActionItems.map(item => {
+      const statusColor = item.status === 'blocked' ? 'var(--danger)' : item.status === 'pending' ? 'var(--warning)' : 'var(--success)';
+      const statusLabel = item.status === 'blocked' ? '🛑 Needs Keys' : item.status === 'pending' ? '⏳ Pending' : '✅ Done';
+      return `<div style="display:flex;align-items:center;gap:12px;padding:12px;background:#0f172a;border-radius:8px;border:1px solid #334155;margin-bottom:8px;${item.status === 'done' ? 'opacity:0.6;' : ''}">
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${item.title}</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${item.desc}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+          <span style="font-size:10px;font-weight:600;color:${statusColor};">${statusLabel}</span>
+          <a href="${item.actionUrl}" target="_blank" class="btn btn-outline" style="padding:3px 8px;font-size:9px;">${item.actionLabel}</a>
+        </div>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+function openActionChecklistModal() {
+  renderHumanActionChecklist();
+  document.getElementById('actionChecklistModal').classList.add('show');
+}
+
+function renderActionChecklistPreview() {
+  const container = document.getElementById('actionChecklistPreview');
+  if (!container) return;
+  const previewItems = humanActionItems.filter(i => i.status !== 'done').slice(0, 4);
+  container.innerHTML = previewItems.map(item => {
+    const statusColor = item.status === 'blocked' ? 'var(--danger)' : 'var(--warning)';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#0f172a;border-radius:6px;border:1px solid #334155;margin-bottom:6px;">
+      <span style="font-size:12px;color:var(--text-primary);flex:1;">${item.title}</span>
+      <span style="font-size:10px;font-weight:600;color:${statusColor};">${item.status === 'blocked' ? '🔑 Keys Needed' : '⏳ Pending'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ======================================================================
+// MODAL FUNCTIONS
+// ======================================================================
+
+function closeModals() {
+  document.getElementById('archModal').classList.remove('show');
+  document.getElementById('actionChecklistModal').classList.remove('show');
+}
+function closeFlowModal() {
+  document.getElementById('flowModal').classList.remove('show');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', function(e) {
+    if (e.target === this) { closeAllModals(); }
+  });
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { closeAllModals(); }
+});
+
+function closeAllModals() {
+  closeModals();
+  closeFlowModal();
+  closePipelineStatusModal();
+  closeWaitlistModal();
+}
+
+function openArchitectureModal() {
+  document.getElementById('archModalBody').innerHTML = ARCHITECTURE_MD_HTML;
+  document.getElementById('archModal').classList.add('show');
+}
+
+// ======================================================================
+// SIDEBAR TOGGLE
+// ======================================================================
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('open');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+// ======================================================================
+// ACTIVE NAV HIGHLIGHT ON SCROLL
+// ======================================================================
+
+function updateActiveNav() {
+  const sections = ['books', 'saas', 'consulting', 'pipeline-ops', 'pipeline-health', 'lead-promotion', 'human-actions'];
+  const navLinks = document.querySelectorAll('.sidebar-nav a');
+  let current = 'books';
+
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      if (rect.top <= 100) current = id;
+    }
+  });
+
+  navLinks.forEach(a => {
+    const href = a.getAttribute('href');
+    a.classList.toggle('active', href === '#' + current);
+  });
+}
+
+// ---- Dynamic Data Loader from pipeline-state.json ----
+async function loadPipelineState() {
+  try {
+    const resp = await fetch('pipeline-state.json');
+    if (!resp.ok) return;
+    const state = await resp.json();
+    if (!state || !state.pipelines) return;
+    // Overlay remote data onto static defaults
+    state.pipelines.forEach(remote => {
+      const local = pipelinesData.find(p => p.id === remote.id);
+      if (!local) return;
+      local.items = remote.items ?? local.items;
+      local.active = remote.active ?? local.active;
+      local.queued = remote.queued ?? local.queued;
+      local.failed = remote.failed ?? local.failed;
+      local.pct = remote.pct ?? local.pct;
+      local.health = remote.health ?? local.health;
+      local.currentStage = remote.currentStage ?? local.currentStage;
+      local.lastRun = remote.lastRun ?? local.lastRun;
+      local.status = remote.status ?? local.status;
+    });
+    renderOps();
+  } catch(e) { /* silent — use static defaults */ }
+}
+
+// ======================================================================
+// INIT
+// ======================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadPersistedState();
+  renderBooks();
+  renderSaaS();
+  renderConsulting();
+  renderOps();
+  renderHealth();
+  renderLeadStats();
+  renderPromoStatus();
+  renderActionChecklistPreview();
+  window.addEventListener('scroll', updateActiveNav);
+  // Load live data from pipeline-state.json (non-blocking)
+  loadPipelineState();
+});
+</script>
+
+</body>
+</html>

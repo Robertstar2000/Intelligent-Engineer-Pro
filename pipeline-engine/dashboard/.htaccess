@@ -1,0 +1,36 @@
+# MIFECO Admin — Password Protected Area
+# All requests go through index.php for auth (except webhook.php)
+
+# Enable rewrite engine
+RewriteEngine On
+
+# Allow direct access to webhook (no auth needed, uses secret in payload)
+RewriteCond %{REQUEST_URI} webhook\.php [NC]
+RewriteRule .* - [L]
+
+# Allow direct access to CSS/JS/fonts
+RewriteCond %{REQUEST_URI} \.(css|js|woff2?|ttf|svg|png|jpg|gif|ico)$ [NC]
+RewriteRule .* - [L]
+
+# Protect the data directory from direct access
+RewriteRule ^data/ - [F,L]
+
+# Block access to PHP files directly (except index.php and webhook.php)
+RewriteCond %{REQUEST_URI} !(index\.php|webhook\.php)$ [NC]
+RewriteRule \.php$ - [F,L]
+
+# All other requests — route nothing needed, index.php handles the gate
+# and HTML files are served directly after PHP session check
+
+# Deny access to hidden files
+<FilesMatch "^\.">
+    Deny from all
+</FilesMatch>
+
+# PHP settings
+<IfModule mod_php.c>
+    php_flag session.use_strict_mode 1
+    php_value session.gc_maxlifetime 7200
+    php_value session.cookie_httponly 1
+    php_value session.cookie_samesite "Strict"
+</IfModule>
