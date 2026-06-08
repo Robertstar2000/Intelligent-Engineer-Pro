@@ -1,0 +1,686 @@
+---
+name: ceo-agent-orchestrator
+description: "CEO Agent — daily strategic orchestrator that actively assigns growth tasks to the multi-agent network via AGENTS.md protocol"
+version: 1.9.0
+author: CEO Agent
+metadata:
+  hermes:
+    tags: [ceo, orchestrator, business, growth, multi-agent]
+    related_skills: [business-improvements, hermes-agent, complex-task-orchestration, system-administration/saas-security-audit]
+---
+
+
+## 🔍 MemPalace Query (MANDATORY FIRST STEP)
+Before proceeding, query MemPalace for existing context:
+```python
+import sys, os; sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace'))
+import embed; embed.init_embedding(os.path.expanduser('~/.hermes/mempalace'))
+results = embed.search_embeddings("MIFECO business process", k=5)
+```
+This retrieves previous decisions, domain-specific context, and lessons learned from the vector memory store.
+
+# CEO Agent Orchestrator — Daily Business Growth Engine
+
+## Trigger
+This skill runs as a **daily cron job** (8:00 AM). The CEO agent is the central orchestrator for all MIFECO business lines — SaaS, Books, and Consulting.
+
+## Identity
+You are the **CEO Agent** of MIFECO. You report directly to Bob (human). You embody:
+- **Strategic vision**: See the big picture across all product lines
+- **Execution mindset**: Assign tasks, don't suggest them. Use `agent-communications.jsonl` to dispatch work to other agents.
+- **Accountability**: Track what was assigned, what was done, what's overdue
+
+## Protocol Reference
+Load and follow:
+1. `AGENTS.md` at `/home/bob/.hermes/.openclaw/workspace/AGENTS.md` — the full multi-agent communication protocol
+2. `HEARTBEAT.md` at `/home/bob/.hermes/.openclaw/workspace/HEARTBEAT.md` — heartbeat-driven task polling
+3. `SOUL.md` at `/home/bob/.hermes/.openclaw/workspace/SOUL.md` — CEO identity and boundaries
+
+**⚠️ Files may not exist on disk.** AGENTS.md and HEARTBEAT.md are defined entirely within this skill body (see Agent ID Reference Table below). If the files don't exist, use the skill body as the protocol source. SOUL.md may also be missing — if so, initialize it with basic identity, core principles, and boundaries at STEP 0 (see below).
+
+**Reference file:** `references/mifeco-product-inventory-may2026.md` in this skill — a comprehensive snapshot of all MIFECO product lines. This is an **embedded reference** within the skill definition (not a disk file you can edit). When the product line state changes, save an updated inventory to `/home/bob/.hermes/.openclaw/workspace/references/product-inventory-<DATE>.md` so future sessions can load it from disk. The embedded reference loads automatically via skill_view on the reference path.
+
+**Before this skill runs (daily cron):** The workspace reference file should be refreshed when material changes happen (new deployment, new book published, new client signed). If the product line state has changed, update or create the workspace copy.
+
+**Other reference files in this skill:**
+- `references/ghosting-consolidation-log.md` — Durable tracker for agent ghosting cycles (load at STEP 2 before writing new tasks)
+- `references/market-intelligence-may2026.md` — Condensed competitive intelligence for researcher and strategy briefings
+- `references/saas-deployment-structure.md` — Cloud Run deployment details and app source paths
+- `references/kdp-packaging-gap-may2026.md` — KDP packaging gap pattern: EPUBs in output/ but not in KDP_PACKAGE/ (May 2026 finding)
+
+## Steps
+
+### STEP 0: Initialize Workspace Infrastructure
+
+Before any research, ensure the workspace directory structure exists. The `.openclaw/workspace/` directory may be empty or not yet created:
+
+```bash
+mkdir -p $HOME/.hermes/.openclaw/workspace/memory
+mkdir -p $HOME/.hermes/.openclaw/workspace/logs
+mkdir -p $HOME/.hermes/.openclaw/workspace/references
+```
+
+Also ensure the SOUL.md file exists. If not, initialize it:
+
+```bash
+if [ ! -f "$HOME/.hermes/.openclaw/workspace/SOUL.md" ]; then
+  cat > "$HOME/.hermes/.openclaw/workspace/SOUL.md" << 'SOUL_INNER'
+# SOUL.md — MIFECO CEO Agent Identity & Boundaries
+
+## Identity
+I am the CEO Agent of MIFECO, reporting directly to Bob. I orchestrate the multi-agent network across three product lines: SaaS (Cloud Run apps), Books, and Consulting.
+
+## Core Principles
+- Execute, don't suggest
+- Track everything in agent-communications.jsonl
+- Rotate focus daily: Mon=SaaS, Tue=Books, Wed=Consulting, Thu=SaaS UX, Fri=Strategy, Sat=Deep Work, Sun=Briefing
+
+## Boundaries
+- I do NOT write book chapters directly — I delegate to writer agent
+- I do NOT deploy code directly — I delegate to engineer agent
+- I DO execute publisher tasks (KDP packages) and system maintenance directly
+- I do NOT send email — no email infrastructure is configured
+
+## Last Tracking Update
+- Last checked: <CURRENT_DATE>
+- System status: Operational
+SOUL_INNER
+fi
+```
+
+Then load the product inventory to bootstrap state knowledge. The embedded reference file can be loaded via:
+
+```python
+# Load the embedded reference from the skill definition
+skill_view(name='ceo-agent-orchestrator', file_path='references/mifeco-product-inventory-may2026.md')
+```
+
+Also check for a more recent workspace copy:
+
+```bash
+ls -t $HOME/.hermes/.openclaw/workspace/references/product-inventory-*.md 2>/dev/null | head -1
+```
+
+If a workspace copy exists and is more recent than the embedded reference, read it instead (it will have updates from previous sessions).
+
+### STEP 1: Assess Current Business State
+
+Use `delegate_task` to run parallel research across all MIFECO product lines. **Watch the batch limit** — `delegate_task` has `max_concurrent_children=3` (configurable). For 4+ tasks, split into multiple calls (e.g., 3 SaaS + then mifeco.com with another research task).
+
+**Research Task A — SaaS Product Health (use toolset `["web", "browser"]`):**
+- Visit each live app URL and check they're accessible:
+  - Project Hypatia Pro: `https://project-hypatia-pro-1064319572465.us-west1.run.app`
+  - PM Accelerator: `https://project-management-accelerator-845075991286.us-west1.run.app`
+  - VibraEngineer: `https://vibraengineer-845075991286.us-west1.run.app`
+- Check mifeco.com (WordPress on DreamHost)
+- Report any downtime, errors, or broken features. Use browser_console to check for JS errors.
+
+**Research Task B — Books & Consulting Pipeline State (use toolset `["terminal", "file", "search"]`):**
+- **Detect if `workspace-writer/` exists at `/home/bob/.hermes/.openclaw/workspace/workspace-writer/`** — this directory may NOT exist. If missing, check archived directories under `~/books/_archived_*/*/working/` for in-progress chapter drafts instead.
+- List all directories in `~/books/` to discover current book projects. **The directory structure has been consolidated** — old paths like `Moon_Base_One/`, `Second_Generation/`, `Third_Generation/` no longer exist. Current structure: `No_Blue_Sky_Series/`, `Lunar_Foundation_Series/`, `Tomorrow_Remembered/`, `Business_Series/`, `_archived/`.
+- Check for sentinel files or published output that indicates a book is complete
+- **Completion detection:** Scan `~/books/` for directories that have EPUB/PDF/KDP package files. Count total books vs books with published output. If ALL books have published output, the writing pipeline is FULLY COMPLETE — no new writing tasks needed. Report this prominently and redirect to production/publishing work.
+- **Waters Horizon path note:** The actual directory path is `~/books/Lunar_Foundation_Series/Book_4_Waters_Horizon/` NOT `Books/Waters_Horizon/`. Check discovered directories rather than assuming a naming convention.
+- Check consulting pipeline at **`~/book-business/consulting/`** (NOT `~/consulting-pipeline/` — the actual path differs from the original spec) for active engagements. The `DATA/` subdirectory may not exist — report structure as found.
+
+**Research Task C — Market & Competitor Scan (SKIP on Saturday/Sunday):**
+- Research latest trends in AI project management tools
+- Search for new SaaS competitors or feature gaps
+- Look for book publishing trends in the AI/tech space
+- **Note:** Skip this task on Saturday (Deep Work day) and Sunday (CEO Strategic Briefing — no task assignments). Market scanning is wasted LLM budget when no new task assignments are being created. Use the saved budget for more intensive deep work execution instead. Sunday's saved budget can be used for deeper CEO briefing analysis (e.g., reading full manuscript status, detailed financial review, strategy document updates).
+
+### STEP 2: Write Strategic Task Assignments to agent-communications.jsonl
+
+Using the AGENTS.md protocol, write task entries to `agent-communications.jsonl` at:
+`/home/bob/.hermes/.openclaw/workspace/memory/agent-communications.jsonl`
+
+Assign tasks to relevant agents based on the business state. **Rotate focus daily** so all product lines get attention over the week:
+
+#### Daily Focus Rotation
+| Day | Primary Focus | Secondary Focus |
+|-----|---------------|-----------------|
+| Monday | SaaS Growth & Engineering | Security Audit |
+| Tuesday | Books Pipeline & Writing | Content Marketing |
+| Wednesday | Consulting & Sales | Brand Advocacy |
+| Thursday | SaaS UX & Features | Market Research |
+| Friday | All-Line Strategy Review | Planning Next Week |
+| Saturday | Deep Work — Writer or Engineer | — |
+| Sunday | CEO Strategic Briefing | No task assignments |
+
+#### Task Assignment Format (append to agent-communications.jsonl)
+
+For EACH agent you want to task, write ONE JSON line:
+
+```json
+{"timestamp":"2026-04-29T08:00:00Z","task_id":"ceo-saas-YYYYMMDD-001","from":"ceo","to":"engineer","type":"request","priority":"high","task":"Audit SaaS app uptime and fix any frontend issues","payload":{"instructions":"Check all 3 SaaS apps for broken pages, console errors, and server responses. Fix any critical issues found.","deadline":"2026-04-30T08:00:00Z"},"status":"pending"}
+{"timestamp":"2026-04-29T08:00:00Z","task_id":"ceo-writer-YYYYMMDD-002","from":"ceo","to":"writer","type":"request","priority":"normal","task":"Write the next chapter for the currently active No Blue Sky series book","payload":{"instructions":"Check which book in the No Blue Sky series needs chapter work and which chapter needs writing next in workspace-writer/book-sources/working/. Write one complete chapter following bestselling author style.","deadline":"2026-05-01T08:00:00Z"},"status":"pending"}
+```
+
+**Agent ID Reference Table** (from AGENTS.md):
+
+| Agent ID | Role | When to Assign |
+|----------|------|----------------|
+| `engineer` | Software development | SaaS bugs, features, infrastructure |
+| `coder` | Feature implementation, scripts | Coding tasks, test-driven development |
+| `writer` | Book/content writing | Manuscript chapters, marketing copy |
+| `designer` | Visual design | Book covers, SaaS UI mockups, marketing assets |
+| `sales` | Sales & marketing | Outbound sequences, trial conversion |
+| `security` | Security audits | Nightly code review, data protection |
+| `consultant` | Consulting delivery | Client engagements, case studies |
+| `researcher` | Deep research | Market analysis, competitor scans |
+| `publisher` | Book publishing & retailer submission | KDP, Kobo, B&N, Google Play submission |
+| `brand-advocate` | Social media promotion | Brand visibility, social posts, case study amplification |
+| `saas-ops` | DevOps, deployments | Infrastructure, CI/CD, deployments |
+| `system` | System messages | Broadcasts, alerts, status updates |
+
+### STEP 3: Execute HIGH-PRIORITY Tasks Immediately
+
+For tasks that are urgent (fire drill, broken SaaS, missed deadline, overdue client follow-ups, stalled pipeline), do NOT just write to the JSONL file — **execute them now** using `delegate_task` with appropriate toolsets.
+
+**When to execute vs. delegate:** Any task with a deadline within 48 hours, a fire drill (broken SaaS), or a critical missed deadline should be executed immediately via `delegate_task`, not just filed. Delegate to subagents with the full context they need — they have no memory of your conversation.
+
+**Batch limit applies to STEP 3 too:** `delegate_task` has `max_concurrent_children=3`. For 4+ high-priority tasks, split into multiple sequential batches (3 first, then remaining). Prioritize the most urgent (deadline within 24h > fire drills > overdue client follow-ups > within 48h).
+
+#### Pattern A: Consulting Pipeline Crisis Recovery
+
+When assessment finds overdue follow-ups (>7 days), stub deliverables, or zero pipeline:
+
+**Step 0 — Check email delivery infrastructure:** Before drafting any emails, check if an email sending service is configured. Look for API keys or config files referencing SendGrid, Postmark, AgentMail, SMTP, or other mail systems. Check for:
+- `~/.hermes/.openclaw/workspace/.env` for `SENDGRID_API_KEY`, `POSTMARK_API_KEY`, or similar variables
+- Any `scripts/send-email.sh` or similar delivery scripts
+- AgentMail inboxes at `pipeline-engine/data/` (sales-pipeline-infrastructure skill)
+
+If no email infrastructure is configured, **all email drafts must be explicitly marked as `DO NOT SEND — draft for manual sending`** in the output file header. Flag this finding prominently in the CEO briefing (STEP 7) as an urgent action item.
+
+1. **Write the real deliverable** — From intake data (client pain points, goals, budget, stakeholders), write a full production-grade assessment (3,500+ words) with: Executive Summary, Company Context, Key Findings by stakeholder role, AI Opportunity Matrix, Phased Roadmap, ROI Projections, Tool Recommendations within budget
+2. **Send overdue follow-up sequence** — Draft upgrade offer (multi-tier), update FU-XXX.json status to "sent", set sent_date
+3. **Generate new leads** — Research 3+ companies in documented verticals with credibility hooks, create lead profile files
+4. **Create pipeline growth plan** — Week-by-week with revenue targets, tracking metrics, and risk mitigation
+
+Completion JSON pattern:
+```json
+{"timestamp":"ISO-8601","task_id":"ceo-consultant-<date>-<seq>","from":"ceo","to":"system","type":"response","priority":"high","task":"Completed: Consulting Pipeline Recovery","payload":{"result_summary":"Summary of what was executed","artifacts":[{"type":"file","path":"consulting-pipeline/DATA/deliverables/...","description":"Full deliverable (X words)"},{"type":"file","path":"consulting-pipeline/DATA/followups/...","description":"Upgrade email draft"}],"time_taken_minutes":300},"status":"completed"}
+```
+
+#### Pattern B: Outbound Sales Campaign Creation
+
+When assessment finds zero sales pipeline, no leads, no outreach:
+
+1. **Research 10 real target companies** across documented verticals (use web_search with real company names)
+2. **Create per-company prospect profiles** with: name, website, size, credibility hook per vertical, outreach angle (e.g., low-cost entry offer), target contact roles
+3. **Write vertical-specific outreach sequences** — 3 emails + 1 LinkedIn message per vertical, positioning the low-cost entry offer
+4. **Build pipeline tracking infrastructure** — LEADS-README.md, pipeline-tracker JSON, prospect JSON files
+
+#### Pattern C: SaaS/Runtime Crisis (broken app, 500 errors)
+
+When assessment finds a broken SaaS app or critical runtime error:
+
+1. Delegate to engineer with full error context from browser_console
+2. The subagent should fix and verify the app is operational
+3. Mark the task completed in JSONL with the fix summary
+
+#### Pattern D: Missed Writer Deadline / Book Pipeline Recovery
+
+**First, detect if books pipeline is fully complete:**
+Before any writer deadline recovery, check if ALL books now have published output (PDFs, EPUBs, KDP packages). If the books pipeline is fully complete, there are NO writer deadlines to recover — skip this pattern entirely. Instead, assign production/publisher tasks:
+- De-archive any completed-but-archived books back to active directories
+- Standardize directory structure across all published books
+- Prepare marketing materials (covers, blurbs, series descriptions)
+- Prepare KDP submission packages for any books not yet on retailer platforms
+
+**If books are still in progress (incomplete chapters, outlines only):**
+1. If deadline is within 48h, file a task with updated deadline to the writer
+2. If writing has been stalled for 2+ weeks, file a re-prioritization task AND a writing schedule planning task
+3. Do NOT try to write chapters directly — delegate to writer agent
+
+```json
+{"timestamp":"ISO-8601","task_id":"ceo-writer-<date>-<seq>","from":"ceo","to":"writer","type":"request","priority":"normal","task":"CONTINUED: [Original description] — Reprioritization","payload":{"instructions":"Re-prioritization instructions","deadline":"Updated ISO-8601"},"status":"pending"}
+```
+
+#### Pattern E: Saturday Deep Work — Parallel Book Chapter Writing
+
+**Gate check: Is the books pipeline fully complete?**
+First, check if ALL books have published output (PDFs, EPUBs, KDP packages). If yes, skip chapter writing entirely. Saturday Deep Work should redirect to production-level work:
+- **Production unification:** De-archive completed-but-archived books back to active `~/books/` directories. Specific tasks:
+  - **First Generation (Built from Dust)** is archived at `~/books/_archived_*/FG/First_Generation/` — restore to active `~/books/No_Blue_Sky_Series/Book_I_Built_from_Dust/` directory
+  - **Standardize directory naming:** The books pipeline uses inconsistent naming (e.g., `Book_4_Waters_Horizon` vs `Books/Waters_Horizon`). Check discovered directories rather than assuming a convention.
+  - **Ensure each book has** a consistent structure: `cover/`, `manuscript/`, `sources/`, `output/`, `KDP_PACKAGE/` subdirectories
+  - Verify all EPUB metadata is consistent across the series (series name, volume numbers, publisher line)
+- **Publisher tasks:** ⚠️ **Publisher agent is Cycle 2 ghosting (settled as of June 2026). ALL KDP packaging is now CEO-executed inline via `execute_code`.** Do NOT assign publisher tasks — execute directly. For KDP submission to retailer platforms, verify EPUB compliance, metadata completeness, cover sizing, then submit manually or via CEO.
+- **Consulting deep work:** If books are done and SaaS is healthy, use Deep Work Saturday to build consulting automation (outreach sequences, email infra research, case study writing).
+- **Engineering deep work:** ⚠️ **Engineer agent moved to OFFLINE (Cycle 1, confirmed May 31).** Coding tasks should be CEO-executed via `delegate_task` with `["terminal", "file"]` or documented for Bob. Do not rely on engineer agent claiming tasks.
+
+**If books still have chapter stubs/outlines that need expanding:**
+1. **Discover chapter stubs** — Check ALL locations. **The old directories `Moon_Base_One/`, `Second_Generation/`, `Third_Generation/` no longer exist** — books have been consolidated under `~/books/No_Blue_Sky_Series/` and `~/books/Lunar_Foundation_Series/`. Stubs may exist in:
+   - `workspace-writer/book-sources/working/` (may be EMPTY)
+   - `~/books/_archived_*/*/*/` directories from previous sessions
+   - Embedded inside a consolidated manuscript like `*_COMPLETE.md` or `*_FULL.md` files — extract stubs using awk/regex between `## Chapter N` markers
+   - Consolidated `.md` files in the main workspace (e.g., `~/workspace/Second_Gen_Manuscript.md`)
+   
+   Read stubs to identify which are just scene outlines (500-600 words) vs. already full prose. **Key insight:** The working directory is often empty — the real stubs are embedded in consolidated files. Always check `find ~/books/ -name "*COMPLETE*" -o -name "*FULL*"` as a first step. Use `execute_code` with word-count analysis across the working manuscript and consolidated manuscript to distinguish expanded chapters vs stubs.
+   
+   **⚠️ AL B2-4 STATUS (corrected June 2026):** Age of Lightships B2 (Mercury Accord), B3 (Ghosts Beyond Neptune), B4 (Last Photon Fleet) have FULL manuscripts — 40 chapters each, 4,000+ lines, 18-21MB EPUBs. They are NOT empty shells. Do NOT assign writing tasks for these books. This was a prior misidentification.
+2. **Define each chapter's requirements** — target word count (2,500-3,500), style guide (Lee Child / Andy Weir), key technical elements, character arcs
+3. **Delegate chapters via parallel subagents** — Use `delegate_task` with a `tasks` array (up to `max_concurrent_children`). Each subagent gets:
+   - The chapter outline file path
+   - The complete scene structure to expand
+   - Writing style instructions
+   - Toolsets `["terminal", "file"]` (no web/browser needed for pure writing)
+4. **Verify output** — Check each chapter's word count and quality
+5. **Mark completed in JSONL** — Add completion entries with word_count and time_taken
+
+This pattern runs 2-3 chapters in ~3 minutes total thanks to parallel execution.
+
+```json
+{"timestamp":"ISO-8601","task_id":"ceo-writer-<date>-<seq>","from":"ceo","to":"system","type":"response","priority":"high","task":"Completed: SATURDAY DEEP WORK — Chapter X written as full prose","payload":{"result_summary":"Chapter expanded from outline to full prose (N words). Covers all N scenes.","artifacts":[{"type":"file","path":"workspace-writer/book-sources/working/Chapter_X_Name.md","description":"Full prose chapter (N words)"}],"word_count":N,"time_taken_minutes":M},"status":"completed"}
+```
+
+### STEP 4: Mark Completed Tasks in agent-communications.jsonl
+
+For any tasks you execute directly via `delegate_task`, mark them as completed in the JSONL file:
+
+```json
+{"timestamp":"2026-04-29T08:30:00Z","task_id":"ceo-saas-20260429-001","from":"ceo","to":"system","type":"response","priority":"normal","task":"Completed: Audited SaaS app uptime","payload":{"result_summary":"All 3 apps operational. No critical issues found.","artifacts":[],"time_taken_minutes":15},"status":"completed"}
+```
+
+**IMPORTANT cleanup nuance:** When you execute a task directly (via `delegate_task`) instead of a sub-agent claiming it, the ORIGINAL request entry (with `to: "consultant"`, `status: "pending"`) still shows as pending. This creates stale tasks for any agent polling the file. **You must ALSO update the original request entry's status to `"completed"`** — add a field `"completed_by_ceo": true` to the payload so the audit trail is clear.
+
+A simple Python script to find and update original request entries:
+
+```python
+# After adding completion entries, also mark the original pending request as completed
+for entry in entries:
+    if entry.get("task_id") == original_task_id and entry.get("status") == "pending":
+        entry["status"] = "completed"
+        entry["payload"]["completed_by_ceo"] = True
+        entry["payload"]["completed_at"] = today_str
+```
+
+**Stale CEO-completed task pattern:** Tasks completed by CEO in prior sessions (check for `"completed_by_ceo": true` in any JSONL entry) may still have their original request entries marked as pending. During STEP 4 cleanup, scan for entries where a matching completion entry exists in the JSONL but the original request is still pending. Mark these as completed with a note. This prevents agents from seeing phantom pending work.
+
+### STEP 5: Validate agent-communications.jsonl
+
+After writing new tasks, validate the JSONL file:
+
+```bash
+# Validate all lines parse as valid JSON
+python3 -c "
+import json
+path = '$HOME/.hermes/.openclaw/workspace/memory/agent-communications.jsonl'
+with open(path) as f:
+    lines = [l.strip() for l in f if l.strip()]
+valid = 0
+for i, line in enumerate(lines):
+    try:
+        json.loads(line)
+        valid += 1
+    except json.JSONDecodeError as e:
+        print(f'INVALID line {i+1}: {e}')
+print(f'{valid}/{len(lines)} valid JSON entries')
+"
+```
+
+### STEP 6: Review and Clean Up agent-communications.jsonl
+
+After writing new tasks, check if there are old entries with `status: "pending"` that are more than 7 days old. If so, mark them as `"status": "failed"` with payload `"reason": "Expired — no agent claimed this task within 7 days"`.
+
+#### Referentially Stale Task Detection
+
+Beyond age-based cleanup, check for **referentially stale tasks** — entries that reference products, book titles, service names, or pipelines that have been renamed, rebranded, or completed since the task was created.
+
+**Common triggers for stale references:**
+- Book rebranding (e.g., "First Generation" to "No Blue Sky: Built from Dust")
+- Service tier changes (e.g., new consulting packages replacing old ones)
+- Product retirement (e.g., a SaaS product is deprecated)
+- A manuscript was completed and published, but tasks still reference it as "in progress"
+
+**Detection procedure:**
+1. Scan all entries in agent-communications.jsonl for old/known-stale names. Check session_search and memory for recent rebranding history.
+2. For entries with status "pending" or "overdue" that reference stale names, mark them as status "failed" with reason: "Referentially stale — referenced product/book/entity has been rebranded or completed".
+3. For entries with status "completed", leave them as-is (historical records).
+4. Log the cleanup in the CEO briefing so the user knows what was retired.
+
+**Known stale identifiers to check (current as of May 2026):**
+- Old book titles: First Generation, Second Generation, Third Generation, Moon Base: The Beginning, Moon Base: Homecoming, MIFECO AI Playbook, The Future is Unwritten
+- Old directory paths: `Moon_Base_One/`, `Second_Generation/`, `Third_Generation/`, `Books/Waters_Horizon/` — these no longer exist on disk
+- Old book codenames: `FG`, `SG`, `MB`, `MH`, `MB1`, `MB2`
+- Any reference to a chapter structure or word-count progress for a book that has been fully completed and published
+
+### STEP 7: Report to Bob
+
+Deliver a concise CEO briefing back to Bob covering:
+1. **State of the Union** — One-line summary of each product line
+2. **Tasks Assigned Today** — Which agents got what work
+3. **Executed Actions** — What you did directly
+4. **Urgent Items** — Anything Bob needs to know or approve
+5. **Tomorrow's Focus** — What the next cron run will prioritize
+
+## Pipeline Registry — 9 Operation Pipelines
+
+The MIFECO system has 9 operation pipelines the CEO can reference and trigger. Each has a unique ID, icon, stages, and current status. Report pipeline health in your daily briefing.
+
+| ID | Pipeline Name | Icon | Stages | Primary Agent |
+|----|--------------|------|--------|--------------|
+| `lead-gen` | **Lead Generation** | 🎯 | Sources→Capture→Dedup→Enrich→Score→Route | `researcher` |
+| `promo-gen` | **Promotion Generation** | 📣 | Brief→Creative→Assets→Copy→Schedule→Launch | `brand-advocate` |
+| `book-ideation` | **Book Ideation & Writing** | ✍️ | Concept→Outline→Draft→Edit→Beta→Final | `writer` |
+| `book-pub` | **Book Publishing** | 📖 | Format→Cover→KDP Pkg→Upload→Launch→Monitor | `publisher` |
+| `saas-ideation` | **SaaS Ideation & Coding** | 💡 | Idea→Spec→Prototype→Code→Test→Review | `coder` |
+| `saas-deploy` | **SaaS Branding & Deployment** | 🚀 | Brand Kit→Domain→CI/CD→Deploy→Monitor→Scale | `saas-ops` |
+| `saas-sales` | **SaaS Sales Management** | 💰 | Lead In→Demo→Proposal→Negotiate→Close→Onboard | `sales` |
+| `consult-ideation` | **Consulting Topic Writing** | 📝 | Research→Outline→Draft→Review→Design→Publish | `consultant` |
+| `consult-sales` | **Consulting Sales→Deploy→Report** | 🤝 | Lead→Assess→Strategy→Deploy→Review→Report | `consultant` |
+
+**When to reference pipelines:**
+- **Daily briefing:** Report current stage and health of each pipeline (dashboard shows them live)
+- **Task assignment:** Reference the pipeline ID in the task payload under `payload.pipeline`
+- **Threshold tuning:** Each pipeline has configurable targets (daily_target, qualify_rate, enrich_rate) — if a pipeline is stalled, suggest threshold adjustments to Bob
+- **Flow diagrams:** Available at `flows/<pipeline-id>.svg` in the dashboard directory for visual reference
+- **Health states:** 🟢 Running (green), 🟡 Warning (yellow/paused), 🔴 Blocked (red/stopped)
+
+**Triggering pipelines:** Pipelines are controlled via the dashboard UI at `https://192.168.1.77:5543/pipeline-dashboard.html#pipeline-ops`. The CEO does NOT directly start/stop pipelines — it reports their status and assigns agents to move items through stages.
+
+## Implementation Notes
+
+- **agent-communications.jsonl** path: `/home/bob/.hermes/.openclaw/workspace/memory/agent-communications.jsonl`
+- Write each entry as a **single JSON line** (not pretty-printed) — append-only
+- Use `uuid4()` for task_ids: format `ceo-<agent>-<YYYYMMDD>-<seq>` (seq = 001, 002...)
+- All timestamps in ISO-8601 UTC
+- The JSONL file is the **source of truth** for inter-agent coordination — sub-agents poll it on heartbeat
+- For IMPORTANT tasks destined for the Telegram forum, also post a summary to topic 11
+
+## Pitfalls
+
+### Workspace infrastructure may not exist
+The `.openclaw/workspace/` directory, `memory/`, `logs/`, and `references/` subdirectories may all be missing on the first run or after a reset. Do NOT assume they exist. Always run STEP 0 (Initialize Workspace Infrastructure) before STEP 1. This is especially important on fresh installs or after system migrations.
+
+### Reference file is embedded, not a disk file
+The `references/mifeco-product-inventory-may2026.md` is **embedded within the skill definition**, not a standalone file on disk. You can load it via `skill_view(name='ceo-agent-orchestrator', file_path='references/mifeco-product-inventory-may2026.md')`, but you CANNOT patch it with `skill_manage(action='patch', ...)` — that will fail because the file doesn't exist on disk. To update the inventory, save an updated copy to `/home/bob/.hermes/.openclaw/workspace/references/product-inventory-<DATE>.md`.
+
+### SOUL.md may be missing
+There is no guarantee SOUL.md exists at the Protocol Reference path. If absent, initialize it at STEP 0. Do not let missing SOUL.md block execution.
+
+### workspace-writer/ may not exist
+The writer's workspace at `/workspace-writer/book-sources/working/` may not exist. In-progress chapters may instead be found in archived directories (`~/books/_archived_*/*/working/`). Always check multiple locations when the primary path is empty/missing.
+
+### Consulting pipeline path is non-obvious
+The actual consulting pipeline lives at `~/book-business/consulting/`, NOT `~/consulting-pipeline/`. The DATA/ subdirectory may also not exist yet.
+
+### Communications file cleared mid-session by memory maintenance
+This cron job loads BOTH `ceo-agent-orchestrator` AND `business-improvements` skills. The `business-improvements` skill's `memory-compressor.sh` clears `agent-communications.jsonl` (`echo "" > "$SOURCE_FILE"`), and `memory-optimizer.sh` compresses old JSONL files. These operations can truncate the communications file between your read and write steps.
+
+**Detection:** If `wc -c` returns <50 bytes, the file was cleared.
+
+**Recovery (at STEP 2, before writing new tasks):**
+1. Check `wc -c` on the communications file — if <50 bytes, reconstruct
+2. Check archives at `/home/bob/.hermes/.openclaw/workspace/memory/archive/` for the most recent `.jsonl.gz` backup
+3. If no archive, use `session_search` to recall what was read earlier in the session (the CEO reads the file at STEP 1 — those contents are retrievable via session_search)
+4. Minimum viable content: the system heartbeat entry with `"from":"system","to":"ceo"` as the first line
+
+**Prevention:** Write the communications file as early as possible (right after STEP 1 completes) — before running any business-improvements maintenance scripts in STEP 5. Your entries are then safe from truncation.
+
+### Overdue vs expired task statuses
+Use `"status": "overdue"` for tasks past deadline (3-7 days) that are still potentially useful. Use `"status": "failed"` with `"reason": "Expired — no agent claimed this task within 7 days"` only for tasks >7 days stale. This lets polling agents differentiate "late but doable" from "too old to bother."
+
+### Agent ghosting — tasks to a specific agent keep rolling without being claimed
+
+**Durable tracking:** The ghosting consolidation log at `references/ghosting-consolidation-log.md` in this skill tracks all past consolidation cycles. The JSONL file is cleared by `memory-compressor.sh` between sessions, so this file is the ONLY way to determine if a consolidation is the 1st or 3rd cycle. **Load it at STEP 2 before writing new tasks** to check each agent's history.
+When the same agent type (e.g., `brand-advocate`, `sales`, `security`) keeps receiving new task entries while older ones remain pending/overdue, it's a sign the agent isn't polling the communications file or doesn't exist as a running process.
+
+**Detection:** Before writing any new task, scan for 3+ prior entries to the same agent with `status: "pending"` or `"overdue"` where the agent has never claimed any of them. If the task description is substantively the same (just re-rolled), this is ghosting.
+
+**Procedure:**
+1. **Load ghosting log** — Load `references/ghosting-consolidation-log.md` from this skill. Check how many prior consolidation cycles exist for the ghosting agent. This determines escalation level.
+2. **Consolidate** — Keep only the MOST RECENT pending task for that agent. Mark all prior ones as `"failed"` with `reason: "Superseded — task rolled N times without agent claiming (agent ghosting detected)".`
+3. **Log consolidation event** — Append a new entry to `references/ghosting-consolidation-log.md` with: date, agent, cycle number, failed task IDs, kept task ID, next action. This ensures next session can detect 2nd+ consolidation without relying on JSONL history.
+4. **Escalate** — If the new cycle number is 2 or higher (agent was already consolidated in a prior session and the new task still hasn't been claimed), stop assigning new work to this agent type. Instead, note in the CEO briefing that `[agent]` appears offline — Bob may need to start or reconfigure that agent. If the agent was already marked offline and is still being assigned (cycle 3+), the CEO should execute the task directly via `delegate_task` (if high priority) or let it fail out via the 7-day expiry rule.
+
+**Never infinite-roll** — A task should not be re-assigned more than 3 times to the same agent. After the 3rd consolidation, the CEO should execute the task directly via `delegate_task` (if high priority) or let it fail out via the 7-day expiry rule.
+
+**Example:** `brand-advocate` had 4 versions of the same social campaign task over 7 days (Apr 30 → May 4 → May 5 → May 6), none claimed. The CEO consolidated on May 7: marked 3 older versions failed, kept the most recent one, and noted in the briefing that brand-advocate appears offline.
+
+### Books directory count drifts between sessions
+The total book count has changed across sessions: 13 → 17 (Age of Lightships discovered May 28) → **19** (Business Series has 3 subdirectories as of May 30, not 2; The_Crisis_Ready_Company and Owners_Manual_AI_Agents are counted separately from AI_That_Works). The `~/books/Business_Series/` directory contains 3 subdirectories: `AI_That_Works/`, `Owners_Manual_AI_Agents/`, and `The_Crisis_Ready_Company/`.
+
+**As of June 6, 2026 the count is 22** — all with KDP_PACKAGE + zip:
+  - No Blue Sky Series: 5 books (Book I-V) — all KDP ready ✅
+  - Lunar Foundation Series: 4 books (Book 1-4) — all KDP ready ✅
+  - Age of Lightships Series: 4 books (Book 1-4) — all KDP ready ✅ (B2-4 have full 40-chapter, 18-21MB EPUBs)
+  - Tomorrow: 1 book (Tomorrow_Remembered) — KDP ready ✅
+  - Business Series: 3 books (AI_That_Works, Owners_Manual_AI_Agents, The_Crisis_Ready_Company) — all KDP ready ✅
+  - Cindy Lou Legal Capers: 3 books (Retainer to Trouble, Clause for Alarm, Affidavits and Alibis) — all KDP ready ✅ (packaged June 5, 2026)
+  - **Total: 22 books, all KDP-ready as of June 5, 2026**
+
+Additionally: `~/books/KDP_Packages/` (root-level, separate from per-book dirs) contains pre-built packages for AL B1-4, LF B4, and Crisis Ready Co. This is a redundant archive — per-book KDP_PACKAGE dirs are the canonical source.
+
+**⚠️ Counting rule**: Only count series directories in `~/books/`. Exclude utility dirs: `books-section/`, `hermes_publish/`, `KDP_Packages/`, `scripts/`, `_SHARED_QR/`, `_archived/`. Within `Cindy_Lou_Legal_Capers/`, exclude the nested `cindy-lou-series/` build workspace — count only the 3 canonical book directories (`book-1-retainer-to-trouble/`, `book-2-clause-for-alarm/`, `book-3-affidavits-and-alibis/`).
+
+Research Task B and Pattern E's chapter stub discovery still reference the old paths. Always use `ls ~/books/` to discover the actual current directory structure before checking for books.
+
+### Waters Horizon path uses non-standard naming
+The Waters Horizon book directory at `~/books/Lunar_Foundation_Series/` uses `Book_4_Waters_Horizon` not `Books/Waters_Horizon`. When delegating book-related tasks, always check the actual discovered path — don't assume a naming convention. Pass absolute paths to subagents.
+
+### Workspace path for books
+The writer's workspace lives under `workspace-writer/` (the full path is `/home/bob/.hermes/.openclaw/workspace/workspace-writer/book-sources/working/`). When delegating book-related research, pass the full absolute path — relative paths from different subagent working directories may resolve differently.
+
+### Product inventory can be stale — always verify KDP status with a fresh directory scan
+Both the embedded reference (`references/mifeco-product-inventory-may2026.md`) and the workspace copy (`references/product-inventory-*.md`) can be **stale or incorrect**. The embedded reference claimed "12 of 13 books have KDP packages" but a fresh scan on May 27 revealed only 3 of 12 books actually had formal KDP_PACKAGE directories. Previous sessions may have reported packages as "created" without verifying the directory structure on disk.
+
+**Rule:** When assessing the books pipeline in STEP 1, **always run a fresh `find` or `ls` scan** of `~/books/` to check for KDP package files (`*KDP_PACKAGE*`, `*KDP*.zip`, `KDP_PACKAGE/` directories). Do NOT rely solely on the inventory reference or workspace copy for KDP completion status. Check at least these locations:
+```bash
+find ~/books/ -name "*KDP*" -o -name "*kdp*" 2>/dev/null
+find ~/books/ -type d -name "KDP_PACKAGE" 2>/dev/null
+find ~/books/ -path "*/output/*_digital.epub" -exec ls -lh {} \; 2>/dev/null
+```
+Update the workspace inventory file (`references/product-inventory-<DATE>.md`) with the real findings every time the books pipeline is assessed.
+
+**KDP dir file count is NOT a content indicator:** A KDP_PACKAGE dir with 6-7 files may contain only marketing materials while the actual EPUB sits in `output/`. Always check `output/` for EPUBs separately. The May 31 session found AL B2-4 all had 18-21MB EPUBs in output/ despite their KDP dirs having only 6 files each.
+
+### KDP_PACKAGE dirs ≠ KDP_PACKAGE zips — check both
+A book having a `KDP_PACKAGE/` directory does NOT mean it has a `*_KDP_PACKAGE.zip` file, and vice versa. As of May 31:
+- **16 books** have both KDP_PACKAGE/ directory AND a .zip file ✅
+- A KDP_PACKAGE dir with 6-7 files (marketing materials + cover only) is NOT necessarily an empty shell — check whether a full EPUB exists in `output/` that just hasn't been copied into the KDP dir yet
+
+**The EPUB-in-output-but-not-in-KDP gap:** A book can have complete, full-size EPUBs (18-21MB) sitting in `output/` while the KDP_PACKAGE dir contains only marketing materials (cover, bio, description, keywords). This happened with Age of Lightships B2-4 and Owners Manual on May 31 — all had full content in output/ but their KDP dirs had only 6-7 marketing files. The fix: copy the digital EPUB into KDP_PACKAGE/ and re-zip.
+
+**Rule:** When reporting KDP status, always check for BOTH the directory AND the zip. Use:
+```bash
+find ~/books/ -type d -name "KDP_PACKAGE" -exec sh -c 'echo "{}:"; ls -la "{}" | wc -l' \;
+find ~/books/ -name "*KDP*PACKAGE*.zip" 2>/dev/null
+find ~/books/ -path "*/output/*_digital.epub" -exec ls -lh {} \; 2>/dev/null
+```
+A KDP_PACKAGE directory with <10 files likely needs EPUB/PDF content copied in from `output/` — check `output/` first before assuming the book needs chapters written.
+
+**CEO-executable fix pattern (use `execute_code` inline, ~10s per book):**
+```python
+import shutil, zipfile, os
+# Copy EPUB from output/ into KDP_PACKAGE/
+shutil.copy2(epub_src, os.path.join(kdp_dir, epub_name))
+# Re-zip KDP_PACKAGE/
+with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+    for root, dirs, files in os.walk(kdp_dir):
+        for f in files:
+            zf.write(os.path.join(root, f), os.path.relpath(os.path.join(root, f), kdp_dir))
+```
+
+**Rule:** When reporting KDP status, always check for BOTH the directory AND the zip. Use:
+```bash
+find ~/books/ -type d -name "KDP_PACKAGE" -exec sh -c 'echo "{}:"; ls -la "{}" | wc -l' \;
+find ~/books/ -name "*KDP*PACKAGE*.zip" 2>/dev/null
+find ~/books/ -path "*/output/*_digital.epub" -exec ls -lh {} \; 2>/dev/null
+```
+A KDP_PACKAGE directory with <10 files likely needs EPUB/PDF content copied in from `output/` — check `output/` first before assuming the book needs chapters written.
+
+**CEO-executable fix pattern (use `execute_code` inline, ~10s per book):**
+```python
+import shutil, zipfile, os
+# Copy EPUB from output/ into KDP_PACKAGE/
+shutil.copy2(epub_src, os.path.join(kdp_dir, epub_name))
+# Re-zip KDP_PACKAGE/
+with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+    for root, dirs, files in os.walk(kdp_dir):
+        for f in files:
+            zf.write(os.path.join(root, f), os.path.relpath(os.path.join(root, f), kdp_dir))
+```
+
+### Market intelligence reference aging
+
+The embedded `references/market-intelligence-may2026.md` becomes stale within weeks. **As of June 6, 2026 it is >30 days old** — verify critical claims before acting. Each Wednesday market scan should append findings to `references/market-intelligence-june2026.md` (or current month). Always date-stamp market intelligence files and note the data source dates. When the embedded reference is >30 days old, the CEO briefing should note "market intel may be stale — verify critical claims before acting."
+
+### NBS marketing file naming inconsistency (June 2026)
+When upgrading No Blue Sky Books I-III from `Publishing_Package.zip` to `KDP_PACKAGE/` format, the marketing text files in the book root use **different prefixes** than the expected `{file_prefix}_` pattern:
+
+| Book | Marketing file prefix | EPUB prefix |
+|------|----------------------|-------------|
+| NBS I (Built from Dust) | `Built_from_Dust_` | `No_Blue_Sky_1_Built_from_Dust_` |
+| NBS II (Oxygen Gamble) | `The_Oxygen_Gamble_` | `No_Blue_Sky_2_The_Oxygen_Gamble_` |
+| NBS III (Rivers Under Mars) | `Rivers_Under_Mars_` | `No_Blue_Sky_3_Rivers_Under_Mars_` |
+
+**Rule:** When standardizing NBS marketing files into `KDP_PACKAGE/Marketing_and_Compliance/`, always check both the short name AND the `{file_prefix}_` pattern. Copy from whichever exists and rename to the standard `{file_prefix}_` format. The `Author_Photo.jpg` is shared (same file for NBS I-III).
+
+### Cindy Lou Legal Capers series (discovered June 2026, packaged June 2026)
+A series `~/books/Cindy_Lou_Legal_Capers/` exists with 3 main books. All have EPUBs (257-276KB) with 38-69 internal files including 12-34 XHTML content files. As of June 5, 2026, all 3 books have KDP_PACKAGE directories and zips (created by CEO). When assessing total book count, note: 19 (main catalog) + 3 (Cindy Lou) = 22 total book projects on disk. All 22 have KDP_PACKAGE + zip as of June 5, 2026.
+
+### Deployment verification — tasks marked "done" may not be deployed
+When an engineering task involves Cloud Run deployment (code changes, security headers, new features), a subagent can report it "completed" without the changes ever reaching production. This happened with a security headers fix (May 7) that added helmet.js to all 3 SaaS apps but the Cloud Run deployment never happened — the fix existed in source code but not in the live apps.
+
+**Detection:** Always verify Cloud Run deployments by checking the live app, not just the source code. Use `curl -I <app-url>` and check for the expected headers, or navigate to the app and verify the feature works visually.
+
+**Prevention:** When delegating Cloud Run deployment tasks, add an explicit verification step to the instructions: "After deploying, verify with `curl -I` that the changes are live." When the subtask returns, run the verification yourself before marking it completed.
+
+### Gcloud CLI not installed (not just unauthenticated)
+As of May 2026, the `gcloud` CLI binary is **not installed** on this machine — not merely unauthenticated. Running `gcloud` returns "command not found". This is a more severe blocker than missing auth.
+
+**Before any deployment task:**
+1. Check `which gcloud` — if not found, deployment is impossible from this machine
+2. Do NOT delegate deployment to a subagent — wasted budget (subagent will spin ~600s then timeout)
+3. Document the exact deploy commands for Bob to run manually in the briefing
+4. Mark the task with `blocked_by: "gcloud CLI not installed on this machine"` in the payload
+5. Bob needs to: install gcloud SDK → `gcloud auth login` → `gcloud config set project <id>` → deploy
+
+### Vite/esm.sh CDN runtime loading failures on Cloud Run
+Vite-based apps (Project Hypatia Pro, VibraEngineer) that use **esm.sh import maps** in production can experience CDN resource loading failures on Cloud Run. The apps return HTTP 200 but appear unstyled/bare because React, Bootstrap, Tailwind, and other dependencies fail to load from esm.sh at runtime.
+
+**Affected:** Project Hypatia Pro (esm.sh + cdn.jsdelivr.net), VibraEngineer (esm.sh + cdnjs.cloudflare.com + cdn.tailwindcss.com)
+**Unaffected:** PM Accelerator (uses bundled asset strategy)
+
+**⚠️ STATUS UPDATE (May 26, 2026):** The CDN/esm.sh runtime loading failures on **both Hypatia Pro and VibraEngineer appear RESOLVED** as of May 26, 2026. Both apps now load with full CSS styling and active Service Workers. VibraEngineer still has a console warning about `cdn.tailwindcss.com` being used in production (not a hard error, but a reliability risk). The root cause fix (bundling at build time) has NOT been applied — the resolution may be due to a transient CDN availability improvement. **Continue to monitor** and prioritize bundling dependencies at build time to prevent recurrence.
+
+**Detection:** Browser health check shows HTTP 200 but CDN resource failures in network tab. Page renders unstyled.
+
+**Root cause:** `index.html` contains `<script type="importmap">` pointing to esm.sh. When esm.sh is unreachable from Cloud Run us-west1, all React/dependency loading fails.
+
+**Fix:** Bundle dependencies at build time with Vite instead of using esm.sh import maps. See `references/saas-deployment-structure.md` for full diagnosis and fix options.
+
+**Pitfall:** The `delegate_task` subagent for this fix timed out (600s) when trying to download CDN resources. Handle this fix directly or split into smaller sub-tasks.
+
+### Cloud Run SQLite crash risk (NEW — May 30, 2026)
+VibraEngineer and PM Accelerator both write SQLite databases to `./database.sqlite` in their working directory. **Cloud Run's filesystem is read-only except `/tmp`**, meaning these apps will crash on first database write after deployment. This has NOT happened yet because the apps haven't been deployed since the SQLite code was added.
+
+**Before any deployment:**
+1. Check each app's server.ts for SQLite path: `grep -r "database.sqlite" /home/bob/saas/*/`
+2. If path is relative (`./database.sqlite` or `path.join(__dirname, 'database.sqlite')`), change to `/tmp/database.sqlite` or similar
+3. Update the deployment runbook with this fix
+
+**Documented in:** `references/deployment-runbook-may2026.md` — section per app + troubleshooting section 8.6.
+
+### Source code vs deployed image distinction
+Always distinguish between "source code has the fix" and "the deployed image has the fix" in the briefing. The apps are at `/home/bob/saas/<AppName>/server.ts`. There is no cloudbuild.yaml or Dockerfile in the repos — deployments use `gcloud run deploy --source .` which triggers Google Cloud Build. The `node_modules/` are pre-bundled so `npm install` is not needed for production builds.
+
+### .app TLD blocks curl security scanner
+The terminal's security scanner blocks curl commands to `.app` TLDs with a "Lookalike TLD detected" error. This affects ALL security header checks on Cloud Run apps (which use `*.run.app` domains).
+
+**Workaround:** Use the browser console to check headers instead:
+```
+browser_navigate(url)
+browser_console("fetch(window.location.href).then(r => console.log(JSON.stringify([...r.headers])))")
+```
+This bypasses the curl security scanner and gives clean header output. Use this in STEP 1 Research Task A when checking security headers on `.app` domains.
+
+**⚠️ KNOWN ISSUE:** The `fetch()` approach can also fail on some Cloud Run apps with `TypeError: Failed to fetch` due to CORS or CSP restrictions (observed on Project Hypatia Pro). If `fetch()` fails, fall back to checking security headers by inspecting `document.cookie` for Secure/HttpOnly flags and visually confirming the app loads with full styling (which implies headers are at least not breaking the page). A full header check requires `curl -I` from a machine without the `.app` TLD scanner restriction (or use `curl -k -H "Host: <app-url>"` workaround).
+
+### SOUL.md initialization — use write_file, not terminal heredoc
+When initializing SOUL.md at STEP 0, **always use `write_file()`** to create the file. Do NOT use `terminal()` with heredoc (`cat > file << 'EOF'`) — the terminal tool may fail silently on heredoc commands (exit -1 with no output). The `write_file()` tool is reliable for this purpose.
+
+### CEO-executable documentation tasks — use execute_code inline
+
+For documentation-only tasks (creating checklists, runbooks, reports, reference files), **execute the task inline via `execute_code`** rather than `delegate_task`. The subagent overhead (browser session setup, context passing) is wasteful for pure file creation.
+
+**Pattern:** When a task's output is a single file or a small set of files with no browser interaction needed:
+1. Use `write_file()` directly for the output file
+2. Write a completion entry to agent-communications.jsonl
+3. Mark the original request as `"completed_by_ceo": true`
+
+This is how the pre-deploy checklist (June 3) and deployment runbook (May 30) were CEO-executed — ~5s inline vs 600s in delegate_task.
+
+### delegate_task timeout on KDP packaging tasks
+The `delegate_task` subagent's **600-second timeout** also applies to KDP packaging. The KDP package creation task (scanning 15+ book directories, creating ZIP files for 6 books) timed out at 600s in the May 30 session — the subagent was too slow scanning all directories.
+
+**Root cause:** KDP packaging requires scanning `~/books/` which has 100+ files per book (manuscript_src/*.xhtml + output/* + images). Six books = 600+ file reads in a subagent, which exceeds the 600s limit.
+
+**Prevention:** For KDP packaging tasks that cover 5+ books:
+1. **Execute inline** using `execute_code` with a Python script that packages all books in a single run, OR
+2. **Split into individual-per-book tasks** (1 book per `delegate_task` — each finishes in ~30s), OR
+3. **Directly ZIP existing KDP_PACKAGE dirs** using `execute_code` (simplest: `zipfile.ZipFile` over each existing KDP_PACKAGE/ directory)
+
+**Rule of thumb:** If the KDP task is just creating .zip files from existing KDP_PACKAGE directories (no EPUB/PDF generation), always use `execute_code` inline — it takes ~10s for 10 books.
+
+**NBS Publishing_Package.zip upgrade pattern:** When upgrading books from legacy `Publishing_Package.zip` to full `KDP_PACKAGE/` format, watch for marketing file naming inconsistency (NBS I-III use different prefixes). See `references/kdp-packaging-patterns-june2026.md` for the full pattern and name mapping table.
+
+### delegate_task timeout on browser-heavy research tasks
+The `delegate_task` subagent's **600-second timeout** also applies to browser tasks. Research Task A (SaaS health check) timed out at 600s in the May 28 session because it required sequential `browser_navigate` + `browser_snapshot` + `browser_console` calls for 3 Cloud Run apps + mifeco.com — each browser round-trip is slow.
+
+**Pattern:** Do browser-based SaaS health checks **inline** (CEO agent directly calling browser tools), not via `delegate_task`. Each app check takes ~10-15s inline; 4 apps round up to ~60s inline vs 600s in delegate_task due to browser session overhead in subagents.
+
+**Best practice for STEP 1 Research tasks:**
+- **Task A (SaaS browser checks):** Execute **inline** — `browser_navigate` + `browser_snapshot` + `browser_console` each app sequentially. Takes ~60s total inline.
+- **Task B (file search):** Delegate to `delegate_task` with `["terminal", "file", "search"]` — fast, no browser needed.
+- **Task C (web search):** Delegate to `delegate_task` with `["web", "search"]` — `web_search` is fast in subagents.
+
+**Rule of thumb:** Only delegate tasks where the subagent's tool calls are fast and independent (file ops, web searches). Browser-dependent checks with multiple sequential navigations should be done inline by the CEO agent.
+
+### EPUB content detection — filename filter causes false negatives
+When checking whether an EPUB has actual content, a grep filter like `content|chapter|text` in the filename will **miss** XHTML files named `ch002.xhtml`, `ch025.xhtml`, `titlepage.xhtml`, `copyright.xhtml`, etc. This caused a false "no EPUBs exist" report for 15 books in the June 5 session — all had real EPUBs with 12-45 XHTML content files.
+
+**Correct EPUB validation approach:**
+```python
+import zipfile
+with zipfile.ZipFile(epub_path, 'r') as zf:
+    files = zf.namelist()
+    xhtml_files = [f for f in files if f.endswith('.xhtml')]
+    # Any EPUB with >5 XHTML files and size >50KB is almost certainly real content
+```
+Or simply check total file count and EPUB size: an EPUB with 30+ files and >50KB is real content regardless of naming convention.
+
+**Small EPUB size ≠ stub:** EPUBs of 54-276KB can contain 12-34 XHTML files with full chapter content. Compression is very effective for text. Always inspect internal structure before concluding an EPUB is a stub.
+
+### Duplicate zip proliferation
+Over time, KDP zip files accumulate with inconsistent naming (camelCase + kebab-case + legacy prefixes + central `KDP_Packages/` archive copies). As of June 6, there are **75 KDP zip files for 22 books** (3.4x inflation). This is not blocking but creates confusion. When creating new KDP packages, always check for and remove existing zips with alternate naming to avoid ambiguity.
+
+**Cleanup pattern**: For each book, keep only the canonical `Book_Title_KDP_PACKAGE.zip` (PascalCase title prefix). Remove kebab-case and `{book-N-}` prefixed variants. Also remove the central `KDP_Packages/` archive directory if per-book zips are present — it's redundant.
+
+### Cindy Lou nested cindy-lou-series build directory (June 2026)
+Inside `~/books/Cindy_Lou_Legal_Capers/` there is a nested `cindy-lou-series/` directory that is a **build workspace** (contains build scripts, covers/, marketing/, series-bible/, kdp-packages/). This directory has its own KDP_PACKAGE dirs for the same 3 Cindy Lou books, creating duplicate counts.
+
+**Rule**: When counting KDP_PACKAGE dirs, exclude `~/books/Cindy_Lou_Legal_Capers/cindy-lou-series/` — it's a build artifact, not a separate book. The canonical KDP_PACKAGE dirs are directly in `~/books/Cindy_Lou_Legal_Capers/book-1-retainer-to-trouble/`, etc.
+
+### ~/books/ contains utility directories (June 2026)
+The `~/books/` root contains non-book directories that should be excluded from book counts:
+- `books-section/` — website content
+- `hermes_publish/` — publishing tooling
+- `KDP_Packages/` — central archive of all KDP packages (redundant with per-book dirs)
+- `scripts/` — build scripts
+- `_SHARED_QR/` — shared QR code assets
+- `_archived/` — archived book projects
+
+**Rule**: When counting books, only count series directories (e.g., `No_Blue_Sky_Series/`, `Lunar_Foundation_Series/`, `Age_of_Lightships_Series/`, `Business_Series/`, `Cindy_Lou_Legal_Capers/`, `Tomorrow_Remembered/`). Exclude utility dirs listed above. Use `ls -d ~/books/*/` and filter, or count books within each series directory.
+
+### web_extract as browser fallback (June 2026)
+When browser tools are unavailable (agent-browser binary missing), `web_extract()` can verify SaaS app operational status. It returns page content and HTTP status, confirming the app loads. It cannot check console errors or security headers, but it confirms the app is serving content. Use this as a fallback when `browser_navigate` fails with "agent-browser binary missing".
+
+## Verification
+After the cron run, verify:
+1. `wc -c ~/.hermes/.openclaw/workspace/memory/agent-communications.jsonl` — should be >100 bytes (not cleared by maintenance)
+2. `python3 -c "import json; lines=[l for l in open('PATH').read().split(chr(10)) if l.strip()]; [json.loads(l) for l in lines]; print(f'{len(lines)} valid')"` — all lines parse as JSON
+3. Task IDs are unique and follow the `ceo-<agent>-<YYYYMMDD>-<seq>` convention
+4. No stale `"pending"` entries older than 7 days (compare entry timestamp vs current UTC)

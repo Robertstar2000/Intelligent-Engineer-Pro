@@ -1,0 +1,15 @@
+---
+name: mempalace-embedding-integration
+description: ""
+---
+
+## 🔍 MemPalace Query (MANDATORY FIRST STEP)
+Before proceeding, query MemPalace for existing context:
+```python
+import sys, os; sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace'))
+import embed; embed.init_embedding(os.path.expanduser('~/.hermes/mempalace'))
+results = embed.search_embeddings("MemPalace embedding integration FAISS vector", k=5)
+```
+This retrieves previous decisions, domain-specific context, and lessons learned from the vector memory store.
+
+[[], [], {}, {}, ["text], normalize_embeddings=True)[0]\n    fid = len(_id_map)\n    _index.add_with_ids(np.array([emb]), np.array([fid]))\n    _id_map[fid] = memory_id\n    _persist()\n\ndef search_embeddings(query_text, k=5):\n    global _index, _id_map\n    if _index.ntotal == 0:\n        return []\n    q_emb = _model.encode([query_text], normalize_embeddings=True)[0]\n    D, I = _index.search(np.array([q_emb]), k)\n    results = []\n    for score, fid in zip(D[0], I[0]):\n        if fid == -1:\n            continue\n        memory_id = _id_map.get(int(fid))\n        if memory_id is not None:\n            results.append((memory_id, float(score)))\n    return results\n\ndef remove_embedding(memory_id):\n    # Simplified: mark for lazy rebuild (nightly)\n    pass\n\ndef _persist():\n    faiss.write_index(_index, os.path.join(_storage_path, 'indexes', 'faiss.index'))\n    with open(os.path.join(_storage_path, 'indexes', 'id_map.json'), 'w') as f:\n        json.dump(_id_map, f)\n```\n\n## Integration Flow\n- **Capture**: After storing a raw memory event in MemPalace/raw/, call `add_embedding(memory_id, raw_text)`.\n- **Consolidation**: When a memory's text is updated (e.g., during summarization), call `remove_embedding(old_id)` then `add_embedding(new_id, new_text)` (or rely on nightly rebuild).\n- **Retrieval**: For a user query, generate query embedding, search FAISS index for top‑k candidates, fetch the corresponding memory records from the appropriate store (semantic/episodic/procedural/preferences), re‑rank using overlap of context tags and palace tags, return layered context (working → high‑confidence → episodic → raw evidence as needed).\n\n## Risks\n- Model drift: If the embedding model changes, existing index becomes incompatible; schedule periodic re‑indexing.\n- Stale embeddings: Consolidation hook updates index when memory text changes; otherwise nightly rebuild mitigates.\n- Privacy: Embeddings are derived from raw text; ensure file permissions restrict access to the index directory.\n- Interference: Combine vector similarity scores with tag‑based re‑ranking to reduce false positives from ambiguous queries.\n\n## Verification\n- After a new memory is captured, verify that `faiss.read_index` contains the vector and that `search_embeddings` returns the memory ID.\n- Confirm that retrieval returns semantically related memories when queried with related phrasing.\n- Ensure that reinforcement, pruning, and explainability metadata continue to function as before.]

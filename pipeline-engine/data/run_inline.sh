@@ -1,0 +1,1 @@
+cd /home/bob/.hermes/.openclaw/workspace/pipeline-engine/data && bash test.sh

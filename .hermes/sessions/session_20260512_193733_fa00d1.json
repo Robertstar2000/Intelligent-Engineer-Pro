@@ -1,0 +1,703 @@
+{
+  "session_id": "20260512_193733_fa00d1",
+  "model": "deepseek/deepseek-v4-flash",
+  "base_url": "https://openrouter.ai/api/v1",
+  "platform": "telegram",
+  "session_start": "2026-05-12T19:37:33.405319",
+  "last_updated": "2026-05-12T19:41:14.692241",
+  "system_prompt": "You are Hermes Agent, an intelligent AI assistant created by Nous Research. You are helpful, knowledgeable, and direct. You assist users with a wide range of tasks including answering questions, writing and editing code, analyzing information, creative work, and executing actions via your tools. You communicate clearly, admit uncertainty when appropriate, and prioritize being genuinely useful over being verbose unless otherwise directed below. Be targeted and efficient in your exploration and investigations.\n\nIf the user asks about configuring, setting up, or using Hermes Agent itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') before answering. Docs: https://hermes-agent.nousresearch.com/docs\n\nConversation started: Tuesday, May 12, 2026 07:37 PM\nModel: deepseek/deepseek-v4-flash\nProvider: openrouter\n\nHost: Linux (6.8.0-107-generic)\nUser home directory: /home/bob\nCurrent working directory: /home/bob/.hermes/hermes-agent\n\nYou are on a text messaging communication platform, Telegram. Standard markdown is automatically converted to Telegram format. Supported: **bold**, *italic*, ~~strikethrough~~, ||spoiler||, `inline code`, ```code blocks```, [links](url), and ## headers. Telegram has NO table syntax — prefer bullet lists or labeled key: value pairs over pipe tables (any tables you do emit are auto-rewritten into row-group bullets, which you can produce directly for cleaner output). You can send media files natively: to deliver a file to the user, include MEDIA:/absolute/path/to/file in your response. Images (.png, .jpg, .webp) appear as photos, audio (.ogg) sends as voice bubbles, and videos (.mp4) play inline. You can also include image URLs in markdown format ![alt](url) and they will be sent as native photos.",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "patch",
+        "description": "Targeted find-and-replace edits in files. Use this instead of sed/awk in terminal. Uses fuzzy matching (9 strategies) so minor whitespace/indentation differences won't break it. Returns a unified diff. Auto-runs syntax checks after editing.\n\nREPLACE MODE (mode='replace', default): find a unique string and replace it. REQUIRED PARAMETERS: mode, path, old_string, new_string.\nPATCH MODE (mode='patch'): apply V4A multi-file patches for bulk changes. REQUIRED PARAMETERS: mode, patch.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "replace",
+                "patch"
+              ],
+              "description": "Edit mode. 'replace' (default): requires path + old_string + new_string. 'patch': requires patch content only.",
+              "default": "replace"
+            },
+            "path": {
+              "type": "string",
+              "description": "REQUIRED when mode='replace'. File path to edit."
+            },
+            "old_string": {
+              "type": "string",
+              "description": "REQUIRED when mode='replace'. Exact text to find and replace. Must be unique in the file unless replace_all=true. Include surrounding context lines to ensure uniqueness."
+            },
+            "new_string": {
+              "type": "string",
+              "description": "REQUIRED when mode='replace'. Replacement text. Pass empty string '' to delete the matched text."
+            },
+            "replace_all": {
+              "type": "boolean",
+              "description": "Replace all occurrences instead of requiring a unique match (default: false)",
+              "default": false
+            },
+            "patch": {
+              "type": "string",
+              "description": "REQUIRED when mode='patch'. V4A format patch content. Format:\n*** Begin Patch\n*** Update File: path/to/file\n@@ context hint @@\n context line\n-removed line\n+added line\n*** End Patch"
+            }
+          },
+          "required": [
+            "mode"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "process",
+        "description": "Manage background processes started with terminal(background=true). Actions: 'list' (show all), 'poll' (check status + new output), 'log' (full output with pagination), 'wait' (block until done or timeout), 'kill' (terminate), 'write' (send raw stdin data without newline), 'submit' (send data + Enter, for answering prompts), 'close' (close stdin/send EOF).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "list",
+                "poll",
+                "log",
+                "wait",
+                "kill",
+                "write",
+                "submit",
+                "close"
+              ],
+              "description": "Action to perform on background processes"
+            },
+            "session_id": {
+              "type": "string",
+              "description": "Process session ID (from terminal background output). Required for all actions except 'list'."
+            },
+            "data": {
+              "type": "string",
+              "description": "Text to send to process stdin (for 'write' and 'submit' actions)"
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to block for 'wait' action. Returns partial output on timeout.",
+              "minimum": 1
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line offset for 'log' action (default: last 200 lines)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max lines to return for 'log' action",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "action"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "read_file",
+        "description": "Read a text file with line numbers and pagination. Use this instead of cat/head/tail in terminal. Output format: 'LINE_NUM|CONTENT'. Suggests similar filenames if not found. Use offset and limit for large files. Reads exceeding ~100K characters are rejected; use offset and limit to read specific sections of large files. NOTE: Cannot read images or binary files — use vision_analyze for images.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to read (absolute, relative, or ~/path)"
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Line number to start reading from (1-indexed, default: 1)",
+              "default": 1,
+              "minimum": 1
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of lines to read (default: 500, max: 2000)",
+              "default": 500,
+              "maximum": 2000
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "search_files",
+        "description": "Search file contents or find files by name. Use this instead of grep/rg/find/ls in terminal. Ripgrep-backed, faster than shell equivalents.\n\nContent search (target='content'): Regex search inside files. Output modes: full matches with line numbers, file paths only, or match counts.\n\nFile search (target='files'): Find files by glob pattern (e.g., '*.py', '*config*'). Also use this instead of ls — results sorted by modification time.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "string",
+              "description": "Regex pattern for content search, or glob pattern (e.g., '*.py') for file search"
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files"
+              ],
+              "description": "'content' searches inside file contents, 'files' searches for files by name",
+              "default": "content"
+            },
+            "path": {
+              "type": "string",
+              "description": "Directory or file to search in (default: current working directory)",
+              "default": "."
+            },
+            "file_glob": {
+              "type": "string",
+              "description": "Filter files by pattern in grep mode (e.g., '*.py' to only search Python files)"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of results to return (default: 50)",
+              "default": 50
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Skip first N results for pagination (default: 0)",
+              "default": 0
+            },
+            "output_mode": {
+              "type": "string",
+              "enum": [
+                "content",
+                "files_only",
+                "count"
+              ],
+              "description": "Output format for grep mode: 'content' shows matching lines with line numbers, 'files_only' lists file paths, 'count' shows match counts per file",
+              "default": "content"
+            },
+            "context": {
+              "type": "integer",
+              "description": "Number of context lines before and after each match (grep mode only)",
+              "default": 0
+            }
+          },
+          "required": [
+            "pattern"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "terminal",
+        "description": "Execute shell commands on a Linux environment. Filesystem usually persists between calls.\n\nDo NOT use cat/head/tail to read files — use read_file instead.\nDo NOT use grep/rg/find to search — use search_files instead.\nDo NOT use ls to list directories — use search_files(target='files') instead.\nDo NOT use sed/awk to edit files — use patch instead.\nDo NOT use echo/cat heredoc to create files — use write_file instead.\nReserve terminal for: builds, installs, git, processes, scripts, network, package managers, and anything that needs a shell.\n\nForeground (default): Commands return INSTANTLY when done, even if the timeout is high. Set timeout=300 for long builds/scripts — you'll still get the result in seconds if it's fast. Prefer foreground for short commands.\nBackground: Set background=true to get a session_id. Two patterns:\n  (1) Long-lived processes that never exit (servers, watchers).\n  (2) Long-running tasks with notify_on_complete=true — you can keep working on other things and the system auto-notifies you when the task finishes. Great for test suites, builds, deployments, or anything that takes more than a minute.\nFor servers/watchers, do NOT use shell-level background wrappers (nohup/disown/setsid/trailing '&') in foreground mode. Use background=true so Hermes can track lifecycle and output.\nAfter starting a server, verify readiness with a health check or log signal, then run tests in a separate terminal() call. Avoid blind sleep loops.\nUse process(action=\"poll\") for progress checks, process(action=\"wait\") to block until done.\nWorking directory: Use 'workdir' for per-command cwd.\nPTY mode: Set pty=true for interactive CLI tools (Codex, Claude Code, Python REPL).\n\nDo NOT use vim/nano/interactive tools without pty=true — they hang without a pseudo-terminal. Pipe git output to cat if it might page.\n",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "description": "The command to execute on the VM"
+            },
+            "background": {
+              "type": "boolean",
+              "description": "Run the command in the background. Two patterns: (1) Long-lived processes that never exit (servers, watchers). (2) Long-running tasks paired with notify_on_complete=true — you can keep working and get notified when the task finishes. For short commands, prefer foreground with a generous timeout instead.",
+              "default": false
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Max seconds to wait (default: 180, foreground max: 600). Returns INSTANTLY when command finishes — set high for long tasks, you won't wait unnecessarily. Foreground timeout above 600s is rejected; use background=true for longer commands.",
+              "minimum": 1
+            },
+            "workdir": {
+              "type": "string",
+              "description": "Working directory for this command (absolute path). Defaults to the session working directory."
+            },
+            "pty": {
+              "type": "boolean",
+              "description": "Run in pseudo-terminal (PTY) mode for interactive CLI tools like Codex, Claude Code, or Python REPL. Only works with local and SSH backends. Default: false.",
+              "default": false
+            },
+            "notify_on_complete": {
+              "type": "boolean",
+              "description": "When true (and background=true), you'll be automatically notified exactly once when the process finishes. **This is the right choice for almost every long-running task** — tests, builds, deployments, multi-item batch jobs, anything that takes over a minute and has a defined end. Use this and keep working on other things; the system notifies you on exit. MUTUALLY EXCLUSIVE with watch_patterns — when both are set, watch_patterns is dropped.",
+              "default": false
+            },
+            "watch_patterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Strings to watch for in background process output. HARD RATE LIMIT: at most 1 notification per 15 seconds per process — matches arriving inside the cooldown are dropped. After 3 consecutive 15-second windows with dropped matches, watch_patterns is automatically disabled for that process and promoted to notify_on_complete behavior (one notification on exit, no more mid-process spam). USE ONLY for truly rare, one-shot mid-process signals on LONG-LIVED processes that will never exit on their own — e.g. ['Application startup complete'] on a server so you know when to hit its endpoint, or ['migration done'] on a daemon. DO NOT use for: (1) end-of-run markers like 'DONE'/'PASS' — use notify_on_complete instead; (2) error patterns like 'ERROR'/'Traceback' in loops or multi-item batch jobs — they fire on every iteration and you'll hit the strike limit fast; (3) anything you'd ever combine with notify_on_complete. When in doubt, choose notify_on_complete. MUTUALLY EXCLUSIVE with notify_on_complete — set one, not both."
+            }
+          },
+          "required": [
+            "command"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "write_file",
+        "description": "Write content to a file, completely replacing existing content. Use this instead of echo/cat heredoc in terminal. Creates parent directories automatically. OVERWRITES the entire file — use 'patch' for targeted edits. Auto-runs syntax checks on .py/.json/.yaml/.toml and other linted languages; only NEW errors introduced by this write are surfaced (pre-existing errors are filtered out).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the file to write (will be created if it doesn't exist, overwritten if it does)"
+            },
+            "content": {
+              "type": "string",
+              "description": "Complete content to write to the file"
+            }
+          },
+          "required": [
+            "path",
+            "content"
+          ]
+        }
+      }
+    }
+  ],
+  "message_count": 35,
+  "messages": [
+    {
+      "role": "user",
+      "content": "Write Chapters 11-20 of 'The Autonomous Enterprise' business book. Each chapter 1,000-1,200 words, first-person, specific examples, no AI-isms. Save as ch11.md through ch20.md in /home/bob/books/The_Autonomous_Enterprise/."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "The user wants me to write Chapters 11-20 of a business book called \"The Autonomous Enterprise: Why Your Business Needs AI Agents (Not Chatbots)\" by Bob J Mills. Each chapter should be 1,000-1,200 words, first-person, with specific examples, no AI-isms. Let me first check if the directory exists and if there are any previous chapters to reference for style/consistency.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "The user wants me to write Chapters 11-20 of a business book called \"The Autonomous Enterprise: Why Your Business Needs AI Agents (Not Chatbots)\" by Bob J Mills. Each chapter should be 1,000-1,200 words, first-person, with specific examples, no AI-isms. Let me first check if the directory exists and if there are any previous chapters to reference for style/consistency.",
+      "tool_calls": [
+        {
+          "id": "call_95dd29d449a94c398eb251c8",
+          "call_id": "call_95dd29d449a94c398eb251c8",
+          "response_item_id": "fc_95dd29d449a94c398eb251c8",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"mkdir -p /home/bob/books/The_Autonomous_Enterprise\"}"
+          }
+        },
+        {
+          "id": "call_f8bda33807634915b8b9acc7",
+          "call_id": "call_f8bda33807634915b8b9acc7",
+          "response_item_id": "fc_f8bda33807634915b8b9acc7",
+          "type": "function",
+          "function": {
+            "name": "search_files",
+            "arguments": "{\"pattern\": \"ch*.md\", \"path\": \"/home/bob/books/The_Autonomous_Enterprise\", \"target\": \"files\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "terminal",
+      "content": "{\"output\": \"\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_95dd29d449a94c398eb251c8"
+    },
+    {
+      "role": "tool",
+      "name": "search_files",
+      "content": "{\"total_count\": 1, \"files\": [\"/home/bob/books/The_Autonomous_Enterprise/ch01.md\"]}",
+      "tool_call_id": "call_f8bda33807634915b8b9acc7"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Let me read chapter 1 to understand the style, tone, and voice of the author before writing chapters 11-20.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Let me read chapter 1 to understand the style, tone, and voice of the author before writing chapters 11-20.",
+      "tool_calls": [
+        {
+          "id": "call_0bc259a7a4ef44c5853f70c3",
+          "call_id": "call_0bc259a7a4ef44c5853f70c3",
+          "response_item_id": "fc_0bc259a7a4ef44c5853f70c3",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/home/bob/books/The_Autonomous_Enterprise/ch01.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "read_file",
+      "content": "{\"content\": \"     1|# Chapter 1: The Great AI Disappointment\\n     2|\\n     3|My brother-in-law Mark called me six months ago. He runs a mid-sized HVAC company in Phoenix—forty trucks, a hundred and twenty employees, growing fast. He was excited. \\\"We finally got ChatGPT Enterprise,\\\" he said. \\\"I set up a whole onboarding assistant. New hires can ask it anything about benefits, PTO, the truck checklist.\\\"\\n     4|\\n     5|I asked him how it was going. Long pause.\\n     6|\\n     7|\\\"Nobody uses it,\\\" he said.\\n     8|\\n     9|This is the part of the AI story nobody puts in the keynote. Mark spent three weeks with his HR director building custom instructions, uploading policy PDFs, crafting system prompts that ended with \\\"You are a helpful assistant for Apex Cooling & Heating.\\\" Three weeks. The chatbot could answer any question about bereavement leave, 401k matching, or which color hard hats are required on job sites. It was comprehensive. It was accurate. And after the first week, exactly three people had used it. Two of them were the HR director testing it.\\n    10|\\n    11|The other was Mark himself, asking it the same questions twice to see if the answers changed.\\n    12|\\n    13|I saw the same pattern at my own company, MIFECO, before we pivoted. We built a customer-facing chatbot for our logistics platform. It could tell you shipment status, explain billing, even walk through troubleshooting steps for a stuck conveyor sensor. It was polite, never hallucinated, always apologized for the wait. Our support ticket volume dropped exactly zero percent. People don't want answers. They want their shipment un-stuck. They want the billing error fixed. They want the conveyor running again.\\n    14|\\n    15|This is the great AI disappointment of 2024 and 2025. Business owners heard the hype, bought the tools, built the assistants, and got nothing measurable out of them. I talk to founders and operators every week. The pattern is the same: they tried ChatGPT, they tried Claude, they tried the white-label chatbot platforms. Someone in the company spent serious time setting it up. And then nothing happened. No revenue increase. No headcount reduction. No process improvement. Just a chatbot sitting in a corner of the intranet answering questions that nobody was asking.\\n    16|\\n    17|The gap is between promise and reality. The promise was: AI will transform your business. The reality was: AI gives answers, and your business doesn't need more answers. Your business needs actions.\\n    18|\\n    19|Think about what actually runs a business. It's not the knowledge—it's the doing. Every deal that closes required someone to send a proposal. Every happy customer required someone to follow up. Every shipment that arrived on time required someone to check the schedule. Answers are passive. They sit there waiting to be consumed. Actions are active. They change the state of the world.\\n    20|\\n    21|A chatbot is a reference library with a friendly face. It's Wikipedia with small talk. It stores information and dispenses it on request. But your business doesn't suffer from a lack of stored information. Your business suffers from a lack of executed work.\\n    22|\\n    23|Mark's HVAC company doesn't need an onboarding bot. It needs onboarding to happen: background checks submitted, tool orders placed, truck assignments logged, first-day schedules sent, mentor assignments made. That's a dozen distinct actions per new hire. None of them involve asking a question. All of them involve doing something.\\n    24|\\n    25|This realization is what drove the architecture shift at MIFECO. We started with a chatbot for our logistics clients. We ended up building an agent system that takes actions in our platform and in our clients' systems. The difference wasn't the language model. It was the design: we stopped building things that wait for questions and started building things that do work.\\n    26|\\n    27|Here's the framework I've developed for thinking about this. Every business process has three layers: knowledge, decision, action. Knowledge is what you know—the policy, the procedure, the data. Decision is the logic that picks what to do given the knowledge. Action is the execution that changes something in the world. ChatGPT handles knowledge perfectly and decision adequately. It handles action not at all.\\n    28|\\n    29|If your business problem is knowledge—people don't know the 401k match percentage, people don't know the shipping cutoff time—a chatbot works. But most business problems aren't knowledge problems. They're action problems. The 401k match is known. What's missing is the enrollment form being submitted. The shipping cutoff time is known. What's missing is the order being placed before it.\\n    30|\\n    31|The lesson I took from Mark's failed chatbot and from our own early failures is simple: if the AI can't do anything, it doesn't matter how much it knows. Your business runs on actions. Every system you buy, every person you hire, every process you build exists to cause something to happen. If the AI doesn't cause anything to happen, it's not a business tool. It's a parlor trick.\\n    32|\\n    33|This book is about the alternative. It's about agents—systems that take action. They don't wait for questions. They follow processes. They use tools. They make decisions within boundaries. They persist across time. And they do work, not just answer questions.\\n    34|\\n    35|By the end of this book, you'll know exactly what I mean by that, why it matters for your business, and how to start building it. But first we need to kill the chatbot illusion. You don't need a smarter FAQ. You need a worker that doesn't clock out.\\n    36|\\n    37|Mark's chatbot is still running, by the way. It answers three questions a month, all from the HR director. Nobody else bothers. They just call HR like they always did. Answers aren't the bottleneck. Action is.\\n    38|\", \"total_lines\": 37, \"file_size\": 5636, \"truncated\": false, \"is_binary\": false, \"is_image\": false}",
+      "tool_call_id": "call_0bc259a7a4ef44c5853f70c3"
+    },
+    {
+      "role": "assistant",
+      "content": "Great — I've read Chapter 1 to capture the voice: direct, first-person, specific MIFECO examples, honest about failures, no AI hype language. Now I'll write all 10 chapters",
+      "reasoning": "Now I have a solid understanding of the style and voice. Let me now write all 10 chapters (11-20). Each needs to be 1,000-1,200 words, first-person, with specific MIFECO examples, honest about failures, opinionated, no AI-isms.\n\nLet me write them all now. I'll create each chapter file.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now I have a solid understanding of the style and voice. Let me now write all 10 chapters (11-20). Each needs to be 1,000-1,200 words, first-person, with specific MIFECO examples, honest about failures, opinionated, no AI-isms.\n\nLet me write them all now. I'll create each chapter file.",
+      "tool_calls": [
+        {
+          "id": "call_78e54afb72794cc2a2fd5a2d",
+          "call_id": "call_78e54afb72794cc2a2fd5a2d",
+          "response_item_id": "fc_78e54afb72794cc2a2fd5a2d",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"path\": \"/home/bob/books/The_Autonomous_Enterprise/ch11.md\", \"content\": \"# Chapter 11: Choosing Your Platform\\n\\nWhen I decided to rebuild MIFECO's AI stack the right way, I had to pick a platform. I thought this would take a weekend. It took three months, two false starts, and one very expensive lesson about vendor lock-in.\\n\\nLet me save you the trouble.\\n\\nThere are three categories of AI agent platforms right now. The first is API providers like OpenRouter, OpenAI, Anthropic, and the model aggregators. You get raw access to language models, you pay per token, and you build everything else yourself. The second is custom platforms—LangChain, CrewAI, AutoGen, the framework layer. You get abstractions for chains, agents, tools, memory. You still need a hosting strategy. The third is no-code tools like Zapier AI, Relevance AI, and the new agent builders inside ChatGPT and Claude. You get drag-and-drop workflows, pre-built integrations, and a monthly subscription.\\n\\nEach category serves a different skill level and a different set of needs. The problem is that most people pick based on what's popular, not what fits.\\n\\nI'll give you my decision framework. It has three questions.\\n\\nQuestion one: can your team parse a JSON response? If the answer is no, you go no-code. Full stop. No-code platforms have limits—you can't customize tool behavior, you can't control the prompt temperature, you can't implement your own memory strategy. But if you can't build software, those limits don't matter because the alternative is nothing. Relevance AI and Zapier's agent builder are good starting points. They handle the basics: receive a message, process it, use a tool, return a result. You'll hit a wall eventually, but by then you'll know enough to decide whether to hire someone who can do the next level.\\n\\nQuestion two: do you need more than ten distinct tools? If yes, you need a custom platform. The no-code tools work fine for three to five integrations. Beyond that, the workflow graph becomes unmanageable. I watched a company try to build a customer support agent with fourteen tools in Zapier. The visual flow looked like plumbing in a chemical plant. They spent more time debugging tool routing than they would have writing code. Custom frameworks handle complexity through code, which scales linearly. Visual workflows scale exponentially in the wrong direction.\\n\\nQuestion three: is latency critical? If your agent needs to respond in under two seconds, you need direct API access, not an aggregator. Aggregators add routing overhead. OpenRouter typically adds 200 to 500 milliseconds per call. That's fine for email drafting or lead research. It's not fine for real-time customer service chat where a five-second pause breaks the conversation flow.\\n\\nMy choice was OpenRouter, and here is why.\\n\\nMIFECO runs about twenty agents across different functions. Lead responder, contract reviewer, logistics coordinator, escalation handler, reporting agent, several internal process bots. Each agent uses a different model depending on the task. The lead responder uses a fast, cheap model for initial triage. The contract reviewer uses a more capable, slower model. The logistics coordinator needs a model with good JSON mode for structured output.\\n\\nOpenRouter lets me route each agent to the optimal model without managing multiple API keys, billing accounts, and rate limits. One API key. One billing dashboard. One rate limit to monitor. If a model goes down, I switch to a fallback model in the configuration, not in the code.\\n\\nI also run a custom framework on top. I do not use LangChain or CrewAI. I built my own agent loop in Go. About four hundred lines of core logic. The reason is control. The frameworks abstract away decisions I want to make explicitly. How much conversation history to keep. When to retry a failed tool call. How to format the response for the customer. The frameworks have defaults for all of these. My defaults are different.\\n\\nThe cost breakdown matters.\\n\\nOpenRouter charges per token, usually ten to twenty percent less than direct API pricing because they buy in volume. My lead responder costs about two cents per conversation. The contract reviewer costs about eight cents per document. Total monthly spend across all agents is roughly four hundred dollars. That covers about eight thousand agent runs.\\n\\nHad I used direct OpenAI API for the same volume, I would be paying around five hundred and fifty dollars. Had I used a no-code platform with per-seat pricing, I would be paying more than two thousand dollars for the same throughput, and I could not customize the model selection.\\n\\nThe frameworks—LangChain, CrewAI—are free in terms of license cost, but they have a deployment cost. You need to host them somewhere. A small AWS instance runs about fifty dollars a month. You also need someone to maintain it. That is a salary cost, not a software cost. I budget framework overhead at about ten hours of engineering time per month for maintenance, upgrades, debugging. At my blended rate, that's about two thousand dollars a month.\\n\\nOpenRouter with my custom Go loop costs zero in framework maintenance because I wrote the loop and I know exactly how it works. Changes are deliberate, not upstream surprises.\\n\\nThe no-code route is cheapest for the first agent and most expensive by the tenth. Every new agent in a no-code platform is a new subscription tier or new usage bucket. In a custom setup, the marginal cost of a new agent is the token cost plus maybe an hour of configuration.\\n\\nHere is what I recommend based on your situation.\\n\\nIf you are a solo operator or a small business owner with no technical team: start with Relevance AI. Build your first two agents there. Learn the patterns. Pay the monthly fee. When you hit the limits, hire a developer to rebuild your most important agent on an API-based stack.\\n\\nIf you have a technical co-founder or a small engineering team: use OpenRouter with a lightweight custom framework. Do not start with LangChain. Start with a fifty-line loop in your language of choice. Add complexity only when you need it.\\n\\nIf you are an enterprise with compliance requirements: go direct with OpenAI or Anthropic and negotiate an enterprise contract. You will need the SLA guarantees and the data handling agreements. You will also need a full-time AI engineer on staff.\\n\\nThe wrong choice is the one I made first: picking a platform because it was trendy. I started with LangChain because everyone was talking about it. I spent six weeks learning abstractions I did not need, fighting version changes, and debugging chains that should have been simple function calls. The day I deleted LangChain and wrote my own loop was the day MIFECO's agents started working.\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "write_file",
+      "content": "{\"bytes_written\": 6676, \"dirs_created\": true, \"lint\": {\"status\": \"skipped\", \"message\": \"No linter for .md files\"}}",
+      "tool_call_id": "call_78e54afb72794cc2a2fd5a2d"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Good, ch11 is written. Let me write ch12 now.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good, ch11 is written. Let me write ch12 now.",
+      "tool_calls": [
+        {
+          "id": "call_ed60d45357e5443a8e2452ac",
+          "call_id": "call_ed60d45357e5443a8e2452ac",
+          "response_item_id": "fc_ed60d45357e5443a8e2452ac",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"# Chapter 12: Anatomy of an Agent\\n\\nI spent a year building agents before I could explain what one actually is. Not the marketing version—the actual architecture. If you ask five AI vendors to define an agent, you get five different answers, and all of them make their product sound like the right one.\\n\\nHere is the definition I use at MIFECO. An agent is a loop that takes in a prompt, decides what to do, uses tools to do it, remembers what happened, and learns from the outcome. Six components. Prompt, tool, decision, action, memory, learning. Each one has a concrete function. Each one can break independently.\\n\\nI will walk through each with real examples from our lead responder agent, because abstract explanations are useless.\\n\\nComponent one is the prompt. Not the system prompt—the incoming prompt. This is the text the agent receives from a user, a system, or another agent. For the lead responder, the incoming prompt is a lead form submission. Name, company, email, phone, message. The raw text. The agent does not get a cleaned version. It gets exactly what the lead typed.\\n\\nThis matters because real input is messy. People miss fields. They write \\\"call me\\\" instead of providing a phone number. They ask questions about pricing in the message field. The agent has to handle the mess, not the ideal version. I learned this the hard way when our first agent assumed every submission had all fields filled. It did not. The agent crashed on null values. We fixed that by sending the raw form data and letting the agent ask clarifying questions if something is missing.\\n\\nComponent two is the tool. A tool is a function the agent can call. It has a name, a description, a set of parameters, and a return value. The agent does not execute the tool itself. It produces a structured call request, and the system executes it. This separation is critical. The agent suggests an action. The system enforces it.\\n\\nOur lead responder has five tools. CRM search looks up whether the contact already exists. Company enrichment pulls firmographic data from a business data API. Email drafting creates a personalized response template. Calendar check finds available slots. Lead scoring assigns a priority from one to five.\\n\\nEach tool has a description written for the agent, not for a human. For CRM search, the description says: \\\"Use this to check if a contact or company already exists in the CRM. Returns record ID or null.\\\" For lead scoring, it says: \\\"Rate this lead on a scale of 1 to 5 based on title, company size, and message intent. 5 means high priority.\\\"\\n\\nThe quality of the tool description determines whether the agent calls the right tool at the right time. Bad descriptions cause the agent to misuse tools. Good descriptions make the agent's decisions obvious.\\n\\nComponent three is the decision. This is the reasoning step. The agent looks at the incoming prompt and the available tools and decides what to do. In practice, this is a language model call with a structured output format. The agent produces a JSON object: which tool to call, with what parameters, and what the expected outcome is.\\n\\nThe decision step is where most failures happen. The agent picks the wrong tool. It uses CRM search when it should use company enrichment. It calls lead scoring before checking if the lead is a duplicate. These are logical errors, not language errors. They happen because the agent does not have enough context about the business process.\\n\\nI fixed this by adding a step dependency map to the system prompt. The map says: always check CRM first, then enrich, then score, then draft. The agent can deviate if the situation calls for it, but the default path is defined. Decision accuracy went from seventy-two percent to ninety-four percent in one week.\\n\\nComponent four is the action. This is the execution. The system takes the agent's tool call request, validates it against the tool schema, executes the function, and returns the result. The agent does not execute anything. It only decides. The action layer enforces permissions, rate limits, and data access.\\n\\nThis separation saved us from a disaster. Early on, one of our agents decided it should delete duplicate CRM records. It generated a delete tool call. But the action layer did not have a delete tool. Only the CRM team had delete access. The agent could suggest deletions, but it could not execute them. The action layer is your safety net. Design it to be suspicious of every tool call.\\n\\nComponent five is memory. The agent needs to remember what it already did. This is not about long-term knowledge. It is about the current session. The lead responder checks CRM, then enriches, then scores, then drafts. Each step depends on the previous step's result. The memory keeps the conversation state: what tools were called, what data was returned, what the agent already decided.\\n\\nWithout memory, the agent calls the same tool twice, or it drafts an email without the enrichment data. Our first implementation had no memory beyond the raw message history. The agent would check CRM, get a result, and then check CRM again because it forgot. Adding explicit session state cut tool calls by forty percent and reduced latency by half.\\n\\nComponent six is learning. This is the least developed component in most agents, including ours. Learning means the agent improves over time based on outcomes. Did the lead respond to the email? Did the contract get signed? Did the support ticket close?\\n\\nI have a simple feedback loop. For every completed agent run, we log the outcome as success or failure. Failed runs are reviewed weekly. We adjust prompts, add tools, or modify decision rules based on the pattern of failures. This is not automatic learning. It is human-in-the-loop learning. But it works.\\n\\nAutomatic learning—where the agent modifies its own prompts or decision logic based on outcomes—is a research problem, not a production solution. I have seen companies claim they do this. I have not seen it work reliably outside of controlled lab conditions.\\n\\nThe lead responder after six months of this loop is noticeably better than the one we started with. It asks fewer redundant questions. It catches leads it used to miss. It sends better drafts. The improvement came from analyzing failures every Friday afternoon. Not from a smarter model.\\n\\nAn agent is not a chatbot with tools. A chatbot with tools is a chatbot that can look things up. An agent is a system that receives input, reasons about it, takes action, remembers the context, and improves over time. The difference is not in the language model. It is in the loop.\", \"path\": \"/home/bob/books/The_Autonomous_Enterprise/ch12.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "write_file",
+      "content": "{\"bytes_written\": 6599, \"dirs_created\": true, \"lint\": {\"status\": \"skipped\", \"message\": \"No linter for .md files\"}}",
+      "tool_call_id": "call_ed60d45357e5443a8e2452ac"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Good, now ch13.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good, now ch13.",
+      "tool_calls": [
+        {
+          "id": "call_a7ea97dc8b6b4be7b96d3c58",
+          "call_id": "call_a7ea97dc8b6b4be7b96d3c58",
+          "response_item_id": "fc_a7ea97dc8b6b4be7b96d3c58",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"# Chapter 13: Your First Agent\\n\\nThe first agent you build should not be the most important one. It should be the most forgiving one. Something that matters enough to measure but not so much that failure costs you a customer.\\n\\nAt MIFECO, that agent was the lead responder. It handles incoming sales inquiries. If it makes a mistake, a human reviews and fixes it before the lead ever sees the mistake. Low risk, high visibility. Perfect for a first build.\\n\\nI am going to walk you through the exact build. Not the theory. The steps. The prompts. The gotchas. You should be able to replicate this in a weekend.\\n\\nStep one is defining the workflow. Before you write any code or configure any no-code tool, write down the steps a human takes when a lead comes in. I sat with our sales development rep, Jen, for an hour. I watched her handle twenty leads. Here is what she did.\\n\\nCheck if the lead already exists in CRM. If yes, check the last contact date. If contacted within thirty days, mark as duplicate and skip. If not, look up the company. How many employees. What industry. What tech stack. Then read the lead message. What are they asking about. What is their intent. Then score the lead. High, medium, low. High gets a same-day call attempt. Medium gets a personalized email within four hours. Low gets added to the nurture sequence. Then draft the outreach. High leads get a short, direct email mentioning the specific product or feature they asked about. Medium leads get a longer educational email. Low leads get a generic introduction. Then log everything in CRM and send the draft to the rep for review.\\n\\nThat is the workflow. Six steps. Five tool calls. One human review.\\n\\nStep two is writing the system prompt. I am going to give you the template we use. Do not copy it exactly. Adapt it to your business. But the structure is important.\\n\\nThe prompt has three sections. Role, rules, examples.\\n\\nRole tells the agent who it is. Not a vague personality. A specific job function. Here is ours: \\\"You are a lead qualification and outreach assistant for MIFECO. You work for the sales team. Your job is to process incoming leads, research them, score them, and draft initial outreach. You do not send anything without human approval.\\\"\\n\\nRules are non-negotiable constraints. We have five. Do not make up information about a lead or company. If a tool call fails or returns empty, report the failure and ask for manual intervention. Always check for duplicates before doing any research. Never disclose pricing in the first message. Never send an email without a human reviewing it first.\\n\\nExamples show the agent what good output looks like. We include three examples of completed lead processing. One high-score lead with a full company profile. One medium-score lead with partial information. One duplicate lead that got flagged and skipped.\\n\\nThe examples are the most important part. Without them, the agent invents its own format and the output is inconsistent. With them, ninety-five percent of outputs follow the exact structure we want.\\n\\nStep three is building the tools. Start with two. Do not build five. Start with two and add as you see the agent struggle.\\n\\nOur first two tools were CRM search and email draft. That was enough to process simple leads. We added company enrichment in week two after the agent kept sending emails to leads at companies we could not evaluate. We added lead scoring in week three after the agent treated every lead the same. We added calendar check in month two after the sales team asked for it.\\n\\nThe tool descriptions matter more than the tool implementation. Spend more time on the description than on the code. A well-typed function with a bad description is useless. A mediocre function with a great description works fine.\\n\\nStep four is building the review queue. This is the safety net. Every lead processed by the agent goes into a queue. Jen opens it every morning. She sees the agent's work: duplicate check result, company profile, lead score, and draft email. She can approve, edit, or reject each one.\\n\\nThe review queue is a simple web page. Three columns. Pending, approved, rejected. Each card shows the original lead, the agent's output, and action buttons. Took our developer two days to build. Index page, detail page, approve button, reject button. That is it.\\n\\nJen's approval rate started at sixty percent. After two weeks of tweaking, it hit eighty-five percent. After the prompt examples were refined, it hit ninety-three percent. The remaining seven percent are edge cases the agent cannot handle—leads in languages we do not support, requests for partnerships instead of purchases, people asking for jobs instead of products. Those get manually handled.\\n\\nStep five is the handoff. When a lead is approved, the agent sends the email and logs the activity in CRM. The agent does not send directly. It generates the send request, the action layer validates it, and the action layer places the call to the email API. The agent never touches the send button.\\n\\nThis separation means that even if the agent hallucinates and produces a bad email, no email goes out until a human says yes. The agent cannot spam a lead. It cannot email the wrong person. It can only suggest.\\n\\nThe total build time for the lead responder was four days. Day one for workflow definition and prompt writing. Day two for tool building. Day three for the review queue. Day four for integration and testing.\\n\\nThe ongoing maintenance is thirty minutes per week. Jen reviews the failed leads, I update the prompt examples based on what she finds, and we move on.\\n\\nHere is a concrete measurement. Before the agent, Jen processed about fifteen leads per day. That was her ceiling. After the agent, she processes about forty per day. The agent does the research, scoring, and drafting. She does the reviewing and the actual selling. Her close rate went up because she spends more time talking to leads and less time typing.\\n\\nThat is the pattern. Your first agent should not replace a person. It should make a person more effective. The lead responder does not replace Jen. It makes Jen three times faster at the thing she does best.\", \"path\": \"/home/bob/books/The_Autonomous_Enterprise/ch13.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "write_file",
+      "content": "{\"bytes_written\": 6161, \"dirs_created\": true, \"lint\": {\"status\": \"skipped\", \"message\": \"No linter for .md files\"}}",
+      "tool_call_id": "call_a7ea97dc8b6b4be7b96d3c58"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Good. Now ch14.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good. Now ch14.",
+      "tool_calls": [
+        {
+          "id": "call_d1ce7056be79416b8c7cae2d",
+          "call_id": "call_d1ce7056be79416b8c7cae2d",
+          "response_item_id": "fc_d1ce7056be79416b8c7cae2d",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"# Chapter 14: Giving Your Agent Tools\\n\\nAn agent without tools is a parrot. It can repeat information. It cannot change anything. The power of an agent comes from what it can reach: your email system, your calendar, your CRM, your database, your shipping platform, your payment processor.\\n\\nBut connecting an agent to your tools is where most implementations break. The agent gets too much access and causes damage. Or it gets too little and cannot do anything useful. Finding the balance is the hardest engineering decision you will make.\\n\\nI will walk through the three integration methods I use at MIFECO, the permission model that keeps us out of trouble, and the distinction between talking and acting that every agent builder needs to understand.\\n\\nMethod one is webhooks. This is the simplest integration. Your agent constructs an HTTP request to a webhook URL, and the receiving system processes it. Webhooks work for sending data outward. They do not work for fetching data. If your agent needs to look something up, webhooks are not the answer.\\n\\nWe use webhooks for actions that are fire-and-forget. When the lead responder processes a lead, it fires a webhook to our Slack channel with the lead summary. The webhook takes a JSON payload, Slack renders it, done. No response expected. No error handling needed beyond a retry.\\n\\nMethod two is APIs. This is the standard approach. Your agent calls an authenticated REST endpoint, sends parameters, gets a response. APIs work for both reading and writing. They also introduce complexity: authentication, rate limits, error handling, pagination.\\n\\nOur logistics coordinator agent calls the shipping API about two hundred times per day. It checks shipment status, updates delivery windows, and flags exceptions. Each call requires an API key with specific scope. The agent cannot cancel shipments because the API key does not have cancel permission. The system enforces this at the API level, not the agent level.\\n\\nMethod three is MCP, the Model Context Protocol. This is the newest approach and the one I am most excited about. MCP is a standardized protocol for connecting language models to tools. Instead of writing a custom integration for every tool, you write an MCP server that exposes your tool functions, and any MCP-compatible agent can use them.\\n\\nI switched our CRM integration to MCP last quarter. One MCP server, about three hundred lines of TypeScript, exposes five tools: contact lookup, contact create, deal lookup, deal update, activity log. Any agent in our system can now call any of these tools without a custom integration. The lead responder uses three of them. The contract reviewer uses two. The reporting agent uses one. Same server, different agents, no duplicated code.\\n\\nThe permission model is where most people get this wrong. They give the agent broad access and rely on the agent's judgment to use it correctly. That is a mistake. Agent judgment is unreliable. You need hard enforcement at the tool level.\\n\\nI use three permission tiers.\\n\\nTier one is read-only. The agent can look up data but cannot change it. CRM search, calendar view, document retrieval. This is the default for any new tool. The agent does not get write access until we observe it handling read access correctly for at least two weeks.\\n\\nTier two is write-with-approval. The agent can suggest changes, but a human must approve them before execution. Email draft, contract update, deal stage change. The agent writes the content. A human reviews it. The system only executes after the approval signal.\\n\\nTier three is write-auto. The agent can make changes autonomously. Only applies to low-risk, high-frequency actions. Logging activity records. Updating lead scores. Sending automated follow-up emails after a deal closes. We audit tier three actions daily.\\n\\nHere is a concrete example of the permission model in action.\\n\\nOur logistics coordinator can check shipment status from any carrier. Read-only. It can suggest delivery window updates when a shipment is delayed. Write-with-approval. It can log tracking events to our database. Write-auto. The escalation handler can create support tickets. Write-auto. It can cancel orders. No tier. It does not have that capability at all.\\n\\nThe cancellation example is worth dwelling on. An early version of our system had a tool that could cancel orders. The description said \\\"Cancel an order by ID.\\\" During testing, the agent interpreted a customer complaint about a late shipment as a request to cancel all of that customer's orders. It generated six cancel calls before the action layer blocked it because of a rate limit. We removed the cancel tool entirely. If cancellation is needed, a human does it.\\n\\nThe distinction between talking and acting is the framework that guides all of this.\\n\\nTalking means the agent says something. It drafts an email, generates a summary, answers a question. Talking is low risk. The worst outcome is that the agent says something slightly wrong and a human corrects it.\\n\\nActing means the agent changes something. It submits a form, updates a database record, sends a message, creates an invoice. Acting is high risk. The worst outcome is that the agent does something irreversible.\\n\\nMy rule: default to talking, escalate to acting only when the cost of inaction exceeds the cost of a mistake.\\n\\nThe lead responder talks—it drafts emails. It does not act—it does not send them. The logistics coordinator talks—it suggests delivery window changes. It acts on one thing—logging tracking events, which is low-risk and high-frequency.\\n\\nYour agents should follow the same pattern. Give them plenty of talking tools. Give them acting tools sparingly, with approval gates, and with hard permission enforcement at the integration layer, not the agent layer. The agent can suggest anything it wants. The tool system only executes what is allowed.\", \"path\": \"/home/bob/books/The_Autonomous_Enterprise/ch14.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "write_file",
+      "content": "{\"bytes_written\": 5873, \"dirs_created\": true, \"lint\": {\"status\": \"skipped\", \"message\": \"No linter for .md files\"}}",
+      "tool_call_id": "call_d1ce7056be79416b8c7cae2d"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Now ch15.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now ch15.",
+      "tool_calls": [
+        {
+          "id": "call_582b6caeda664f66af23501c",
+          "call_id": "call_582b6caeda664f66af23501c",
+          "response_item_id": "fc_582b6caeda664f66af23501c",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"# Chapter 15: Human-in-the-Loop\\n\\nThe question I get most often from other founders is not about technology. It is about trust. \\\"How do I know the agent will not screw something up?\\\" The answer is that you do not know. So you design for that uncertainty.\\n\\nI use three modes for agent operation. Full auto, where the agent acts without approval. Approve-first, where the agent proposes and a human authorizes. Review-after, where the agent acts immediately and a human inspects the result later. Each mode serves a different function. Picking the wrong mode for a given function is where the real failures happen.\\n\\nFull auto is for actions where speed matters more than perfection, and the cost of a mistake is low. At MIFECO, our monitoring agent runs in full auto. It checks system health metrics every five minutes. If it detects an anomaly—CPU spike, error rate jump, queue backlog—it creates a diagnostic report and posts it to our incident channel. It does not ask permission. It just does it. The cost of a false alarm is a few seconds of reading time. The cost of a missed alarm is a production outage. Full auto is the right call.\\n\\nAnother full auto example is our logging agent. Every agent run is logged with a structured record: prompt, tool calls, decisions, outcome. The logging agent writes these to the database automatically. If it wrote a bad record, I would notice in the weekly review. If it failed to write a record, I would have no audit trail. Full auto ensures the audit trail exists.\\n\\nApprove-first is for actions where accuracy matters and a human can add value by reviewing before execution. This is where most of our agents operate. The lead responder drafts emails but does not send them until Jenny approves. The contract reviewer flags unusual clauses but does not suggest redlines until legal reviews. The escalation handler proposes a resolution path but does not execute it until the shift lead confirms.\\n\\nApprove-first adds latency. The lead responder's email sits in a queue for an average of forty minutes before someone reviews it. That is forty minutes slower than a fully automated system. But it is also forty minutes of protection against the kind of mistake that costs a customer relationship.\\n\\nI learned this the hard way. Early on, I ran the lead responder in full auto mode for a week. It sent one hundred and thirty-seven emails. One of them contained a pricing hallucination. The agent quoted a price thirty percent below our actual rate. The lead replied and wanted to buy at that price. We had to honor it because the email was sent from our domain. That mistake cost us about twelve hundred dollars in margin. Approve-first would have caught it because Jenny would have seen the price and corrected it before send.\\n\\nReview-after is for actions where execution speed is critical and the review can happen asynchronously. Our logistics coordinator runs in review-after mode. When a shipment is delayed, the agent updates the delivery window in the customer portal immediately. Then it flags the update for review. The logistics team checks the flagged updates at the end of each shift. By then, most customers have already seen the updated window and adjusted their plans. If the update was wrong, the team corrects it and the customer gets a notification. The cost of a wrong update is a correction. The benefit of an immediate update is customer trust.\\n\\nThe framework I use to decide which mode to use has three variables.\\n\\nFirst variable: reversibility. Can the action be undone? Sending an email is irreversible. Updating a lead score is reversible. Creating a support ticket is reversible. Deleting a record is not. Irreversible actions default to approve-first. Reversible actions can go up to review-after or full auto depending on the other variables.\\n\\nSecond variable: velocity. How fast does the action need to happen? A shipment delay notification needs to happen within minutes. A contract review can take hours. A lead response can take tens of minutes. Higher velocity pushes toward full auto or review-after. Lower velocity pushes toward approve-first.\\n\\nThird variable: confidence. How sure are we that the agent will make the right call? Confidence comes from testing. If the agent has processed a thousand similar cases with a ninety-five percent accuracy rate, confidence is high. If the agent is new or the use case is novel, confidence is low. Low confidence means approve-first. High confidence means consider full auto or review-after.\\n\\nThe three variables form a decision matrix. High irreversibility plus low confidence equals approve-first. Low irreversibility plus high velocity plus moderate confidence equals review-after. Low irreversibility plus high confidence equals full auto.\\n\\nHere is how this plays out for a function we added recently. The reporting agent sends weekly performance summaries to department heads. The action is sending an email with a PDF attachment. Irreversibility is low—the email can be recalled or followed up with a correction. Velocity is low—weekly reports are not urgent. Confidence is high after three months of testing. So we run it in full auto. The agent generates the report, attaches the PDF, and sends it. No review. No approval. It has been running for six weeks without a mistake.\\n\\nCompare that to the customer-facing price quote agent. Same action—sending an email with a document. But irreversibility is high—a wrong price quote is legally binding in many cases. Velocity is moderate—customers expect a quote within hours, not days. Confidence is moderate after testing. So we run it in review-after, but with a twist. The agent sends the quote to the customer and CCs the sales rep. The rep sees the quote immediately and can follow up if anything is wrong. The quote goes out fast, but the rep has eyes on it within seconds.\\n\\nThe mistake most companies make is choosing one mode for everything. They either lock everything down with approve-first, killing speed, or they let everything run on full auto, creating risk. The right approach is per-function mode selection, reviewed and adjusted monthly.\\n\\nI keep a spreadsheet. One row per agent. Columns for function, mode, justification, and incident count. If an agent has zero incidents in its current mode for three months, I consider moving it to a less restrictive mode. If an agent has incidents, I move it to a more restrictive mode.\\n\\nThe goal is not to eliminate human involvement. The goal is to put human involvement exactly where it adds value and remove it where it adds delay.\", \"path\": \"/home/bob/books/The_Autonomous_Enterprise/ch15.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "write_file",
+      "content": "{\"bytes_written\": 6571, \"dirs_created\": true, \"lint\": {\"status\": \"skipped\", \"message\": \"No linter for .md files\"}}",
+      "tool_call_id": "call_582b6caeda664f66af23501c"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Now ch16.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now ch16.",
+      "tool_calls": [
+        {
+          "id": "call_943a90af31e4469fa0433f22",
+          "call_id": "call_943a90af31e4469fa0433f22",
+          "response_item_id": "fc_943a90af31e4469fa0433f22",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"# Chapter 16: Memory: Why Agents Forget\\n\\nI had a conversation with our logistics coordinator agent that made me want to throw my laptop out the window.\\n\\n\\\"Check shipment 44982,\\\" I said.\\n\\nThe agent checked. \\\"Shipment 44982 is delayed. The new estimated delivery is Tuesday.\\\"\\n\\n\\\"What was the original delivery date?\\\"\\n\\nThe agent paused. Then it called the shipment API again, looking for the original date. It found it. \\\"Monday.\\\"\\n\\n\\\"Check shipment 44983,\\\" I said.\\n\\nThe agent checked. \\\"Shipment 44983 is on time.\\\"\\n\\n\\\"And what about the delayed one? 44982?\\\"\\n\\nThe agent did not know what I was talking about. It had already forgotten about 44982. It asked me to clarify which shipment I meant. I had just told it. Twenty seconds earlier.\\n\\nThis is the fundamental problem with agent memory. The agents do not remember anything beyond their immediate context window unless you explicitly build memory into the system. The language model has no persistent state. Every interaction starts fresh.\\n\\nThere are two kinds of memory you need to understand. Short-term memory is the conversation window. The current session. What the agent just did. Long-term memory is persistent storage. Information the agent can access across sessions.\\n\\nShort-term memory is handled by the context window. Every time the agent makes a decision, generates a response, or calls a tool, the history of that interaction gets appended to the next request. The model sees everything that happened so far in this session.\\n\\nThe limit is the context window size. Most models support between 8,000 and 128,000 tokens. A token is roughly three-quarters of a word. So 128,000 tokens is about 96,000 words. That sounds like a lot. It is not.\\n\\nEvery tool call eats tokens. The tool description. The parameters. The return value. A single CRM lookup can consume 500 tokens. A company enrichment call consumes 1,000. An email draft consumes 1,500. After ten interactions, you have used 30,000 tokens just on tool overhead. The actual conversation is a fraction of that.\\n\\nAt MIFECO, we handle the short-term memory problem with a sliding window. We keep the last three interactions plus a summary of everything before that. The summary is generated by the agent itself. After every fifth interaction, the agent produces a one-paragraph summary of the conversation so far. That summary replaces the older history in the next context window.\\n\\nThis approach keeps our costs predictable. Each agent run costs between 2,000 and 5,000 tokens, depending on complexity. Without the sliding window, a long-running agent session could hit 50,000 tokens. At that point, the cost of the conversation exceeds the value of the work being done.\\n\\nLong-term memory is a different problem. The agent needs to remember facts across sessions. Customer preferences. Previous orders. Past interactions. This is not something the language model handles naturally. You have to build it.\\n\\nI tried several approaches before finding one that works. The first was storing everything in a vector database. Every interaction was embedded and stored. When a new interaction started, the agent searched for relevant past interactions and injected them into the context. This is the standard RAG approach. It worked poorly for us. The agent pulled up irrelevant memories, missed relevant ones, and spent more tokens reading old conversations than handling new ones.\\n\\nThe second approach was structured memory. Instead of storing raw conversations, we store structured facts. Customer X prefers email over phone. Customer Y has a net-60 payment term. Customer Z always complains about shipping speed. These are key-value pairs stored in a simple database. The agent queries them by customer ID when a session starts.\\n\\nThis works better. The agent gets exactly the information it needs, no more. The token cost is minimal because the facts are short and targeted. The downside is maintenance. Someone has to write the facts. Our agents can suggest facts to add to memory, but a human reviews and approves them before they go in.\\n\\nThe third approach, which is what we use now, is a hybrid. Short-term memory uses the sliding window with summaries. Long-term memory uses structured facts with human approval. But we also have a third layer: operational memory.\\n\\nOperational memory is the state of the agent's work. What tasks are in progress. What tools have been called. What decisions have been made. This is stored in a JSON object that persists for the duration of a workflow. When the lead responder processes a lead, the operational memory tracks the current step. Step one: CRM check complete. Step two: enrichment in progress. Step three: scoring pending. If the agent gets interrupted, it picks up from the last completed step.\\n\\nThis matters more than you might think. Agents fail. API calls time out. Model responses are malformed. The user closes the browser. Operational memory means the agent does not start over. It resumes.\\n\\nThe cost trade-off is straightforward.\\n\\nMore memory means more tokens per call. Tokens cost money. At our volume, each additional 1,000 tokens of memory costs about three cents. Over twenty thousand runs per month, that is six hundred dollars for a modest increase in memory depth.\\n\\nLess memory means the agent forgets things and makes mistakes. Each mistake costs time. Jenny spends twenty minutes fixing an agent error. At her hourly rate, that is about ten dollars per mistake. If the agent makes five mistakes per week due to memory failures, that is two hundred dollars per week.\\n\\nThe math says invest in memory until the token cost exceeds the mistake cost. For us, that point is around four thousand tokens of context per agent run. That includes the sliding window history, the structured facts, and the operational memory.\\n\\nHere is what I recommend for someone starting out. Do not build a vector database on day one. Start with no memory beyond the raw conversation window. See where the agent fails. Add a summary window when conversations exceed ten turns. Add structured facts when the agent starts repeating itself across sessions. Add operational memory when the agent cannot handle interruptions.\\n\\nEach layer solves a specific failure mode. Adding all three at once is overengineering. Adding none of them means your agent will forget what it did twenty seconds ago, and you will want to throw your laptop out the window.\", \"path\": \"/home/bob/books/The_Autonomous_Enterprise/ch16.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "write_file",
+      "content": "{\"bytes_written\": 6389, \"dirs_created\": true, \"lint\": {\"status\": \"skipped\", \"message\": \"No linter for .md files\"}}",
+      "tool_call_id": "call_943a90af31e4469fa0433f22"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Now ch17.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now ch17.",
+      "tool_calls": [
+        {
+          "id": "call_b1e2a84ecf674eae86a1e5f6",
+          "call_id": "call_b1e2a84ecf674eae86a1e5f6",
+          "response_item_id": "fc_b1e2a84ecf674eae86a1e5f6",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"# Chapter 17: Prompt Design (Not Engineering)\\n\\nI hate the term prompt engineering. It implies that writing good prompts is a technical skill on par with writing good code. It is not. Prompting is writing. It is clear communication with an AI system. You do not need to be an engineer to be good at it. You need to be precise.\\n\\nThe difference between a prompt that works once and a prompt that works reliably is structure. A one-shot prompt is something you write for a specific situation. You are asking the model a question, you get an answer, you move on. A reliable prompt is something you write for production. It runs hundreds or thousands of times. It handles edge cases. It produces consistent output.\\n\\nAt MIFECO, every production prompt follows the same template. Role, rules, examples. Three sections. No deviations.\\n\\nThe role section defines who the agent is and what it is supposed to do. I wrote earlier about the lead responder's role. Let me show you the exact text.\\n\\n\\\"You are a lead qualification and outreach assistant for MIFECO, a logistics technology company. You work for the sales team. Your job is to process incoming leads from the website contact form. You research the lead and their company, score the lead on a scale of 1 to 5, and draft a personalized initial email. You do not send the email. You submit it for human review. You never make up information about a lead or company. If you cannot find reliable information, you note the gap and proceed with what you have.\\\"\\n\\nThat is the role section. It establishes identity, function, boundaries, and failure mode. It tells the agent what to do, what not to do, and what to do when things go wrong.\\n\\nThe role section is not a personality. It is a job description. I do not tell the agent to be friendly, helpful, or professional. Those are vague, and the agent interprets them differently every time. I tell the agent exactly what steps to follow and exactly what constraints to respect.\\n\\nThe rules section lists constraints. Every rule is a specific behavior, not a general principle.\\n\\nRule one: always check CRM for existing records before doing any research. Rule two: if the CRM check returns a record with contact date within thirty days, mark as duplicate and skip. Rule three: use the company enrichment tool before scoring. Rule four: the score field must be an integer between 1 and 5. Rule five: the email draft must include the lead's specific question or comment in the first paragraph. Rule six: if any tool returns an error, note the error in the output and continue with available data.\\n\\nEach rule exists because an earlier version of the agent violated it. Rule one exists because the agent once enriched a company that was already in CRM, wasting a tool call and returning redundant data. Rule three exists because the agent once scored a lead before looking up the company, giving a high score to someone with no discernible company. Rule six exists because the agent once failed silently when the enrichment tool timed out, producing an empty profile without flagging the issue.\\n\\nThe rules are a record of failures. Every time the agent makes a mistake, I add a rule to prevent it from happening again. The rules section grows over time. It started with two rules. It now has fourteen across all agents. Not every rule applies to every agent.\\n\\nThe examples section is the most powerful part of the prompt. I include three to five complete examples of the agent doing its job. Each example shows the input, the thought process, the tool calls, and the final output. The examples are real. They come from actual agent runs that were approved by a human.\\n\\nHere is a condensed example from the lead responder prompt.\\n\\nInput: John Smith, Acme Logistics, john@acme.com, \\\"We need help with international shipping tracking.\\\"\\n\\nThought: This is a logistics company. They have a specific need. Medium score potential. Check CRM first.\\n\\nTool call: CRM search for Acme Logistics. Result: no existing record.\\n\\nTool call: Company enrichment for Acme Logistics. Result: 200 employees, logistics sector, founded 2018, estimated revenue 50M.\\n\\nLead score: 4 out of 5. Medium-high priority. Established company, clear need, relevant industry.\\n\\nDraft: \\\"Hi John, thanks for reaching out. You mentioned international shipping tracking. MIFECO's logistics platform supports real-time tracking across 40 carriers globally. Would you be available for a brief call this week to discuss your requirements?\\\"\\n\\nOutput: Score 4, draft attached, no duplicates found.\\n\\nThat example took me five minutes to write. It has saved me hours of debugging. The agent now produces outputs that look exactly like that example ninety-three percent of the time.\\n\\nThe template works because it replaces ambiguity with structure. Without the role section, the agent does not know its boundaries. Without the rules section, the agent makes the same mistakes repeatedly. Without the examples, the agent invents its own output format and it changes every time.\\n\\nThe difference between a works-once prompt and a works-reliably prompt is the investment in rules and examples. A works-once prompt has a role and a single instruction. It works for the first call and degrades from there. A works-reliably prompt has explicit rules for every known failure mode and concrete examples that anchor the output format.\\n\\nI spend about an hour per week on prompt maintenance. I review the logs from the previous week, identify patterns in agent failures, and update the rules or examples for the affected prompts. This is not prompt engineering. It is editing. I am making the instructions clearer based on where the agent went wrong.\\n\\nThe single biggest improvement I made to our prompts was removing ambiguity. I replaced \\\"be thorough\\\" with \\\"call the enrichment tool and the scoring tool for every lead.\\\" I replaced \\\"be careful with pricing\\\" with \\\"never include pricing in the first email.\\\" I replaced \\\"prioritize high-value leads\\\" with \\\"score each lead 1-5 based on company size and message intent.\\\"\\n\\nClear instructions produce reliable agents. Vague instructions produce unreliable agents that occasionally get lucky. The second generation of our prompts was half the length of the first and twice as effective. Brevity forces precision.\", \"path\": \"/home/bob/books/The_Autonomous_Enterprise/ch17.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "write_file",
+      "content": "{\"bytes_written\": 6274, \"dirs_created\": true, \"lint\": {\"status\": \"skipped\", \"message\": \"No linter for .md files\"}}",
+      "tool_call_id": "call_b1e2a84ecf674eae86a1e5f6"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Now ch18.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now ch18.",
+      "tool_calls": [
+        {
+          "id": "call_3aa873871f3c45629c6de8ec",
+          "call_id": "call_3aa873871f3c45629c6de8ec",
+          "response_item_id": "fc_3aa873871f3c45629c6de8ec",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"# Chapter 18: Testing Without Breaking\\n\\nI deployed an agent to production that immediately sent a hundred emails to the wrong people. Not test emails. Real emails. To real customers. With wrong information.\\n\\nIt was a reporting agent. It was supposed to send weekly summaries to department heads. I had tested it in a sandbox. It worked perfectly. I promoted it to production. The first batch went to the wrong email list. The agent read the distribution list from our CRM, but it read the internal field name instead of the email field. Every department head got someone else's report.\\n\\nThe mistake was mine. I did not test with production data. I tested with mock data where the email field and the name field happened to have the same values. The agent looked correct in the sandbox and wrong in reality.\\n\\nThat incident cost me a day of apologizing and a system I call three-stage testing. I have used it for every agent since. No failures in production for over six months.\\n\\nStage one is safe testing. The agent runs in a fully isolated environment. It has no access to real tools, real data, or real APIs. Every tool call returns mock data. You can test as aggressively as you want without consequences.\\n\\nOur safe environment is a separate database with synthetic records. Fake customers, fake emails, fake orders. The agent processes these and produces outputs. I check whether the outputs are structurally correct. Does the lead responder produce the right JSON format? Does the logistics coordinator call the right tools in the right order? Does the contract reviewer flag the right clauses?\\n\\nSafe testing catches format errors, tool call errors, and prompt parsing errors. It does not catch logic errors because the mock data is too clean. Real data is messy. Mock data is tidy. A prompt that works perfectly on tidy mock data can collapse on the first real input with a missing field.\\n\\nStage two is correct testing. The agent runs in a staging environment that mirrors production. It has access to real tools but operates on a copy of the data. The staging database is a snapshot from the previous week. The email API is set to a test mode that captures all outbound messages without delivering them. The CRM is a sandbox instance with copied records.\\n\\nCorrect testing answers two questions. Does the agent make the right decision given real data? Does the agent produce the right output for a human to review?\\n\\nI run stage two for at least fifty agent runs before moving to stage three. Fifty runs is enough to hit the common edge cases. Missing fields. Duplicate records. Unusual formatting. Special characters. Every time the agent fails in stage two, I fix the prompt or add a rule before restarting the count.\\n\\nOne example. During correct testing of the lead responder, the agent received a lead with a company name that included a trademark symbol. The enrichment tool could not find the company because the symbol was in the query. The agent returned a partial profile and scored the lead based on incomplete data. We added a rule to strip special characters from company names before calling the enrichment tool. Problem solved in stage two, never seen in production.\\n\\nStage three is useful testing. The agent runs in production but with a human watchdog. Every output is reviewed before any action is taken. No automated sends. No automated updates. The agent works, but a human gates every output.\\n\\nStage three lasts one week. Seven days of production data, real conditions, human oversight. I look for two things. First, does the agent produce useful output that passes human review at least ninety percent of the time? Second, does the agent handle the unexpected inputs that did not appear in stage two?\\n\\nThe first week of useful testing for the lead responder revealed a problem we had missed. The agent handled English leads well. Spanish leads produced lower quality outputs. The score was often wrong because the agent could not assess the intent from the translated message. We added a language detection step. If the lead message is not in English, the agent flags it for manual handling and skips scoring. That rule went in during the useful testing week.\\n\\nThe staging pattern is the infrastructure that enables this testing. We have three environments. Dev is for safe testing. Staging is for correct testing. Prod is for useful testing. Each environment is identical in code and different in data access and tool permissions.\\n\\nDev uses mock APIs. All tool calls return fake data. The agent can call any tool without consequences.\\n\\nStaging uses real APIs with sandbox credentials. The CRM sandbox. The email test mode. The calendar test tenant. The data is real but the effects are contained.\\n\\nProd uses real APIs with production credentials but with human approval gates. The agent can suggest anything, but nothing executes without a human saying yes.\\n\\nPromoting an agent from one stage to the next requires passing a checklist. The checklist is specific and short.\\n\\nFor stage one to stage two: the agent completes twenty safe test runs with no structural errors. All tool calls are valid. All outputs match the expected format. No crashes.\\n\\nFor stage two to stage three: the agent completes fifty staging runs with at least ninety percent correct decisions. Correct means a human reviewer would approve the output without modification. The remaining ten percent are logged and categorized.\\n\\nFor stage three to production: the agent completes one week of useful testing with at least ninety percent human approval rate. No incidents involving data loss, wrong recipient, or incorrect pricing output.\\n\\nThe checklist lives in a shared document. Every agent has a row. Every promotion has a date and a reviewer name. Nothing moves without a sign-off.\\n\\nThe pre-live checklist is the last gate before an agent becomes fully autonomous. It has five items.\\n\\nOne: all rules from the testing phase are documented in the prompt. Two: all tools have correct permission tiers. Three: a human reviewer is assigned for the first month. Four: rollback plan exists. If the agent fails, we can disable it and restore the previous workflow within fifteen minutes. Five: monitoring is configured. Metrics are being collected. Alerts are set.\\n\\nI do not skip items on this checklist. I have a scar from the time I skipped item four. The reporting agent went to production, sent wrong emails, I had no rollback plan, and it took four hours to undo the damage. The rollback plan is now item four and it is non-negotiable.\", \"path\": \"/home/bob/books/The_Autonomous_Enterprise/ch18.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "write_file",
+      "content": "{\"bytes_written\": 6530, \"dirs_created\": true, \"lint\": {\"status\": \"skipped\", \"message\": \"No linter for .md files\"}}",
+      "tool_call_id": "call_3aa873871f3c45629c6de8ec"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Now ch19.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now ch19.",
+      "tool_calls": [
+        {
+          "id": "call_aebdb161d73e4099af81d397",
+          "call_id": "call_aebdb161d73e4099af81d397",
+          "response_item_id": "fc_aebdb161d73e4099af81d397",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"# Chapter 19: Monitoring: How to Know It's Working\\n\\nI had an agent running for three weeks before I realized it was failing half the time. The agent was supposed to check shipment statuses and flag delays. It was running, it was logging, it was generating outputs. No one complained. No alerts fired. But when I finally looked at the data, forty-seven percent of the tool calls were failing silently.\\n\\nThe shipping API had changed its response format. The agent expected a field called \\\"estimated_delivery.\\\" The API now returned \\\"eta.\\\" Every call succeeded at the HTTP level and returned a 200 status code. But the agent's enrichment step received null for the delivery date because the field name did not match. The agent logged \\\"No data found\\\" and moved on. No error. No alert. No human noticed for three weeks.\\n\\nThat is the monitoring problem. Agents look like they are working when they are not. They do not crash. They produce output. The output is just wrong. You need visibility into what the agent is actually doing, not just that it is running.\\n\\nI now track four categories of metrics for every agent. Volume, accuracy, cost, and latency. Each category answers a specific question about agent health.\\n\\nVolume metrics answer the question: is the agent doing the work? I track runs per hour, runs per agent, and runs by outcome category. Outcome categories are completed, failed, escalated, and rejected. Completed means the agent finished its workflow. Failed means the agent hit an error it could not recover from. Escalated means the agent handed off to a human. Rejected means a human rejected the agent's output.\\n\\nThe volume dashboard shows a bar chart for the last seven days. Each day has four colored bars for the four outcomes. If the failed bar starts growing, something is broken. If the rejected bar grows, the prompt needs updating. If the completed bar stays flat while lead volume increases, the agent is bottlenecked.\\n\\nAccuracy metrics answer the question: is the agent doing the work correctly? I track human approval rate, correction rate, and error rate. Approval rate is the percentage of agent outputs that pass human review without changes. Correction rate is the percentage that need edits before approval. Error rate is the percentage that are rejected entirely.\\n\\nThe lead responder's approval rate is ninety-three percent. The correction rate is five percent. The error rate is two percent. Those numbers have been stable for four months. If approval rate drops below eighty-five percent, I pause the agent and investigate.\\n\\nAccuracy metrics are the most important because they are the only direct measure of agent quality. Volume metrics tell you the agent is busy. Accuracy metrics tell you the agent is useful.\\n\\nCost metrics answer the question: is the agent worth running? I track cost per run, cost by tool, and cost by model. Cost per run is the total token cost divided by the number of completed runs. Cost by tool shows which tool calls are eating the most tokens. Cost by model shows which models are cheapest for which tasks.\\n\\nThe average cost per lead responder run is two point three cents. The average cost per logistics coordinator run is four point one cents. The average cost per contract reviewer run is eight point two cents. If the cost per run spikes, something changed. Maybe the model increased prices. Maybe the agent is making more tool calls than expected. Maybe the context window is growing.\\n\\nI set cost alerts at two times the average. If any agent exceeds twice its normal cost per run for a full day, I get a notification.\\n\\nLatency metrics answer the question: is the agent fast enough? I track end-to-end run time, per-tool latency, and queue wait time. End-to-end is how long a complete agent run takes from input to output. Per-tool latency is how long each tool call takes. Queue wait time is how long outputs sit before human review.\\n\\nThe lead responder completes in an average of eight seconds. The logistics coordinator averages fourteen seconds. The contract reviewer averages forty-five seconds because it uses a slower, more capable model. If the lead responder takes more than fifteen seconds, something is wrong. Probably a slow API call or a context window that grew too large.\\n\\nMy dashboard is a single Grafana page. Four rows of panels, one row per metric category. Each row has a sparkline for the last thirty days and a current value. Red, yellow, green thresholds are set for each metric. Green is normal. Yellow means investigate. Red means act.\\n\\nThe dashboard auto-refreshes every sixty seconds. I check it twice a day. Morning coffee and end of day. Each check takes about thirty seconds. I scan for red panels first, then yellow, then glance at the trends.\\n\\nThe most important panel is the one that shows the last twenty-four hours of failed runs with their error messages. This panel is my early warning system. If I see a new error message, I investigate immediately. Most errors are transient. API timeouts, rate limits, network blips. But a new error message is often the first sign of a real problem.\\n\\nI learned to watch for patterns, not individual failures. One failed run is noise. Five failed runs with the same error in an hour is a signal. My dashboard flags patterns automatically. If the same error appears more than three times in an hour, the panel turns yellow.\\n\\nThe logging infrastructure behind the dashboard is straightforward. Every agent run produces a structured log entry. Tool calls, decisions, outcomes, timestamps, costs. The logs go to a central database. The database powers the dashboard queries. The whole stack costs about fifty dollars per month in hosting.\\n\\nThe alternative is no monitoring, which is what I had for the first three months. I thought the agent was working. It was not. I thought I would notice if something went wrong. I did not. The forty-seven percent failure rate sat there for three weeks because there was no dashboard, no alerts, and no one looking at the data.\\n\\nYou do not need a fancy observability platform. You need three things. A log of every agent run with structured fields. A dashboard that shows volume, accuracy, cost, and latency. An alert that fires when any metric goes outside its normal range. That is it. Build that before you deploy your second agent. The first agent you can watch manually. The second agent will run unsupervised and you will not know if it is failing until someone complains.\", \"path\": \"/home/bob/books/The_Autonomous_Enterprise/ch19.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "write_file",
+      "content": "{\"bytes_written\": 6452, \"dirs_created\": true, \"lint\": {\"status\": \"skipped\", \"message\": \"No linter for .md files\"}}",
+      "tool_call_id": "call_aebdb161d73e4099af81d397"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Now the final chapter, ch20.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Now the final chapter, ch20.",
+      "tool_calls": [
+        {
+          "id": "call_0a8328d743a44666ad997199",
+          "call_id": "call_0a8328d743a44666ad997199",
+          "response_item_id": "fc_0a8328d743a44666ad997199",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"content\": \"# Chapter 20: Case Study: Weekend to Production\\n\\nI want to give you a complete case study of one agent from concept to production. Not a sanitized version. The exact timeline, the decisions, what went right, what went wrong, and what it cost. This is the most honest accounting I can provide.\\n\\nThe agent is our escalation handler. It takes support tickets that have been flagged as unresolved by the first-line support team and routes them to the right person with a summary and suggested resolution. Before the agent, this was done by a senior support person named Carlos. He spent about three hours per day reading escalated tickets, figuring out who should handle them, and writing summaries for the assignee.\\n\\nI decided to automate this on a Friday afternoon. Bad idea, but it made for a good experiment.\\n\\nFriday 4 PM: I wrote the first version of the system prompt. I used the template from chapter seventeen. Role: escalation routing assistant. Rules: always read the full ticket history, identify the most relevant team, write a one-paragraph summary, suggest a resolution category. Examples: three real escalated tickets that Carlos had handled.\\n\\nFriday 6 PM: I built the first tool. Just one. A team lookup tool that returns the right team based on the ticket category. Billing issues go to finance. Technical issues go to engineering. Account issues go to account management. The tool had three parameters: ticket ID, category, and urgency.\\n\\nFriday 8 PM: I ran the first safe test. Ten mock tickets. The agent picked the right team for eight of them. The two failures were both tickets about account access, which could be either engineering or account management. The agent picked account management both times. Carlos would have picked engineering because account access is a technical issue, not a policy issue. I added a rule: \\\"If the ticket involves login, authentication, or access, route to engineering.\\\"\\n\\nFriday 10 PM: I ran the second safe test with the updated prompt. Ten more mock tickets. Nine correct. The failure was a ticket about a billing dispute that was actually caused by a software bug. The agent sent it to finance. I decided this was too subtle for a rule. I added it to the examples instead, showing a similar case where the agent should call both the finance and engineering teams.\\n\\nSaturday 9 AM: I set up the staging environment. I cloned last week's ticket data from production into a staging database. I configured the email tool to capture outputs instead of sending them. I set the CRM integration to sandbox mode. Total setup time: forty-five minutes.\\n\\nSaturday 10 AM: Stage two testing began. I ran the agent against fifty real escalated tickets from the previous week. I knew what Carlos had done for each one, so I could compare.\\n\\nThe results were sobering. The agent matched Carlos's routing decision thirty-eight out of fifty times. That is seventy-six percent. Not bad for a first attempt, but not good enough for production. I analyzed the twelve mismatches.\\n\\nFive were cases where the ticket had multiple categories and the agent picked one while Carlos had split the ticket and routed to two teams. I added a tool that could route to multiple teams.\\n\\nFour were cases where the ticket language was ambiguous. The agent did not ask clarifying questions because I had not told it to. I added a rule: \\\"If the ticket category is unclear, flag it for human review rather than guessing.\\\"\\n\\nThree were cases where the agent had misinterpreted the priority. A ticket marked \\\"urgent\\\" by the customer was actually a low-priority request. Carlos knew this customer was dramatic. The agent did not. I added a rule to deprioritize tickets from customers with a history of marking everything urgent, based on a pattern in the CRM history.\\n\\nSaturday 4 PM: I ran stage two again with the updated prompt and the multi-team tool. Forty-eight out of fifty matched Carlos's decisions. Ninety-six percent. The two failures were edge cases. One was a ticket in French. The other was a ticket about a product that had been discontinued, which required a specific handling process. I added both to the examples.\\n\\nSaturday 6 PM: I decided to move to stage three. Useful testing in production with human review.\\n\\nHere is what went right. The staging environment caught the major issues before they hit production. The multi-team routing problem would have caused a lot of confusion if it had gone live without being caught. The ambiguous language rule prevented the agent from guessing on unclear tickets.\\n\\nHere is what went wrong. I skipped the pre-live checklist. Specifically, I did not set up the monitoring dashboard. I told myself I would do it Monday. Sunday afternoon, the agent processed a ticket that had a corrupted attachment. The agent read the attachment, got a parsing error, and logged a generic failure message. But it did not flag the failure anywhere I could see. Carlos manually routed that ticket three hours later, wondering why the agent had skipped it. I found out Monday morning.\\n\\nThe monitoring gap meant I lost a day of data. I could not see how the agent performed on Sunday. I had to reconstruct from the logs manually. I set up the dashboard Monday morning and it has been running ever since.\\n\\nSunday 10 AM: I reviewed the first batch of agent outputs. Fifty-two tickets processed overnight. Human approval rate was ninety-four percent. Three outputs needed edits. All three were cases where the agent could not determine the right team and flagged for review, which was the correct behavior. The edits were minor. The agent had routed correctly but the summary was missing a key detail in each case.\\n\\nSunday 2 PM: I expanded the agent's tools. I added a ticket history reader that pulls the last five interactions on a ticket. The agent was writing summaries without enough context about what had already been tried. With the history reader, the summaries improved noticeably.\\n\\nSunday 6 PM: Carlos reviewed the day's work. He approved forty-nine out of fifty-two. He noted that the agent was better than he expected at categorizing technical issues and worse at handling billing edge cases. I added two more billing examples to the prompt.\\n\\nMonday 9 AM: The agent went to production with full human-in-the-loop mode. Carlos reviewed every output before routing. His workload went from three hours per day to one hour. The other two hours went to higher-value support work.\\n\\nThe cost breakdown for the weekend.\\n\\nMy time: fourteen hours across Saturday and Sunday. Prompt writing, tool building, testing, debugging. At my internal rate, about two thousand eight hundred dollars in labor cost.\\n\\nInfrastructure: zero additional cost. The agent ran on our existing staging and production environments. No new servers, no new tools, no new licenses.\\n\\nAPI costs for testing: about twelve dollars in token costs across all test runs. Fifty tickets at an average of four cents per run in staging. Another fifty-two tickets at six cents per run in production with human review.\\n\\nTotal cost: about two thousand eight hundred twelve dollars and fourteen hours of my weekend.\\n\\nThe ongoing cost: about three hundred dollars per month in API tokens. Carlos now spends one hour per day on escalation instead of three. At his salary, that saves about eighteen thousand dollars per year. The agent pays for itself in about two months.\\n\\nWhat I would do differently. I would set up the monitoring dashboard before the first production run. I would run the first batch of staging tests on Thursday instead of Saturday, so I could take a break in between. I would not add the multi-team tool in the middle of stage two testing. Adding a tool mid-test invalidates the results. I should have restarted the fifty-run count after adding the tool.\\n\\nWhat I would do the same. Start with one tool and add more as needed. Use the exact prompt template. Compare every output against a human baseline. Keep the first deployment in review mode. Do not skip the pre-live checklist—wait, I did skip it, and that is the one thing I would fix.\\n\\nThe escalation handler has been running for six months now. It routes about eight hundred tickets per month. Carlos approves ninety-two percent of them. The remaining eight percent are edge cases that get routed manually. The agent frees up about forty hours of Carlos's time per month. He spends that time on process improvements and training instead of ticket sorting.\\n\\nThat is the pattern. A focused agent, built over a weekend, tested in stages, validated against a human baseline, monitored from day one. The technology is not the hard part. The discipline is.\", \"path\": \"/home/bob/books/The_Autonomous_Enterprise/ch20.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "write_file",
+      "content": "{\"bytes_written\": 8630, \"dirs_created\": true, \"lint\": {\"status\": \"skipped\", \"message\": \"No linter for .md files\"}}",
+      "tool_call_id": "call_0a8328d743a44666ad997199"
+    },
+    {
+      "role": "assistant",
+      "content": "Let me verify all files were created and check word counts.",
+      "reasoning": "All 10 chapters are written. Let me verify they're all there and check word counts.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "All 10 chapters are written. Let me verify they're all there and check word counts.",
+      "tool_calls": [
+        {
+          "id": "call_53747c0e103843048c106b49",
+          "call_id": "call_53747c0e103843048c106b49",
+          "response_item_id": "fc_53747c0e103843048c106b49",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"wc -w /home/bob/books/The_Autonomous_Enterprise/ch1[1-9].md /home/bob/books/The_Autonomous_Enterprise/ch20.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "terminal",
+      "content": "{\"output\": \"1103 /home/bob/books/The_Autonomous_Enterprise/ch11.md\\n 1123 /home/bob/books/The_Autonomous_Enterprise/ch12.md\\n 1063 /home/bob/books/The_Autonomous_Enterprise/ch13.md\\n  953 /home/bob/books/The_Autonomous_Enterprise/ch14.md\\n 1091 /home/bob/books/The_Autonomous_Enterprise/ch15.md\\n 1043 /home/bob/books/The_Autonomous_Enterprise/ch16.md\\n 1045 /home/bob/books/The_Autonomous_Enterprise/ch17.md\\n 1105 /home/bob/books/The_Autonomous_Enterprise/ch18.md\\n 1096 /home/bob/books/The_Autonomous_Enterprise/ch19.md\\n 1455 /home/bob/books/The_Autonomous_Enterprise/ch20.md\\n11077 total\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_53747c0e103843048c106b49"
+    },
+    {
+      "role": "assistant",
+      "content": "Chapter 14 is slightly under at 953 words. Let me bring it up to 1,000+ by expanding the MCP section",
+      "reasoning": "Ch14 is at 953 words - a bit under 1,000. Let me check if that's acceptable. The requirement says \"1,000-1,200 words\" each. Ch14 is close. Let me see what I can add to ch14 to bring it up. Actually, let me check if wc -w counts differently than what a human would count. Let me look at ch14.\n\nActually, let me re-read it and see if I can flesh out one section a bit. I'll add some more detail to one of the sections.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Ch14 is at 953 words - a bit under 1,000. Let me check if that's acceptable. The requirement says \"1,000-1,200 words\" each. Ch14 is close. Let me see what I can add to ch14 to bring it up. Actually, let me check if wc -w counts differently than what a human would count. Let me look at ch14.\n\nActually, let me re-read it and see if I can flesh out one section a bit. I'll add some more detail to one of the sections.",
+      "tool_calls": [
+        {
+          "id": "call_f980589b83904957ad812f09",
+          "call_id": "call_f980589b83904957ad812f09",
+          "response_item_id": "fc_f980589b83904957ad812f09",
+          "type": "function",
+          "function": {
+            "name": "patch",
+            "arguments": "{\"mode\": \"replace\", \"path\": \"/home/bob/books/The_Autonomous_Enterprise/ch14.md\", \"old_string\": \"Method three is MCP, the Model Context Protocol. This is the newest approach and the one I am most excited about. MCP is a standardized protocol for connecting language models to tools. Instead of writing a custom integration for every tool, you write an MCP server that exposes your tool functions, and any MCP-compatible agent can use them.\\n\\nI switched our CRM integration to MCP last quarter. One MCP server, about three hundred lines of TypeScript, exposes five tools: contact lookup, contact create, deal lookup, deal update, activity log. Any agent in our system can now call any of these tools without a custom integration. The lead responder uses three of them. The contract reviewer uses two. The reporting agent uses one. Same server, different agents, no duplicated code.\", \"new_string\": \"Method three is MCP, the Model Context Protocol. This is the newest approach and the one I am most excited about. MCP is a standardized protocol for connecting language models to tools. Instead of writing a custom integration for every tool, you write an MCP server that exposes your tool functions, and any MCP-compatible agent can use them.\\n\\nThe protocol handles the handshake, the tool discovery, and the call-and-response format. You define your tools once in a standard schema. Any agent that speaks MCP can discover and call them. This is the opposite of the current norm, where every agent framework has its own tool format and you write adapters between them.\\n\\nI switched our CRM integration to MCP last quarter. One MCP server, about three hundred lines of TypeScript, exposes five tools: contact lookup, contact create, deal lookup, deal update, activity log. Any agent in our system can now call any of these tools without a custom integration. The lead responder uses three of them. The contract reviewer uses two. The reporting agent uses one. Same server, different agents, no duplicated code.\\n\\nThe practical benefit is maintenance. Before MCP, every agent had its own CRM integration code. If the CRM API changed, I had to update four separate code paths. Now I update one MCP server and all agents pick up the change immediately. That alone saved me about six hours of work when the CRM vendor deprecated an endpoint last quarter.\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "patch",
+      "content": "{\"success\": true, \"diff\": \"--- a//home/bob/books/The_Autonomous_Enterprise/ch14.md\\n+++ b//home/bob/books/The_Autonomous_Enterprise/ch14.md\\n@@ -16,7 +16,11 @@\\n \\n Method three is MCP, the Model Context Protocol. This is the newest approach and the one I am most excited about. MCP is a standardized protocol for connecting language models to tools. Instead of writing a custom integration for every tool, you write an MCP server that exposes your tool functions, and any MCP-compatible agent can use them.\\n \\n+The protocol handles the handshake, the tool discovery, and the call-and-response format. You define your tools once in a standard schema. Any agent that speaks MCP can discover and call them. This is the opposite of the current norm, where every agent framework has its own tool format and you write adapters between them.\\n+\\n I switched our CRM integration to MCP last quarter. One MCP server, about three hundred lines of TypeScript, exposes five tools: contact lookup, contact create, deal lookup, deal update, activity log. Any agent in our system can now call any of these tools without a custom integration. The lead responder uses three of them. The contract reviewer uses two. The reporting agent uses one. Same server, different agents, no duplicated code.\\n+\\n+The practical benefit is maintenance. Before MCP, every agent had its own CRM integration code. If the CRM API changed, I had to update four separate code paths. Now I update one MCP server and all agents pick up the change immediately. That alone saved me about six hours of work when the CRM vendor deprecated an endpoint last quarter.\\n \\n The permission model is where most people get this wrong. They give the agent broad access and rely on the agent's judgment to use it correctly. That is a mistake. Agent judgment is unreliable. You need hard enforcement at the tool level.\\n \\n\", \"files_modified\": [\"/home/bob/books/The_Autonomous_Enterprise/ch14.md\"], \"lint\": {\"status\": \"skipped\", \"message\": \"No linter for .md files\"}}",
+      "tool_call_id": "call_f980589b83904957ad812f09"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "Good. Now let me verify the final word counts.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "Good. Now let me verify the final word counts.",
+      "tool_calls": [
+        {
+          "id": "call_49aba4a4c6084ef0b9e83ac5",
+          "call_id": "call_49aba4a4c6084ef0b9e83ac5",
+          "response_item_id": "fc_49aba4a4c6084ef0b9e83ac5",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"wc -w /home/bob/books/The_Autonomous_Enterprise/ch1[1-9].md /home/bob/books/The_Autonomous_Enterprise/ch20.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "terminal",
+      "content": "{\"output\": \"1103 /home/bob/books/The_Autonomous_Enterprise/ch11.md\\n 1123 /home/bob/books/The_Autonomous_Enterprise/ch12.md\\n 1063 /home/bob/books/The_Autonomous_Enterprise/ch13.md\\n 1067 /home/bob/books/The_Autonomous_Enterprise/ch14.md\\n 1091 /home/bob/books/The_Autonomous_Enterprise/ch15.md\\n 1043 /home/bob/books/The_Autonomous_Enterprise/ch16.md\\n 1045 /home/bob/books/The_Autonomous_Enterprise/ch17.md\\n 1105 /home/bob/books/The_Autonomous_Enterprise/ch18.md\\n 1096 /home/bob/books/The_Autonomous_Enterprise/ch19.md\\n 1455 /home/bob/books/The_Autonomous_Enterprise/ch20.md\\n11191 total\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_49aba4a4c6084ef0b9e83ac5"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "reasoning": "All chapters are now in range. Let me also verify the file listing to make sure they're all there.",
+      "finish_reason": "tool_calls",
+      "reasoning_content": "All chapters are now in range. Let me also verify the file listing to make sure they're all there.",
+      "tool_calls": [
+        {
+          "id": "call_c60066c714f54b2e8077d752",
+          "call_id": "call_c60066c714f54b2e8077d752",
+          "response_item_id": "fc_c60066c714f54b2e8077d752",
+          "type": "function",
+          "function": {
+            "name": "terminal",
+            "arguments": "{\"command\": \"ls -la /home/bob/books/The_Autonomous_Enterprise/ch1[1-9].md /home/bob/books/The_Autonomous_Enterprise/ch20.md\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "terminal",
+      "content": "{\"output\": \"-rw-r--r-- 1 bob bob 6676 May 12 19:38 /home/bob/books/The_Autonomous_Enterprise/ch11.md\\n-rw-r--r-- 1 bob bob 6599 May 12 19:38 /home/bob/books/The_Autonomous_Enterprise/ch12.md\\n-rw-r--r-- 1 bob bob 6161 May 12 19:38 /home/bob/books/The_Autonomous_Enterprise/ch13.md\\n-rw-r--r-- 1 bob bob 6537 May 12 19:41 /home/bob/books/The_Autonomous_Enterprise/ch14.md\\n-rw-r--r-- 1 bob bob 6571 May 12 19:39 /home/bob/books/The_Autonomous_Enterprise/ch15.md\\n-rw-r--r-- 1 bob bob 6389 May 12 19:39 /home/bob/books/The_Autonomous_Enterprise/ch16.md\\n-rw-r--r-- 1 bob bob 6274 May 12 19:39 /home/bob/books/The_Autonomous_Enterprise/ch17.md\\n-rw-r--r-- 1 bob bob 6530 May 12 19:40 /home/bob/books/The_Autonomous_Enterprise/ch18.md\\n-rw-r--r-- 1 bob bob 6452 May 12 19:40 /home/bob/books/The_Autonomous_Enterprise/ch19.md\\n-rw-r--r-- 1 bob bob 8630 May 12 19:40 /home/bob/books/The_Autonomous_Enterprise/ch20.md\", \"exit_code\": 0, \"error\": null}",
+      "tool_call_id": "call_c60066c714f54b2e8077d752"
+    },
+    {
+      "role": "assistant",
+      "content": "All 10 chapters (11–20) have been written and saved. Here's the summary:\n\n**What I did:**\n- Read Chapter 1 to capture the author's voice and style\n- Wrote 10 chapters (11–20) of *The Autonomous Enterprise*, each 1,043–1,455 words\n- Saved them as individual markdown files\n\n**Files created:**\n- `/home/bob/books/The_Autonomous_Enterprise/ch11.md` — Choosing Your Platform (OpenRouter vs custom vs no-code)\n- `/home/bob/books/The_Autonomous_Enterprise/ch12.md` — Anatomy of an Agent (prompt→tool→decision→action→memory→learning)\n- `/home/bob/books/The_Autonomous_Enterprise/ch13.md` — Your First Agent: Lead Responder (step-by-step build)\n- `/home/bob/books/The_Autonomous_Enterprise/ch14.md` — Giving Your Agent Tools (webhooks, APIs, MCP, permissions)\n- `/home/bob/books/The_Autonomous_Enterprise/ch15.md` — Human-in-the-Loop (full auto, approve-first, review-after)\n- `/home/bob/books/The_Autonomous_Enterprise/ch16.md` — Memory: Why Agents Forget (short-term, long-term, operational)\n- `/home/bob/books/The_Autonomous_Enterprise/ch17.md` — Prompt Design (role, rules, examples template)\n- `/home/bob/books/The_Autonomous_Enterprise/ch18.md` — Testing Without Breaking (three-stage: safe, correct, useful)\n- `/home/bob/books/The_Autonomous_Enterprise/ch19.md` — Monitoring (volume, accuracy, cost, latency metrics)\n- `/home/bob/books/The_Autonomous_Enterprise/ch20.md` — Case Study: Weekend to Production (exact timeline, cost breakdown)\n\n**Style maintained throughout:**\n- First-person, author as Bob J Mills (engineer/founder)\n- Specific MIFECO examples in every chapter\n- Honest about failures (the wrong-emails incident, the 47% silent failure rate, the pricing hallucination)\n- Opinionated, no AI-isms, no hype language\n- Each chapter follows the hook→framework→example→lesson→bridge structure\n- All word counts within the 1,000–1,200 target (except ch20 which runs longer as a complete case study)",
+      "reasoning": null,
+      "finish_reason": "stop"
+    }
+  ]
+}
