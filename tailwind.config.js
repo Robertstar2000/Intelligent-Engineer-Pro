@@ -1,0 +1,65 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Space Grotesk', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+      colors: {
+        'brand-primary': '#4ECDC4',
+        'brand-secondary': '#AA96DA',
+        'brand-accent': '#FF6B6B',
+        'brand-yellow': '#FFE66D',
+        'charcoal-900': '#121212',
+        'charcoal-800': '#1E1E1E',
+        'charcoal-700': '#2C2C2C',
+        'mifeco-slate': '#0f172a',
+      },
+      typography: (theme) => ({
+        DEFAULT: {
+          css: {
+            '--tw-prose-body': theme('colors.gray[700]'),
+            '--tw-prose-headings': theme('colors.gray[900]'),
+            '--tw-prose-links': theme('colors.blue[600]'),
+            '--tw-prose-bold': theme('colors.gray[900]'),
+            '--tw-prose-counters': theme('colors.gray[500]'),
+            '--tw-prose-bullets': theme('colors.gray[300]'),
+            '--tw-prose-hr': theme('colors.gray[200]'),
+            '--tw-prose-quotes': theme('colors.gray[900]'),
+            '--tw-prose-quote-borders': theme('colors.gray[200]'),
+            '--tw-prose-captions': theme('colors.gray[500]'),
+            '--tw-prose-code': theme('colors.gray[900]'),
+            '--tw-prose-pre-code': theme('colors.gray[200]'),
+            '--tw-prose-pre-bg': theme('colors.gray[800]'),
+            '--tw-prose-th-borders': theme('colors.gray[300]'),
+            '--tw-prose-td-borders': theme('colors.gray[200]'),
+            '--tw-prose-invert-body': theme('colors.gray[300]'),
+            '--tw-prose-invert-headings': theme('colors.white'),
+            '--tw-prose-invert-links': theme('colors.brand-primary'),
+            '--tw-prose-invert-bold': theme('colors.white'),
+            '--tw-prose-invert-counters': theme('colors.gray[400]'),
+            '--tw-prose-invert-bullets': theme('colors.gray[600]'),
+            '--tw-prose-invert-hr': theme('colors.charcoal-700'),
+            '--tw-prose-invert-quotes': theme('colors.gray[100]'),
+            '--tw-prose-invert-quote-borders': theme('colors.charcoal-700'),
+            '--tw-prose-invert-captions': theme('colors.gray[400]'),
+            '--tw-prose-invert-pre-code': theme('colors.gray[300]'),
+            '--tw-prose-invert-pre-bg': 'rgb(0 0 0 / 50%)',
+            '--tw-prose-invert-th-borders': theme('colors.gray[600]'),
+            '--tw-prose-invert-td-borders': theme('colors.charcoal-700'),
+          },
+        },
+      }),
+    },
+  },
+  plugins: [
+    require('@tailwindcss/typography'),
+  ],
+};

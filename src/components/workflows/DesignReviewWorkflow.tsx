@@ -1,0 +1,138 @@
+import React from 'react';
+import { Remarkable } from 'remarkable';
+import { Check } from 'lucide-react';
+import { PhaseActions } from '../PhaseActions';
+import { Button, Card } from '../ui';
+import { Phase, ToastMessage, Project, MetaDocument } from '../../types';
+import { generatePhaseVisualAssets } from '../../services/geminiService';
+
+declare const Prism: any;
+
+const md = new Remarkable({
+    html: true, typographer: true,
+    highlight: function (str, lang) {
+        if (lang && typeof Prism !== 'undefined' && Prism.languages[lang]) {
+            try { return Prism.highlight(str, Prism.languages[lang], lang); } catch (e) { console.error(e); }
+        }
+        return '';
+    },
+});
+
+interface WorkflowProps {
+    phase: Phase;
+    project: Project;
+    onUpdateProject: (updatedProject: Project) => void;
+    onUpdatePhase: (phaseId: string, updates: Partial<Phase>) => void;
+    onPhaseComplete: () => void;
+    onGoToNext: () => void;
+    onDownloadArchive: () => void;
+    isLastPhase: boolean;
+    setToast: (toast: ToastMessage | null) => void;
+}
+
+export const DesignReviewWorkflow = ({ 
+    phase, 
+    project, 
+    onUpdateProject, 
+    onUpdatePhase, 
+    onPhaseComplete, 
+    onGoToNext, 
+    onDownloadArchive,
+    isLastPhase,
+    setToast 
+}: WorkflowProps) => {
+    const handleChecklistChange = (itemId: string) => {
+        if (!phase.designReview) return;
+        const newChecklist = phase.designReview.checklist.map(item =>
+            item.id === itemId ? { ...item, checked: !item.checked } : item
+        );
+        onUpdatePhase(phase.id, { designReview: { ...phase.designReview, checklist: newChecklist } });
+    };
+
+    const handleFinalizeReview = async () => {
+        const updates: Partial<Phase> = { 
+            status: 'completed',
+            reviewEndDate: new Date().toISOString(),
+        };
+        if (phase.sprints?.length > 0) {
+            updates.sprints = phase.sprints.map(s => ({ ...s, status: 'completed' }));
+        }
+        onUpdatePhase(phase.id, updates);
+        
+        setToast({ message: 'Design review complete! Advancing to the next phase.', type: 'success' });
+        
+        if (['Preliminary Design', 'Critical Design'].includes(phase.name)) {
+            setToast({ message: `Generating visual assets for ${phase.name}...`, type: 'info' });
+            try {
+                const phaseWithOutput = { ...phase, ...updates }; 
+                const newDocs = await generatePhaseVisualAssets(project, phaseWithOutput);
+                if (newDocs.length > 0) {
+                    onUpdateProject({ 
+                        ...project, 
+                        metaDocuments: [...(project.metaDocuments || []), ...newDocs] 
+                    });
+                    setToast({ message: `${newDocs.length} assets generated and saved to Documents.`, type: 'success' });
+                }
+            } catch (error: any) {
+                setToast({ message: `Failed to generate visual assets: ${error.message}`, type: 'error' });
+            }
+        }
+
+        onPhaseComplete();
+
+        setTimeout(() => {
+            onGoToNext();
+        }, 1500);
+    };
+    
+    const allChecked = phase.designReview?.checklist.every(item => item.checked);
+
+    return (
+        <>
+            <Card title="Phase Output for Review" description="This is the generated document pending approval.">
+                 <div className="bg-gray-50 dark:bg-gray-900/50 border dark:border-gray-700 rounded-lg p-4 max-h-96 overflow-y-auto prose dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{ __html: md.render(phase.outputs[phase.outputs.length - 1]?.content || '') }}
+                />
+            </Card>
+            <Card title="Design Review" description="Verify all success factors are met before proceeding. The project cannot advance until this review is complete.">
+                <div className="space-y-3">
+                    {phase.designReview?.checklist.map((item) => (
+                        <label key={item.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={item.checked}
+                                onChange={() => handleChecklistChange(item.id)}
+                                className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600"
+                            />
+                            <span className="text-gray-800 dark:text-gray-300 flex-1">{item.text}</span>
+                        </label>
+                    ))}
+                </div>
+                <div className="mt-6">
+                    <PhaseActions 
+                        phase={phase}
+                        onMarkComplete={handleFinalizeReview}
+                        onDownload={() => {
+                            if (phase.outputs.length > 0) {
+                                const latestOutput = phase.outputs[phase.outputs.length - 1].content;
+                                const blob = new Blob([latestOutput], { type: 'text/markdown' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `${project.name}_${phase.name}.md`;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                            }
+                        }}
+                        onGoToNext={onGoToNext}
+                        onPackageAll={onDownloadArchive}
+                        isLastPhase={isLastPhase}
+                        isCompletable={allChecked}
+                        reviewRequired={false} // Already in review, this button finalizes it
+                        isDownloadDisabled={phase.outputs.length === 0}
+                    />
+                </div>
+            </Card>
+        </>
+    );
+};
