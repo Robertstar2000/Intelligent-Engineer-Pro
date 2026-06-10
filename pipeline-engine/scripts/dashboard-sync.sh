@@ -117,7 +117,7 @@ if [ "$USE_WEBHOOK" = true ]; then
     
     python3 -c "
 import urllib.request, json
-data = json.dumps({'secret': 'Rm2214ri%%%%', 'action': 'refresh'}).encode()
+data = json.dumps({'secret': 'Rm2214ri####', 'action': 'refresh'}).encode()
 req = urllib.request.Request('$WEBHOOK_URL', data=data, 
     headers={'Content-Type': 'application/json'})
 resp = urllib.request.urlopen(req)

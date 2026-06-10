@@ -126,6 +126,44 @@ process(action="poll", session_id="<id>")
 
 > ⚠️ **Pitfall — v0.136.0 confirmed: API key auth works, agent identity does not.** As of v0.136.0, `echo "sk-proj-..." | codex login --with-api-key` works for `codex exec` with model `gpt-5.3-codex`. Agent identity JWT tokens (stored at `~/.codex/agent-identity.token`) cause 401 errors — the token's `aud: "codex-app-server"` doesn't match the CLI's `chatgpt.com/backend-api` endpoint. Device auth login succeeds but all models are rejected with "not supported when using Codex with a ChatGPT account." **Only API key auth works for `codex exec`.**
 
+## Hermes `openai-codex` Provider Auth (Separate from Codex CLI)
+
+When the user asks to "set up Codex auth" for Hermes (not the CLI), they mean configuring Hermes's `openai-codex` model provider using a ChatGPT OAuth JWT token. This is **completely separate** from `codex login`.
+
+### Key Distinction
+- **Codex CLI auth** → `codex login --with-api-key` → stored in `~/.codex/auth.json` → used by `codex exec`
+- **Hermes provider auth** → `CODEX_OAUTH_TOKEN` in `~/.hermes/.env` → stored in `~/.hermes/auth.json` → used by Hermes delegation
+
+### Setup Steps
+
+1. **Verify token exists in `.env`:**
+   ```bash
+   grep CODEX_OAUTH_TOKEN ~/.hermes/.env
+   ```
+   Token is a JWT starting with `eyJhbG...`.
+
+2. **Add to `auth.json`** — Must be in BOTH `providers` and `credential_pool` (see `references/auth-methods.md` for full JSON structure). ⚠️ The gateway overwrites `auth.json` on restart — the reliable approach is to set `CODEX_OAUTH_TOKEN` in `.env` and let the gateway auto-populate auth.json.
+
+3. **Add delegation config in `config.yaml`:**
+   ```yaml
+   delegation:
+     subagent_providers:
+       codex:
+         provider: openai-codex
+         model: openai-codex
+         api_mode: codex_responses
+         base_url: https://chatgpt.com/backend-api/codex
+   ```
+
+4. **Restart gateway and verify:**
+   ```
+   hermes doctor
+   ```
+   Should show: `✓ OpenAI Codex auth (logged in)`
+
+### Pitfall: `auth.json` Gateway Overwrite
+The gateway process rewrites `auth.json` on each startup. Manual edits to `auth.json` may be lost. Always set `CODEX_OAUTH_TOKEN` in `~/.hermes/.env` as the source of truth, then restart the gateway to let it auto-populate.
+
 ### Step 4: Verify authentication
 
 ```bash

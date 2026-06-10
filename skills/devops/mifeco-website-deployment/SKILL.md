@@ -47,14 +47,7 @@ This retrieves previous deployment history, known issues, file paths, and creden
 
 **CRITICAL — SPA Blank Page #2:** After modifying the minified JS bundle (`assets/index-HASH.js`), always verify brace/paren balance. Unbalanced braces or parens prevent the bundle from parsing, producing a blank white page. See "React SPA Bundle Modification" below for the verification procedure.
 
-See `references/dreamhost-subdirectory-pitfalls.md` for:
-- Absolute path trap diagnosis and fix pattern
-- `.htaccess` syntax (`Require all denied` causes 500; use `Order allow,deny`)
-- PHP error logging disabled (use `file_put_contents('/tmp/debug.log', ...)`)
-- cURL timeout differences (`CURLOPT_TIMEOUT` vs `CURLOPT_TIMEOUT_MS`)
-- MySQL remote-only connection
-
-See `references/dreamhost-subdirectory-pitfalls.md` for:
+See `references/dreamhost-subdirectory-pitfalls.md` for the full list of:
 - Absolute path trap diagnosis and fix pattern
 - `.htaccess` syntax (`Require all denied` causes 500; use `Order allow,deny`)
 - PHP error logging disabled (use `file_put_contents('/tmp/debug.log', ...)`)
@@ -93,7 +86,33 @@ All website files are at:
 
 ## Deploying Updates
 
-### SFTP via pexpect (Recommended)
+### SFTP via paramiko (Recommended — no sshpass/pexpect needed)
+
+When `sshpass` is not available (can't sudo) and `pexpect` is not installed, use Python's `paramiko` library:
+
+```python
+import paramiko, os
+
+ssh = paramiko.SSHClient()
+ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+ssh.connect('mifeco.com', username='dh_mwpxuu', password='***', timeout=30)
+sftp = ssh.open_sftp()
+
+# Upload files
+for fname in ['index.php', 'pipeline-dashboard.html', 'webhook.php']:
+    sftp.put(os.path.join(local_dir, fname), os.path.join(remote_dir, fname))
+
+# Verify
+stdin, stdout, stderr = ssh.exec_command(f'ls -la {remote_dir}')
+print(stdout.read().decode())
+
+sftp.close()
+ssh.close()
+```
+
+Install paramiko if needed: `pip3 install paramiko` (no sudo required).
+
+### SFTP via pexpect (Alternative)
 
 The `sshpass` utility is not available. Use pexpect for password-based SFTP:
 
@@ -133,8 +152,45 @@ child.close()
 **Notes:**
 - `pexpect` is pre-installed on this system (`python3-pexpect` package)
 - `sshpass` is NOT available — use pexpect instead
+- **ALWAYS `mkdir -p` remote directories BEFORE SCP** — SCP cannot create directories and will fail silently with exit code 1
+- **Use `-o PubkeyAuthentication=no`** in SCP/SSH commands to skip key auth attempts and go straight to password
 - SFTP exit code 1 after `bye` is normal — verify with `ls -la` before closing
 - For bulk uploads: put all files in a loop, or tar/extract over SSH
+
+### SSH/SCP with Password Auth — Standard Pattern
+
+Always use `-o PubkeyAuthentication=no` to avoid key auth delays/failures:
+
+```python
+import pexpect
+
+def ssh_run(command, password, timeout=60):
+    child = pexpect.spawn('ssh', [
+        '-o', 'StrictHostKeyChecking=accept-new',
+        '-o', 'PubkeyAuthentication=no',
+        'dh_mwpxuu@IAD1-SHARED-B8-42.DREAMHOST.COM',
+        command
+    ], timeout=timeout)
+    child.expect('password:')
+    child.sendline(password)
+    child.expect(pexpect.EOF, timeout=timeout)
+    return child.before.decode()
+
+def scp_upload(local_path, remote_path, password, remote_user_host='dh_mwpxuu@IAD1-SHARED-B8-42.DREAMHOST.COM'):
+    # Always mkdir remote dir first
+    remote_dir = remote_path.rsplit('/', 1)[0]
+    ssh_run(f'mkdir -p {remote_dir}', password)
+    child = pexpect.spawn('scp', [
+        '-o', 'StrictHostKeyChecking=accept-new',
+        '-o', 'PubkeyAuthentication=no',
+        local_path,
+        f'{remote_user_host}:{remote_path}'
+    ], timeout=60)
+    child.expect('password:')
+    child.sendline(password)
+    child.expect(pexpect.EOF, timeout=60)
+    return child.exitstatus == 0
+```
 
 ### PHP File Writing — $ Sign Stripping
 
@@ -152,6 +208,12 @@ child.close()
 - `browser_type` fails with "Unknown ref" if refs are stale — navigate → snapshot → then type/click
 - **User prefers panel access over SFTP when possible** — the browser tool may not be available; when it isn't, use SFTP/SSH as fallback and note the limitation
 
+## DreamHost 403 Forbidden — File Permissions
+
+**CRITICAL:** Static files (`.html`, `.js`, `.css`, `.svg`) uploaded via SCP/rsync often get permission `600` (owner-only). The DreamHost web server cannot read these, causing **403 Forbidden**. PHP files work at 600 because they execute as the owner.
+
+**Fix:** `chmod 644` on the affected files. See `references/dreamhost-403-file-permissions.md` for diagnosis, fix, and prevention with `--chmod=Fu=rw,Fog=r` in rsync.
+
 ## React SPA Bundle Modification
 
 When the main mifeco.com site (React/Vite SPA) needs link changes and the source isn't available:
@@ -160,14 +222,16 @@ When the main mifeco.com site (React/Vite SPA) needs link changes and the source
    - Get hash from HTML: `curl -s "https://www.mifeco.com/" | grep -oP 'src="/assets/index-[^\\"]+\\.js"'`
    - Download: `curl -s "https://www.mifeco.com/assets/index-HASH.js" -o /tmp/bundle.js`
 
-2. **ALWAYS back up the original on DreamHost before modifying:**
+2. **CRITICAL: Handle JSX fragments for formatted text.** When text has embedded `<strong>`, `<br/>`, or other inline elements, the compiler stores it as a `l.jsxs(...)` array with nested component calls — not a plain string. Simple find-and-replace fails on these. See `references/react-spa-jsx-fragment-text-replacement.md` for the full workflow including downloading, finding fragments with grep, Python replacement, brace/paren verification, and upload.
+
+3. **ALWAYS back up the original on DreamHost before modifying:**
    `rename index-HASH.js index-HASH.js.original`
 
-3. **Check existing old bundles** in `/home/dh_mwpxuu/mifeco.com/assets/` for a backup. Old bundles accumulate there (hashes change per rebuild) — keep the most recent pre-modification one as a fallback.
+4. **Check existing old bundles** in `/home/dh_mwpxuu/mifeco.com/assets/` for a backup. Old bundles accumulate there (hashes change per rebuild) — keep the most recent pre-modification one as a fallback.
 
-4. **Use Python string replacements** — more reliable than sed for large files. Write a script to `/tmp/` and execute it.
+5. **Use Python string replacements** — more reliable than sed for large files. Write a script to `/tmp/` and execute it.
 
-5. **CRITICAL: Verify brace/paren balance after EVERY modification.** Minified JS bundles are sensitive — one unbalanced brace or paren destroys the entire page (white screen / blank page).
+6. **CRITICAL: Verify brace/paren balance after EVERY modification.** Minified JS bundles are sensitive — one unbalanced brace or paren destroys the entire page (white screen / blank page).
    ```python
    with open('bundle.js') as f:
        c = f.read()
@@ -181,16 +245,16 @@ When the main mifeco.com site (React/Vite SPA) needs link changes and the source
    - Mobile nav Books link: `l.jsx("a",{href:"#bookstore",className:"block text-gray-600 hover:text-blue-600 transition-colors",children:"Books"})`
    - Hero CTAs: `children:"Consult with an Expert"`
    - Product cards: `className:"grid md:grid-cols-3 gap-8`
-   - Footer links: `href:"/consult"` or `href:"/books"`
+   7. **Key patterns to search for in the current bundle:**
 
-7. **Upload back** to `/home/dh_mwpxuu/mifeco.com/assets/` via SFTP
+   8. **Upload back** to `/home/dh_mwpxuu/mifeco.com/assets/` via SFTP
 
-8. **Verify immediately:**
+   9. **Verify immediately:**
    - Download the live bundle again and grep for your changes
    - Check HTTP 200 and correct Content-Type: `curl -sI "https://www.mifeco.com/assets/index-HASH.js"`
    - Verify brace/paren balance on the LIVE bundle (curl → check counts)
 
-9. Changes are lost if the React app is rebuilt — document what was changed in a reference file so it can be re-applied.
+10. Changes are lost if the React app is rebuilt — document what was changed in a reference file so it can be re-applied.
 
 ## Images Currently Deployed
 
@@ -310,13 +374,85 @@ The main mifeco.com site has **two distinct consulting offerings** that must nev
 
 ## Adding Links to the React SPA (mifeco.com)
 
-The main mifeco.com site is a React/Vite SPA. To add external links (e.g., to `/consult/` or `/books/`), you must either modify the minified JS bundle or inject an external script. See `references/react-spa-link-injection.md` for both approaches.
+The main mifeco.com site is a React/Vite SPA. There are TWO approaches to modify it:
 
-**Quick summary:**
-- The SPA has its own `#bookstore` anchor section — this is NOT the same as `/books/`
-- The SPA has service pages at `/strategic-planning`, `/digital-transformation`, etc.
-- External links need `target="_blank"` and `rel="noopener"` since they leave the SPA
-- Bundle hash changes on rebuild — prefer script injection for persistence
+### Approach A: Modify the Compiled JS Bundle (Quick Fix)
+
+For small text/link changes when you can't rebuild. See `references/react-spa-jsx-fragment-text-replacement.md` for the full workflow including downloading, finding fragments with grep, Python replacement, brace/paren verification, and upload.
+
+### Approach B: Source Code Rebuild (Durable — preferred)
+
+**PREFER THIS APPROACH.** The source code is at `/mnt/usb_4tb/project-dirs/mifeco_web/mifeco-website/`. Changes survive rebuilds.
+
+**Source code structure:**
+```
+/mnt/usb_4tb/project-dirs/mifeco_web/mifeco-website/
+├── src/
+│   ├── App.jsx              # Main app layout, nav, hero, services, storefront cards
+│   ├── App.css
+│   ├── main.jsx
+│   ├── components/          # Section components (BookstoreSection, PricingSection, etc.)
+│   └── assets/              # Images (hero, demo video, logos)
+├── dist/                    # Built output (index.html + hashed assets)
+├── vite.config.js
+├── index.html
+└── package.json
+```
+
+**Key components and their approximate line ranges (from 2026-06-09 session):**
+- Desktop nav links: lines ~169-221 (Services, Books, Virtual Consulting, Industries dropdown, About, Careers, Blog)
+- Mobile nav links: lines ~249-268
+- Hero section CTAs: lines ~300-330
+- Products & Services cards (Storefront): lines ~366-530 (Bookstore, Buy AI, Virtual Consulting, Human Expert)
+- MIFECO Bookstore section: `<BookstoreSection />` component at line ~501
+- **Updating the book collection:** See `references/books-collection-update.md` for the complete BOOKS object structure, Amazon URL helper, count update pattern, build/deploy steps, and current inventory.
+
+**Adding a new card to Products & Services:**
+1. Change grid to 4 cols: `className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto"`
+2. Add new `<Card>` block following the existing pattern (gradient header, CardHeader with title+desc, CardContent with bullets+button)
+3. Import new icon from `lucide-react` in the imports at line 4-28 if needed
+
+**Build and deploy cycle:**
+```bash
+cd /mnt/usb_4tb/project-dirs/mifeco_web/mifeco-website
+npm run build
+rsync -avz -e "ssh -o StrictHostKeyChecking=no" dist/ dh_mwpxuu@iad1-shared-b8-42.dreamhost.com:/home/dh_mwpxuu/mifeco.com/
+```
+
+**CRITICAL — SPA Blank Page (index.html out of sync):** Every build produces hashed bundle filenames (`index-HASH.js`, `index-HASH.css`). The root `dist/index.html` is the only file that references the correct hashes. If you sync only `dist/assets/` (e.g., `rsync --delete dist/assets/ ...`), the HTML on the server still points to the *old* hashes. The assets are deleted but the HTML can't find them → blank white page, SPA fails to render.
+
+**Always either:**
+- Sync the full `dist/` directory (above), OR
+- When syncing `assets/` separately, ALWAYS sync `dist/index.html` to the server root as well:
+  ```bash
+  rsync -avz dist/assets/ dh_mwpxuu@mifeco.com:/home/dh_mwpxuu/mifeco.com/assets/
+  rsync -avz dist/index.html dh_mwpxuu@mifeco.com:/home/dh_mwpxuu/mifeco.com/index.html
+  # Both must use the SAME build output — don't mix builds
+  ```
+
+**Verification after deploy:** Check the HTML references the correct hashes, then verify the file exists:
+```bash
+curl -s https://www.mifeco.com | grep -oP 'src="/assets/index-[^"]+\.js"'
+curl -sI https://www.mifeco.com/assets/index-CURRENTHASH.js | grep -E 'HTTP/|content-type'
+```
+
+**Rebuild resets Approach A edits:** Source code rebuilds are triggered by any change to `src/` files. If you previously made compiled-JS edits (Approach A — direct bundle modification), those changes are LOST on rebuild. Before rebuilding, note which edits need re-application, or better yet, always make changes in source files first.
+
+**What gets reset on rebuild:** Compiled JS bundle edits (Approach A) are LOST. Source code edits persist.
+
+**Old bundles accumulate** in `/assets/` — hash-named JS/CSS files from previous builds are never cleaned up by rsync --delete because they're not in the new dist/. Manually clean them up periodically.
+
+**Standard deployment via rsync with password:**
+```python
+import pexpect
+password = '***'
+child = pexpect.spawn('/bin/bash', ['-c', f'rsync -avz -e "ssh -o StrictHostKeyChecking=no" /path/to/dist/ dh_mwpxuu@iad1-shared-b8-42.dreamhost.com:/home/dh_mwpxuu/mifeco.com/'], timeout=120, encoding='utf-8')
+idx = child.expect(['[Pp]assword:', pexpect.TIMEOUT, pexpect.EOF])
+if idx == 0:
+    child.sendline(password)
+    child.expect(pexpect.EOF, timeout=90)
+child.close()
+```
 
 ## Jarvis Page
 
@@ -352,10 +488,26 @@ else:
 
 **Note:** Always use `skill_manage` first. Fall back to file I/O only when the tool cannot resolve the skill path.
 
-## Consulting Pipeline
+## Pipeline Dashboard Sync
+
+When syncing pipeline changes to DreamHost (new stages, products, leads):
+
+1. Update JSON files in `/home/bob/.hermes/pipeline-engine/dashboard/`
+2. Regenerate SVG flow diagrams in `flows/` (8 stages, viewBox="0 0 1050 50")
+3. Seed kanban DB: `python3 /home/bob/.hermes/pipeline-engine/scripts/seed_kanban.py --clear`
+4. Sync to DreamHost: `python3 /home/bob/.hermes/pipeline-engine/scripts/sync_dashboard.py`
+5. Clean up old files: `python3 /home/bob/.hermes/pipeline-engine/scripts/cleanup_dreamhost.py`
+6. Sync FL-Hermes copy: `cp dashboard/*.{html,json,php} FL-Hermes/pipeline-engine/dashboard/ && cp dashboard/flows/*.svg FL-Hermes/pipeline-engine/dashboard/flows/`
+
+**CRITICAL:** rsync is additive — old SVGs and JSON files persist on DreamHost unless explicitly deleted. Always run cleanup after removing files locally.
+
+See the `mifeco-pipeline-management` skill for the full pipeline rebuild workflow.
 
 For the full consulting pipeline architecture, survey flow, database schema, common issues, and credentials, see:
-`references/consulting-pipeline-reference.md`
+For the reader magnet PDF replacement workflow (updating the HTML card, subscribe.php API in both response paths, and uploading the new PDF), see:
+`references/reader-magnet-replacement.md`
+
+See `references/consulting-pipeline-reference.md`
 
 ## Stripe Payment Integration
 

@@ -141,6 +141,8 @@ if [ -d "$FL_HERMES_DIR/.git" ]; then
   rsync -av --delete "$DATA_DIR/cron/" cron/
   rsync -av --delete "$DATA_DIR/memories/" memories/
   rsync -av --delete "$DATA_DIR/mempalace/" mempalace/
+  rsync -av --delete "$DATA_DIR/pipeline-engine/" pipeline-engine/
+  rsync -av --delete "$DATA_DIR/consulting-reports/" consulting-reports/
 
   # Sync SaaS products if they exist
   if [ -d "$HOME/saas" ]; then
@@ -168,7 +170,8 @@ fi
 - **Always verify the USB is mounted** before running (`mountpoint /mnt/usb_4tb`). If the drive is not mounted, backups will silently land on the SSD — defeating the purpose.
 - Do NOT back up the hermes-agent/ directory — it's 8.2GB and can be re-cloned from GitHub.
 - Ensure sufficient free disk space on the destination before running (at least 2x expected backup size).
-- Regularly monitor for unusually small backup files (e.g., 4K files) as these may indicate failed backups. Check with: `find "$HERMES_BACKUP_DIR" -name "hermes-*.tar.gz" -size -100c`
++ - The GitHub sync step (rsync) can take a long time for large .hermes directories and may time out in automated contexts. Consider increasing the timeout or running the sync in the background if using automation.
+## Verification
 - Unusually small backup files (e.g., 4K) may indicate a failed backup. Regularly check for these using the verification script or by scanning the backup directory for files significantly smaller than expected.
 - **If `~/books` is a symlink** (e.g., to `/mnt/usb_4tb/books`), resolve it with `readlink -f` before rsync to avoid backing up the symlink itself.
 - **When HERMES_BACKUP_DIR is explicitly set**, the skill uses that value directly without auto-detection. This ensures predictable behavior for cron jobs and automated backups. See `references/hermes-backup-dir-behavior.md` for details.

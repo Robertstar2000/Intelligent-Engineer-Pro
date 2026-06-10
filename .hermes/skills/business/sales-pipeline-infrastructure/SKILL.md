@@ -1,7 +1,7 @@
 ---
 name: sales-pipeline-infrastructure
 description: Build a complete lead-to-revenue pipeline automation system for one or more product lines — intake forms, data trackers, email nurture sequences, LinkedIn discovery, social media content generation, content deployment dashboard with SEND/DELETE, unified cross-product pipeline, and cron-based orchestration.
-version: 1.6.0
+version: 2.0.0
 author: Hermes Agent
 tags:
   - sales
@@ -34,13 +34,42 @@ This retrieves previous decisions, domain-specific context, and lessons learned 
 
 Use this skill when building or modifying lead-to-revenue pipeline systems, dashboards, enrichment engines, cron orchestration, or content deployment views. Covers setup from scratch AND ongoing operations.
 
-## Architecture
+## Architecture (v2 — 5 Product Pipelines)
 
 ```
 LEAD SOURCE → CAPTURE → SCORE → NURTURE → CONVERT → ONBOARD
 AgentMail inboxes (1 per product line)
-9 Operation Pipelines: lead-gen, promo-gen, book-ideation, book-pub, saas-ideation, saas-deploy, saas-sales, consult-ideation, consult-sales
+5 Product Pipelines: books-creation, books-marketing, saas, human-consulting, virtual-consulting
 ```
+
+**2026-06-09 Migration: 9 → 5 pipelines.** The old architecture had separate creation/publishing/deployment pipelines per product line (9 total). The new architecture collapses to 5 product-aligned pipelines, each representing an end-to-end go-to-market flow. See `references/pipeline-migration-2026-06-09.md` for the full mapping of old→new pipeline IDs and stage remapping.
+
+## The 5 Product Pipelines (8 Stages Each)
+
+### 2.1a Books Creation Pipeline
+**Stages:** Review Market → Build Book Bible → Build Framework → Write → Enrich → Edit → Prep for KDP → Finish
+**Products:** No Blue Sky series (5 vols), The Lunar Foundation series (3 vols), Tomorrow Remembered, AI That Works for Small Business
+**Email:** bigtruck444@agentmail.to | **Nurture:** 4-email sequence over 14 days
+
+### 2.1b Books Marketing Pipeline
+**Stages:** Marketing Content → Infographic → Discovery → Promote → Outreach → Nurture Sequence → Analyze Results → Optimize Campaigns
+**Products:** Same as Books Creation
+**Email:** bigtruck444@agentmail.to | **Nurture:** 4-email sequence over 14 days
+
+### 2.2 SaaS Pipeline
+**Stages:** Identified → Contacted → Qualified → Process → Demo/Free Trial → Complete Transaction → Followup → Upsell/Cross-sell
+**Products:** Project Hypatia Pro ($99/mo), PM Accelerator ($69/mo), VibraEngineer ($29/mo)
+**Email:** carefulvehicle192@agentmail.to | **Nurture:** 7-email sequence over 21 days
+
+### 2.3a Human Consulting Pipeline
+**Stages:** Lead → Contact → Qualified → Intent → Strategy Session → Proposal Sent → Negotiation → Closed Won
+**Services:** Strategy Session ($199), Deep-Dive ($1,499), Full Transformation ($3,999)
+**Email:** crowdedbutton536@agentmail.to | **Nurture:** 5-email sequence over 10 days
+
+### 2.3b Virtual Consulting Pipeline
+**Stages:** Lead → Contacted → Qualifier → Buy → Process → Deliverables → Edit → Complete Delivery
+**Products:** Strategy Session ($199), Deep-Dive ($1,499), Full Transformation ($3,999)
+**Email:** backdoor@mifeco.com | **Nurture:** None (self-service via web)
 
 ## Pipeline Operations Data Layer (Shared State JSON)
 
@@ -98,7 +127,7 @@ The dashboard at `pipeline-engine/dashboard/pipeline-dashboard.html` follows a d
 2. **☁️ SaaS Applications** — Cards with GitHub/prod/local links, online/offline status dots
 3. **💼 Virtual Consulting** — Tier pricing grid, pipeline flow modal
 4. **📊 Lead & Promotion** — Cross-pipeline stats, outreach engine status, nurture sequence status
-5. **⚙️ Pipeline Operations Center** — 9 pipeline cards with run/pause/stop controls, progress bars, monthly thresholds, cron job mapping, skills display, and flow diagram modal
+5. **⚙️ Pipeline Operations Center** — 5 pipeline cards (books-creation, books-marketing, saas, human-consulting, virtual-consulting) with run/pause/stop controls, progress bars, monthly thresholds, cron job mapping, skills display, and flow diagram modal
 6. **🩺 Pipeline Health** — Per-pipeline operational status cards
 
 ### Outreach Dashboard (Send Interface)
@@ -172,7 +201,7 @@ All cron jobs are read-only. They report what needs doing; humans/CEO agent make
   3. In test mode: writes to `mock-inbox.json` for review
   4. In production mode: calls the WordPress REST endpoint for real sending
   Without this, leads stay at "Lead Inbox" forever regardless of how many Send buttons are clicked
-- **Registry format variance** — May use aggregate counts or individual entries; handle both
+- **9 pipelines → 5 product pipelines migrated 2026-06-09** — Pipeline data files now use `books-creation`, `books-marketing`, `saas`, `human-consulting`, `virtual-consulting` IDs. Stage arrays, lead mappings, and dashboard state JSON all updated in lockstep.
 - **JSON patch escape issues** — Write files fresh when body contains escaped newlines
 - **Pipeline data and dashboard arrays must stay in sync** — Always update both
 - **Content Command Center may not be deployed** — The spec-defined `content-command-center.html` may not exist. Check first: if absent, use/update `outreach-dashboard.html` which has the mode toggle and mock inbox viewer built-in
@@ -182,3 +211,17 @@ All cron jobs are read-only. They report what needs doing; humans/CEO agent make
 - **Content generator references Ghost CMS, but site runs WordPress** — `pipeline-engine/data/content-generator.py` contains Ghost API constants and calls. It will fail against the WordPress REST API. Either adapt the generator to use WordPress endpoints (`/wp-json/wp/v2/posts`) or use generic HTTP posting. Same issue affects `backlink-acquisition.py`.
 - **Auto-advance rules in JSON aren't executed** — `pipeline-saas.json` defines `auto_advance_rules` (e.g., stage 1→2 after 7 days), but `daily-pipeline-analysis.py` has no code path to read or execute these rules. Leads with `stage: 1` and `created_at` older than 7 days will NOT auto-advance. Either implement auto-advance in the orchestrator or advance leads manually via the outreach dashboard.
 - **Pipeline summary counts don't match actual lead stages** — `pipeline-consulting.json` summary shows `"lead": 10` but only 1 lead is actually at stage 2 (`"contacted"`). The summary object is not recalculated when individual lead stages change. Always count actual lead stages from the `leads` array, never trust summary counts.
+
+## DreamHost Pipeline Dashboard Deployment
+
+The pipeline dashboard lives at `pipeline-engine/dashboard/` and is deployed to `mifeco.com/admin/` via rsync over SSH. Use the `sync_dashboard.py` script:
+
+```bash
+cd /home/bob/.hermes/pipeline-engine && python3 scripts/sync_dashboard.py
+```
+
+This uses pexpect to handle the SSH password from `~/.hermes/.env` (DREAMHOST_PASSWORD var). The password is for `dh_mwpxuu@iad1-shared-b8-42.dreamhost.com`.
+
+**Key:** Always sync both data JSON files AND the HTML dashboard AND the SVG flows in one rsync run. The dashboard HTML fetches JSON via `fetch()` at runtime, so stale JSON = stale display.
+
+**Cleanup old files:** Use `scripts/cleanup_dreamhost.py` to remove obsolete SVG/HTML files that rsync alone won't delete (rsync additive by default, not --delete).

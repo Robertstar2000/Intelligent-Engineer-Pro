@@ -72,7 +72,75 @@ If `model.model` is a comma-separated string like `"model-a:free, model-a"`, it 
 ### Config version matters
 The `model:` section must be a dict, not a flat string. Older configurations may have `model: "some-model"` as a bare string at the top level — the code handles both formats.
 
-## Verification
+## Codex OAuth Provider Setup
+
+To configure OpenAI Codex as a delegation provider using an existing OAuth token:
+
+### 1. auth.json structure
+
+The token must be stored in `~/.hermes/auth.json` under `providers` (NOT just `credential_pool`):
+
+```json
+{
+  "version": 1,
+  "providers": {
+    "openai-codex": {
+      "tokens": {
+        "access_token": "eyJhbG...",
+        "refresh_token": null,
+        "token_type": "Bearer"
+      },
+      "last_refresh": "2026-06-08T15:43:15.804728+00:00",
+      "auth_method": "oauth_external"
+    }
+  },
+  "credential_pool": {
+    "openai-codex": [
+      {
+        "id": "...",
+        "label": "mifecoinc@gmail.com",
+        "auth_type": "oauth",
+        "priority": 0,
+        "source": "device_code",
+        "base_url": "https://chatgpt.com/backend-api/codex",
+        "last_refresh": "2026-06-08T15:43:15.804728+00:00"
+      }
+    ]
+  }
+}
+```
+
+### 2. config.yaml delegation section
+
+```yaml
+delegation:
+  subagent_providers:
+    codex:
+      provider: openai-codex
+      model: openai-codex
+      api_mode: codex_responses
+      base_url: https://chatgpt.com/backend-api/codex
+      child_timeout_seconds: 600
+      max_iterations: 50
+```
+
+### 3. Environment variable
+
+Ensure `CODEX_OAUTH_TOKEN` is exported in `~/.bashrc` or `~/.hermes/.env`.
+
+### 4. Verification
+
+```bash
+hermes doctor
+# Should show: ✓ OpenAI Codex auth (logged in)
+```
+
+### Pitfalls
+- The `providers` section is where OAuth tokens go; `credential_pool` is for API keys
+- The gateway overwrites `auth.json` on restart — use `hermes auth add` or edit while gateway is stopped
+- `hermes doctor --fix` will show "No Codex credentials stored" if only in `credential_pool` — it reads from `providers`
+
+## Config Verification
 
 ```bash
 cd ~/.hermes && python3 -c "

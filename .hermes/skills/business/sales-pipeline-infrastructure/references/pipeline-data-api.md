@@ -74,15 +74,18 @@ Returns all mock inbox emails (test mode only).
 
 Clears all entries from the mock inbox. Returns `{"success": true, "message": "Mock inbox cleared"}`.
 
-## Stage Advancement Details
+## Stage Advancement Details (v2 — 5 Product Pipelines)
 
 Each product pipeline has different field names for stage tracking:
 
 | Pipeline | Stage 1 | Stage 2 | ID field | Stage field |
 |----------|---------|---------|----------|-------------|
-| books | "Lead Inbox" (id=1) | "Contacted" (id=2) | `id` (e.g. "B-001") | `current_stage` / `current_stage_name` |
+| books-marketing | "Marketing Content" (id=1) | "Infographic" (id=2) | `id` (e.g. "B-001") | `current_stage` / `current_stage_name` |
 | saas | "Identified" (id=1) | "Contacted" (id=2) | `id` (e.g. "S-001") | `stage` |
-| consulting | "lead" (id=1) | "contacted" (id=2) | `id` (e.g. "C-001") | `stage` / `status` |
+| human-consulting | "Lead" (id=1) | "Contact" (id=2) | `id` (e.g. "C-001") | `stage` / `status` |
+| virtual-consulting | "Lead" (id=1) | "Contacted" (id=2) | `id` (e.g. "C-0xx") | `stage` / `status` |
+
+**Note:** books-creation pipeline (manuscript production) does NOT use lead advancement — it tracks manuscript progress through writing stages via filesystem scans, not API calls.
 
 The API matches leads by name/company (substring), not by pipeline-specific ID, since the outreach dashboard uses a separate LEADS array.
 

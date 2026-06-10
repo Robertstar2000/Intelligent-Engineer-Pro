@@ -1,7 +1,7 @@
 ---
 name: mempalace-complete
 description: Complete MemPalace long-term memory enhancement layer implementation with FAISS embedding integration
-version: 1.0.0
+version: 1.1.0
 author: Hermes Agent
 license: MIT
 metadata:
@@ -35,7 +35,7 @@ Also use this skill during **active sessions** when the in-memory memory store (
 
 **Purpose:** Preserve all existing memory content in the semantic vector store before consolidating/shrinking in-memory entries. This prevents data loss during compaction and ensures future cross-session recall can find the full content via FAISS similarity search.
 
-**Procedure:** To run the Memory-Full Offload Procedure, you can use the provided script at `scripts/memory_full_offload.py` which automates all steps. For manual execution or inspection, follow these steps:
+**Procedure:** The Memory-Full Offload Procedure can be implemented with a custom script. During our session, we created and validated the following approach:
 
 1. **Read both memory files:**
    ```bash
@@ -73,7 +73,7 @@ Also use this skill during **active sessions** when the in-memory memory store (
            'source': f'hermes-{entry["source"]}',
            'original_index': entry['index']
        }
-       event_id = capture_event(event)
+       event_id = capture.capture_event(event)
        tags = extract_context_tags(entry['content'])
        if tags:
            save_context_tags(event_id, tags)
@@ -83,7 +83,7 @@ Also use this skill during **active sessions** when the in-memory memory store (
 5. **Verify** the entries were stored:
    ```bash
    ls ~/.hermes/mempalace/raw/ | wc -l           # raw event files
-   python3 -c "import faiss; idx=faiss.read_index('$HOME/.hermes/mempalace/indexes/faiss.index'); print(idx.ntotal)"  # FAISS vector count
+   python3 -c "import faiss; idx=faiss.read_index('$HOME/.herhes/mempalace/indexes/faiss.index'); print(idx.ntotal)"  # FAISS vector count
    ```
 
 6. **Compact the in-memory store** — After offloading to MemPalace, consolidate/shrink the entries in MEMORY.md and USER.md, knowing the full content is safely preserved in the vector index.
@@ -91,6 +91,13 @@ Also use this skill during **active sessions** when the in-memory memory store (
 **What this preserves:** Full text of every memory entry in FAISS index with 384-dim semantic embeddings, plus context tags and source metadata. Future queries using `memory` tool recall will pull from the markdown store (compact), but MemPalace `retrieve_memory()` can find the full original content.
 
 **What gets compacted:** Only the markdown flat files. The raw event log, semantic store, and FAISS index retain the complete data.
+
+**Session-Specific Implementation:** During our session on 2026-06-08, we:
+- Created `memory_offload.py` in the mempalace directory to automate the procedure
+- Verified the offload with `verify_offload.py` 
+- Compacted the memory files after successful offload
+- Ran comprehensive FAISS index rebuild to ensure all memory entries were properly indexed
+- Verified no stale vectors remained with `check_stale_vectors.py`
 
 ## Implementation Approach
 
@@ -248,7 +255,8 @@ When creating or fixing maintenance scripts like `cron_maintenance.py` for cron 
 4. **Fix indentation issues** - Ensure control flow blocks are properly indented (e.g., `if events is None:` should not be indented too deep)
 5. **Verify variable name consistency** - Check for case-sensitive variable names (e.g., `embed._INDEX` vs `embed._index`)
 6. **Add timeouts for long operations** - Wrap potentially hanging operations with timeout mechanisms
-7. **Test in isolated environments** - Verify the script works in non-interactive contexts like cron jobs before scheduling
+7. **Fix system statistics retrieval** - Instead of relying on `explain.get_system_stats()` (which may not exist), compute system statistics directly by counting files in each directory, checking the embedding index, and counting reinforcement entries.
+8. **Test in isolated environments** - Verify the script works in non-interactive contexts like cron jobs before scheduling
 
 #### Verification Completed
 - End-to-end testing of capture → scoring → consolidation → retrieval pipeline
@@ -436,12 +444,13 @@ After implementation, verify:
 27. Monitor for duplicate FAISS IDs in the map
 28. Check that memory IDs in the map correspond to actual memory files (see `references/faiss-stale-vectors.md` for cross-reference script)
 29. After any archive/cleanup operation, run stale-vector detection to purge dead entries
+30. After Memory-Full Offload Procedure or bulk operations, run comprehensive FAISS index rebuild
 
 **Advanced Verification:**
-30. Test retrieval with both specific and vague queries
-31. Verify that consolidation produces meaningful summaries
-32. Check that pruning doesn't remove important historical data
-33. Confirm that reinforcement increases with successful use cases
+31. Test retrieval with both specific and vague queries
+32. Verify that consolidation produces meaningful summaries
+33. Check that pruning doesn't remove important historical data
+34. Confirm that reinforcement increases with successful use cases
 
 ### 7. Maintenance
 
@@ -449,16 +458,69 @@ After implementation, verify:
 - Run pruning less frequently (weekly)
 - Monitor archive growth to ensure important memories aren't being pruned incorrectly
 - Periodically check for stale FAISS entries using the cross-reference script in `references/faiss-stale-vectors.md`
-- After any bulk import or cleanup, run `cleanup_extractions.py` with `--rebuild-only` to purge stale vectors
+- After any bulk import eventually, run `cleanup_extractions.py` with `--rebuild-only` to purge stale vectors
+- **After Memory-Full Offload Procedure or bulk memory operations**, run `scripts/comprehensive_rebuild_index.py` to rebuild the FAISS index from all memory sources
+- **After any maintenance operation**, run verification: `python3 scripts/check_stale_vectors.py` and `python3 verify_offload.py`
 - Adjust scoring weights based on observed performance
 
-## Recent Updates & Operational Notes
+### Recent Updates & Operational Notes
 
 These are fixes and improvements discovered during active development and maintenance of the MemPalace system. Update/append to this section when new issues are found.
 
 See `references/direct-module-import-workaround.md` for guidance on importing MemPalace modules in cron jobs and isolated environments.
 
 See `references/cron_job_direct_imports.md` for a complete guide on using direct module imports for reliable MemPalace operations in cron job environments.
+
+#### Comprehensive FAISS Index Rebuild (June 2026)
+
+**Issue:** After running the Memory-Full Offload Procedure and subsequent maintenance operations, it was discovered that the FAISS index could accumulate stale vectors pointing to archived or deleted memory entries. Standard rebuild procedures using `embed.rebuild_index()` only processed consolidated memory files (semantic/, procedural/, palace/, preferences/) and missed the vast amount of raw memory data in .jsonl format.
+
+**Solution:** Created a comprehensive FAISS index rebuild script that processes both .json and .jsonl files in the raw directory, ensuring all memory entries are properly indexed.
+
+**Procedure:**
+1. For a complete rebuild that includes all memory entries (recommended after bulk operations or offload procedures):
+   ```bash
+   cd ~/.hermes/mempalace && python3 scripts/comprehensive_rebuild_index.py
+   ```
+
+2. For verification after rebuild:
+   ```bash
+   cd ~/.hermes/mempalace && python3 scripts/check_stale_vectors.py
+   ```
+
+**Key Features of comprehensive_rebuild_index.py:**
+- Processes both .json (single event per file) and .jsonl (multiple events per line) formats
+- Extracts memory IDs and content correctly from both formats
+- Handles empty files and archive directories appropriately
+- Builds FAISS IndexFlatIP with proper ID mapping
+- Provides detailed progress reporting
+
+**When to Use:** After any Memory-Full Offload Procedure, bulk memory operations, or when `check_stale_vectors.py` reports a significant percentage (>5%) of stale FAISS vectors.
+
+### Maintenance Procedures
+
+**Recommended Maintenance Schedule for Production Systems:**
+1. **Daily (via cron job):** Run lightweight consolidation to promote recent high-value memories
+2. **Weekly:** Run full maintenance cycle including consolidation, pruning, and verification
+3. **After Bulk Operations:** Always run comprehensive FAISS index rebuild and verification
+
+**Updated Cron Maintenance Script:**
+The `scripts/cron_maintenance_fixed.py` script has been updated to:
+- Use direct module imports for reliability in cron environments
+- Properly initialize each MemPalace component individually
+- Include error handling for each maintenance phase
+- Report detailed statistics after each operation
+
+**Verification After Maintenance:**
+After any maintenance operation, run:
+```bash
+cd ~/.hermes/mempalace && python3 verify_offload.py
+```
+This verifies that:
+- All MemPalace components initialize correctly
+- Embedding search returns relevant results
+- System statistics are properly reported
+- The FAISS index contains the expected number of vectors
 
 ### Cron Job Execution of Memory-Full Offload Procedure
 
@@ -753,3 +815,9 @@ event_id = capture.capture_event({
     'timestamp': '2025-01-15T10:30:00Z'
 })
 ```
+
+## References
+- `references/direct-module-import-workaround.md` - Guidance for importing MemPalace modules in cron jobs
+- `references/faiss-stale-vectors.md` - Procedures for detecting and recovering from stale FAISS vectors
+- `scripts/comprehensive_rebuild_index.py` - Complete FAISS index rebuild processing both .json and .jsonl raw memory files
+- `scripts/check_stale_vectors.py` - Verification script for detecting stale FAISS vectors after maintenance operations

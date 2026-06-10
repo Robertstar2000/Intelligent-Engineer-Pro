@@ -78,14 +78,36 @@ def main():
     
     # Get system statistics
     try:
-        print("\nGetting system statistics...")
-        stats = explain.get_system_stats()
+        print("\\nGetting system statistics...")
+        # Directory counts
+        dirs = {}
+        for subdir in ['raw', 'semantic', 'episodic', 'procedural', 'preferences', 'indexes', 'palace']:
+            dir_path = os.path.join(storage_path, subdir)
+            if os.path.exists(dir_path):
+                try:
+                    files = [f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))]
+                    dirs[subdir] = len(files)
+                except Exception:
+                    dirs[subdir] = 0
+            else:
+                dirs[subdir] = 0
+        # Embedding stats
+        embed_initialized = embed._INDEX is not None
+        embed_vectors = embed._INDEX.ntotal if embed._INDEX is not None else 0
+        # Reinforcement stats
+        reinforcement_path = os.path.join(storage_path, 'reinforcement.jsonl')
+        reinforced_count = 0
+        if os.path.exists(reinforcement_path):
+            try:
+                with open(reinforcement_path, 'r') as f:
+                    lines = [line.strip() for line in f if line.strip()]
+                    reinforced_count = len(lines)
+            except Exception:
+                reinforced_count = 0
         print("✓ System stats:")
-        print(f"  Directories: {stats.get('directories', {})}")
-        embed_stats = stats.get('embedding', {})
-        print(f"  Embedding: {embed_stats.get('initialized', False)} (vectors: {embed_stats.get('total_vectors', 0)})")
-        reinf_stats = stats.get('reinforcement', {})
-        print(f"  Reinforcement: {reinf_stats.get('total_memories_reinforced', 0)} memories reinforced")
+        print(f"  Directories: {dirs}")
+        print(f"  Embedding: {embed_initialized} (vectors: {embed_vectors})")
+        print(f"  Reinforcement: {reinforced_count} memories reinforced")
     except Exception as e:
         print(f"✗ Error getting system stats: {e}")
         import traceback

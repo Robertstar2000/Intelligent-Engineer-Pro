@@ -64,6 +64,28 @@ When a user selects "I don't know / Not applicable" on any scale/choice question
 
 ## Backdoor Login Pattern
 
+The MIFECO admin dashboard (`index.php`) uses a single email + password gate (not multi-user).
+
+**Credentials:**
+- Email: `Robertstar@aol.com`
+- Password: `Rm2214ri#`
+
+**In `index.php`:**
+```php
+$ADMIN_EMAIL    = 'Robertstar@aol.com';
+$ADMIN_PASSWORD = 'Rm2214ri#';
+
+// In the POST handler:
+if ($_POST['email'] === $ADMIN_EMAIL && $_POST['password'] === $ADMIN_PASSWORD) {
+    $_SESSION['logged_in'] = true;
+    $_SESSION['login_time'] = time();
+    header('Location: ' . $redirect);
+    exit;
+}
+```
+
+**For the consulting pipeline specifically** (`register.php`), the backdoor skips Stripe payment:
+
 ```php
 // In register.php — BEFORE normal auth
 $backdoorEmail = 'Robertstar@aol.com';
@@ -77,6 +99,8 @@ if (strcasecmp($email, $backdoorEmail) === 0 && $password === $backdoorPw) {
 ```
 
 **In pay.php**: `if (!empty($_SESSION['backdoor'])) redirect('/survey.php');`
+
+> **Note**: There are two copies of `index.php` — one in `~/.hermes/pipeline-engine/dashboard/` and one in `~/FL-Hermes/pipeline-engine/dashboard/`. Always update both.
 
 ---
 

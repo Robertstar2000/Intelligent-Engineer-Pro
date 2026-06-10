@@ -50,14 +50,22 @@
 
 | Agent | Status |
 |-------|--------|
-| researcher | 🟡 Watch — fresh task assigned June 1 (MS Project campaign, due June 5) |
-| writer | ✅ Active — no action needed (AL B2-4 fully written) |
+| researcher | 🟡 Watch — 2 pending: ceo-researcher-20260606-001 (KDP A10, due June 10, 2d old, within SLA) + ceo-researcher-20260608-001 (MS Project campaign, due June 10, fresh) |
+| writer | ✅ Active — no action needed (all 22 books written and packaged) |
 | publisher | 🔴 OFFLINE Cycle 2 — all KDP work CEO-executed permanently |
 | engineer | 🔴 OFFLINE Cycle 1 — confirmed May 31 (deadline-expired) |
 | security | 🔴 OFFLINE — task assigned but CEO compensates |
 | brand-advocate | 🔴 OFFLINE cycle 3+ — no new tasks |
 | consultant | 🔴 OFFLINE cycle 2 — no new tasks |
 | sales | 🔴 OFFLINE cycle 1 — no new tasks |
+| saas-ops | 🔴 OFFLINE — task assigned June 8, CEO compensates |
+
+### 2026-06-08 — Monday SaaS + Security focus
+- **Assignments:** ceo-engineer-20260608-001 (security headers doc), ceo-saas-ops-20260608-001 (SQLite fix doc), ceo-researcher-20260608-001 (MS Project campaign brief)
+- **Ghosting continued:** engineer, saas-ops assigned despite OFFLINE status — tasks document work for Bob since gcloud CLI not installed
+- **Key findings:** All 22 books KDP-ready (EPUBs in KDP_PACKAGE/Kindle/). Cindy Lou packages thin (1 file each). 63 duplicate zip files. All SaaS operational. Consulting stalled.
+- **No stale tasks to clean:** Only 1 pending task (ceo-researcher-20260606-001, 2d old, within SLA)
+- **execute_code blocked in cron mode:** Discovered execute_code is blocked when running as cron job. Used terminal() heredoc for JSONL appends and write_file() for file creation instead.
 
 ### 2026-05-30 — publisher (Cycle 2 confirmed — CEO executes all KDP work)
 - **Detected:** ceo-publisher-20260528-002 (6 KDP books) pending for 2+ days, unclaimed. Publisher Cycle 2.

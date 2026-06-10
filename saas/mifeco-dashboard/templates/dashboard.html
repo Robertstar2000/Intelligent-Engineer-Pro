@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIFECO Virtual Operations</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0e17; color: #e0e6f0; min-height: 100vh; }
+.container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+/* Header */
+.header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #1a2340; margin-bottom: 30px; }
+.header h1 { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, #00d4ff, #7b2ff7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.header .subtitle { color: #6b7a9c; font-size: 14px; }
+.header .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.header .status-dot.online { background: #00e676; }
+.header .time { color: #6b7a9c; font-size: 13px; }
+
+/* Section headers */
+.section { margin-bottom: 40px; }
+.section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.section-header h2 { font-size: 18px; font-weight: 600; color: #c0d0f0; }
+.section-header .badge { background: #1a2340; color: #6b7a9c; padding: 2px 10px; border-radius: 10px; font-size: 12px; }
+.section-line { flex: 1; height: 1px; background: linear-gradient(90deg, #1a2340, transparent); }
+
+/* SaaS Cards Grid */
+.saas-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+.saas-card { background: #111827; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; transition: all 0.2s; }
+.saas-card:hover { border-color: #334155; transform: translateY(-1px); }
+.saas-card .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.saas-card .card-icon { font-size: 28px; }
+.saas-card .card-title { font-size: 16px; font-weight: 600; color: #e0e6f0; margin: 8px 0 4px; }
+.saas-card .card-desc { font-size: 13px; color: #6b7a9c; line-height: 1.4; }
+.saas-card .card-status { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 10px; border-radius: 6px; }
+.saas-card .card-status.online { background: rgba(0, 230, 118, 0.1); color: #00e676; }
+.saas-card .card-status.offline { background: rgba(255, 82, 82, 0.1); color: #ff5252; }
+.saas-card .card-actions { display: flex; gap: 8px; margin-top: 14px; }
+.saas-card .card-actions a { text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; transition: all 0.2s; }
+.saas-card .card-actions .btn-local { background: #1e293b; color: #e0e6f0; border: 1px solid #334155; }
+.saas-card .card-actions .btn-local:hover { background: #334155; }
+.saas-card .card-actions .btn-prod { background: linear-gradient(135deg, #00d4ff22, #7b2ff722); color: #00d4ff; border: 1px solid #00d4ff33; }
+.saas-card .card-actions .btn-prod:hover { background: linear-gradient(135deg, #00d4ff33, #7b2ff733); }
+.saas-card .card-actions .btn-repo { background: transparent; color: #6b7a9c; border: 1px solid #2a3440; }
+.saas-card .card-actions .btn-repo:hover { border-color: #6b7a9c; color: #e0e6f0; }
+
+/* Books Grid */
+.books-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.book-card { background: #111827; border: 1px solid #1e293b; border-radius: 10px; padding: 16px; display: flex; align-items: center; gap: 14px; }
+.book-card .book-icon { font-size: 24px; }
+.book-card .book-info { flex: 1; }
+.book-card .book-title { font-size: 14px; font-weight: 500; color: #e0e6f0; }
+.book-card .book-status { font-size: 12px; color: #00e676; }
+
+/* Consulting */
+.consulting-banner { background: linear-gradient(135deg, #111827, #1a1f35); border: 1px solid #1e293b; border-radius: 12px; padding: 24px; display: flex; align-items: center; gap: 20px; }
+.consulting-banner .icon { font-size: 32px; }
+.consulting-banner .info h3 { font-size: 16px; font-weight: 600; color: #e0e6f0; margin-bottom: 4px; }
+.consulting-banner .info p { font-size: 13px; color: #6b7a9c; line-height: 1.4; }
+
+/* Loading */
+.status-loading { color: #6b7a9c; font-size: 12px; }
+
+/* Footer */
+.footer { text-align: center; padding: 30px 0; color: #2a3440; font-size: 12px; border-top: 1px solid #1a2340; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="container">
+  
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <h1>MIFECO Virtual Operations</h1>
+      <div class="subtitle">Books · SaaS · Virtual Consulting</div>
+    </div>
+    <div class="time" id="currentTime">Loading...</div>
+  </div>
+
+  <!-- SaaS Apps -->
+  <div class="section">
+    <div class="section-header">
+      <h2>📡 SaaS Product Line</h2>
+      <span class="badge" id="saasCount">{{ saas_apps|length }} apps</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="saas-grid" id="saasGrid">
+      {% for app in saas_apps %}
+      <div class="saas-card" data-slug="{{ app.slug }}">
+        <div class="card-header">
+          <div class="card-icon">{{ app.icon }}</div>
+          <div class="card-status" id="status-{{ app.slug }}">
+            <span class="status-loading">⟳ checking...</span>
+          </div>
+        </div>
+        <div class="card-title">{{ app.name }}</div>
+        <div class="card-desc">{{ app.description }}</div>
+        <div class="card-actions">
+          <a href="http://localhost:{{ app.local_port }}" target="_blank" class="btn-local">Local :{{ app.local_port }}</a>
+          <a href="{{ app.prod_url }}" target="_blank" class="btn-prod">Production →</a>
+          <a href="{{ app.repo }}" target="_blank" class="btn-repo">Repo</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Books -->
+  <div class="section">
+    <div class="section-header">
+      <h2>📚 Books</h2>
+      <span class="badge">{{ books|length }} titles</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="books-grid">
+      {% for book in books %}
+      <div class="book-card">
+        <div class="book-icon">{{ book.icon }}</div>
+        <div class="book-info">
+          <div class="book-title">{{ book.title }}</div>
+          <div class="book-status">{{ book.status }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Virtual Consulting -->
+  <div class="section">
+    <div class="section-header">
+      <h2>💼 Virtual Consulting</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="consulting-banner">
+      <div class="icon">🧠</div>
+      <div class="info">
+        <h3>AI & Business Strategy Consulting</h3>
+        <p>MIFECO provides AI-powered business transformation, technical architecture, and strategic advisory services for small to mid-size enterprises.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    MIFECO © {{ year }} · Hermes-powered Operations Dashboard
+  </div>
+</div>
+
+<script>
+function updateStatus() {
+  fetch('/api/status')
+    .then(r => r.json())
+    .then(statuses => {
+      for (const [slug, info] of Object.entries(statuses)) {
+        const el = document.getElementById('status-' + slug);
+        if (info.running) {
+          el.className = 'card-status online';
+          el.innerHTML = '<span>●</span> Running on :' + info.port;
+        } else {
+          el.className = 'card-status offline';
+          el.innerHTML = '<span>●</span> Offline';
+        }
+      }
+    })
+    .catch(() => {});
+}
+
+function updateTime() {
+  const now = new Date();
+  document.getElementById('currentTime').textContent = 
+    now.toLocaleString('en-US', { weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+updateStatus();
+updateTime();
+setInterval(updateStatus, 30000);
+setInterval(updateTime, 60000);
+</script>
+</body>
+</html>

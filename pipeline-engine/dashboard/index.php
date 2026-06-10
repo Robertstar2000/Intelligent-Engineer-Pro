@@ -3,7 +3,7 @@
  * MIFECO Admin — Password Gate
  * 
  * Single login gate that protects all admin dashboard pages.
- * Uses PHP sessions, password = Rm2214ri%%%%
+ * Uses PHP sessions, email = Robertstar@aol.com, password = Rm2214ri#
  * 
  * Features:
  * - Password-protected access to /admin/
@@ -14,7 +14,8 @@
 
 session_start();
 
-$ADMIN_PASSWORD = 'Rm2214ri%%%%';
+$ADMIN_EMAIL = 'Robertstar@aol.com';
+$ADMIN_PASSWORD = 'Rm2214ri#';
 $SESSION_TIMEOUT = 7200; // 2 hours
 $DASHBOARD_DIR = __DIR__;
 
@@ -40,7 +41,7 @@ if (isset($_GET['logout'])) {
 // Handle login
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
-    if ($_POST['password'] === $ADMIN_PASSWORD) {
+    if ($_POST['email'] === $ADMIN_EMAIL && $_POST['password'] === $ADMIN_PASSWORD) {
         $_SESSION['logged_in'] = true;
         $_SESSION['login_time'] = time();
         // Redirect to dashboard or specified page
@@ -50,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
         header('Location: ' . $redirect);
         exit;
     } else {
-        $error = 'Invalid password';
+        $error = 'Invalid email or password';
     }
 }
 
@@ -155,12 +156,27 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
                 <a href="pipeline-dashboard.html" class="menu-card">
                     <div class="icon">📊</div>
                     <div class="title">Pipeline Dashboard</div>
-                    <div class="desc">View all leads, stages, blockers across Books, SaaS & Consulting</div>
+                    <div class="desc">Leads, stages, blockers across Books, SaaS & Consulting</div>
                 </a>
                 <a href="content-command-center.html" class="menu-card">
                     <div class="icon">📱</div>
                     <div class="title">Content Command Center</div>
-                    <div class="desc">Manage social posts, emails, blog content — SEND & DELETE</div>
+                    <div class="desc">Blog posts, social media, emails — stats & management</div>
+                </a>
+                <a href="outreach-dashboard.html" class="menu-card">
+                    <div class="icon">📧</div>
+                    <div class="title">Outreach Dashboard</div>
+                    <div class="desc">Email campaigns, social outreach, brand advocacy</div>
+                </a>
+                <a href="kanban-dashboard.html" class="menu-card">
+                    <div class="icon">📋</div>
+                    <div class="title">Kanban Board</div>
+                    <div class="desc">Pipeline task board — Books, SaaS, Consulting, Marketing</div>
+                </a>
+                <a href="https://mifeco.com/consult/survey.php?backdoor=1" class="menu-card">
+                    <div class="icon">💼</div>
+                    <div class="title">Virtual Consulting</div>
+                    <div class="desc">Business assessment — backdoor login, skip payment</div>
                 </a>
                 <a href="https://mifeco.com/admin" target="_blank" class="menu-card">
                     <div class="icon">⚙️</div>
@@ -272,14 +288,15 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
 <body>
     <div class="login-box">
         <h1>🔐 MIFECO Admin</h1>
-        <p>Enter password to access dashboards</p>
+        <p>Enter credentials to access dashboards</p>
         
         <?php if ($error): ?>
             <div class="error">✗ <?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
         
         <form method="POST">
-            <input type="password" name="password" placeholder="Password" autofocus required>
+            <input type="email" name="email" placeholder="Email" autofocus required style="margin-bottom: 0.75rem;">
+            <input type="password" name="password" placeholder="Password" required>
             <button type="submit">Unlock</button>
         </form>
         <div class="hint">Authorized personnel only</div>

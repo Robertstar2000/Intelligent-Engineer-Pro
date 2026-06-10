@@ -28,7 +28,7 @@ The MIFECO dashboard ecosystem is served from `~/.hermes/pipeline-engine/dashboa
 
 | Page | URL | Purpose |
 |------|-----|---------|
-| **Pipeline CC** | `https://192.168.1.77:5543/pipeline-dashboard.html` | Pipeline Operations Center with 9 pipelines |
+| **Pipeline CC** | `https://192.168.1.77:5543/pipeline-dashboard.html` | Pipeline Operations Center with 5 pipelines |
 | **Outreach** | `https://192.168.1.77:5543/outreach-dashboard.html` | Lead outreach, send/delete controls |
 | **Hermes Agent** | `https://192.168.1.77:5543/hermes-dashboard.html` | Native Hermes dashboard launcher |
 
@@ -62,27 +62,27 @@ All dashboards read from a **single shared JSON file** `pipeline-state.json` ser
 - **Dashboard loading**: Both Pipeline CC and Outreach fetch it on page load via `fetch('pipeline-state.json')` and overlay the counts onto static defaults
 - **Cron**: Pipeline Ops Sync runs at 8:15 AM daily
 
-### pipeline-state.json structure:
+### pipeline-state.json structure (v2 — 5 Pipelines):
 ```json
 {
   "updatedAt": "ISO-timestamp",
   "pipelines": [
     {
-      "id": "lead-gen",
-      "icon": "🎯",
-      "name": "Lead Generation",
-      "health": "green",
-      "pct": 65,
-      "stages": ["Sources","Capture","Dedup","Enrich","Score","Route"],
+      "id": "books-creation",
+      "icon": "✍️",
+      "name": "Books Creation Pipeline",
+      "health": "yellow",
+      "pct": 60,
+      "stages": ["Review Market","Build Book Bible","Build Framework","Write","Enrich","Edit","Prep for KDP","Finish"],
       "currentStage": 4,
-      "items": 24,
-      "active": 18,
+      "items": 12,
+      "active": 6,
       "queued": 6,
-      "thresholds": { "monthlyTarget": 1500, "qualifyRate": 60, "enrichRate": 80 },
-      "cronJob": "pipeline-orchestrator-daily",
+      "thresholds": { "monthlyTarget": 60, "qualifyRate": 60, "enrichRate": 90 },
+      "cronJob": "ceo-daily-orchestrator",
       "cronSchedule": "0 8 * * *",
-      "skills": ["sales-pipeline-infrastructure", "pipeline-dedup-discovery"],
-      "dataSources": ["leads-registry.json", "pipeline-books.json"]
+      "skills": ["novel-writing", "manuscript-creation"],
+      "dataSources": ["~/books/", "pipeline-books.json"]
     }
   ],
   "contentSummary": {
@@ -120,6 +120,18 @@ Pipeline controls (Run/Pause/Stop state, threshold values) are persisted via `lo
 ## HTML Over SVG Pattern
 
 Interactive dashboards (buttons, modals, scrollable lists, persistence) must be **HTML pages**, not SVG. SVG is suitable only for static diagrams and flow charts. The outreach dashboard was originally an SVG but was replaced with full HTML to support send/delete buttons, scrolling, and state persistence.
+
+## Pipeline Flow SVG Pattern (8-Stage)
+
+Each pipeline has a static SVG flow diagram in `flows/<pipeline-id>.svg`. These are 8-stage horizontal diagrams with the first stage highlighted. See `references/pipeline-flow-svg-and-tabbed-dashboard.md` for the exact template including positioning, colors per pipeline, and arrow connectors.
+
+## Tabbed Kanban Dashboard Pattern
+
+The `pipeline-dashboard.html` uses a tabbed layout with 5 pipeline panels. Each panel shows: pipeline header with health stats, SVG flow diagram, product/service cards, email/nurture info, an 8-column kanban board with lead cards, and quick stats. Data is loaded via fetch() from the JSON data files. See `references/pipeline-flow-svg-and-tabbed-dashboard.md` for the full HTML/JS architecture.
+
+## Standalone Pipeline Kanban Board
+
+The `kanban-dashboard.html` is a **focused kanban-only variant** — no pipeline headers, flow diagrams, product cards, or email sections. Just 5 tabs, each with an 8-column board. Data comes from `kanban-data.php` (tasks array with `pipeline` + `stage` fields). Features: inline card expand/collapse, assignee/priority/search filters, role-color-coded assignee badges, 30s auto-refresh. See `references/standalone-kanban-task-board.md` for the full architecture, data contract, stage definitions, and render pattern.
 
 ## 9 Pipeline Operations Center
 

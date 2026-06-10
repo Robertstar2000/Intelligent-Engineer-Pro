@@ -367,6 +367,58 @@ for s in json.load(sys.stdin)['secrets']:
 
 Note: For secrets, `gh secret set` is dramatically simpler. If setting secrets is needed and `gh` isn't available, recommend installing it for just that operation.
 
+## 7.5 Switching Remote to a Different Repository
+
+When a local repo needs to point to a *different* GitHub repository (not just a different branch — a different repo entirely), follow this pattern:
+
+**Common scenarios:**
+- Repository was renamed on GitHub
+- Repo was split into dev/staging/production versions
+- You need to switch from a prototype repo to the production version
+- The repo was migrated to a different user/organization
+
+**Step-by-step:**
+
+```bash
+# 1. Check current remote
+git remote -v
+
+# 2. Update remote URL to the NEW repo
+git remote set-url origin git@github.com:owner/new-repo-name.git
+
+# 3. Fetch from the new remote (may force-update if histories are unrelated)
+git fetch origin
+
+# 4. Check the new remote's branch structure
+git branch -r
+
+# 5. Reset local branch to match the new remote's HEAD
+#    WARNING: This discards all local commits that aren't shared with the new remote
+git reset --hard origin/main
+
+# 6. Verify
+git log --oneline -3
+git remote -v
+ls -la | head -10
+```
+
+**Caveats:**
+- `git reset --hard` destroys uncommitted local changes — commit or stash first
+- If the old and new repos have unrelated histories, `git fetch` shows a forced update warning (`+` prefix in the refspec line). This is normal.
+- If the new remote has no `main` branch (e.g., `master`), adjust the branch name in step 5
+- The local directory name won't change — if the new repo has a different name, consider renaming: `mv ~/old-repo-name ~/new-repo-name`
+- Use `git remote -v` after the change to confirm the new URL
+
+**With GitHub CLI (`gh`):**
+
+If you need to verify the new repo exists first:
+
+```bash
+gh repo view owner/new-repo-name --json name,owner,defaultBranch
+```
+
+Then apply the same `git remote set-url origin` + `git fetch` + `git reset` pattern above.
+
 ## 8. Releases
 
 **With gh:**

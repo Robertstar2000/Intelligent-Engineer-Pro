@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MIFECO Kanban — Pipeline Task Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1a2332;
+      --border: #334155;
+      --text-primary: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --accent: #00ffcc;
+      --accent-dim: rgba(0,255,204,0.12);
+      --accent2: #667eea;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --orange: #f97316;
+      --info: #06b6d4;
+      --purple: #8b5cf6;
+      --blue: #3b82f6;
+      --cyan: #06b6d4;
+      --sidebar-w: 220px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.3);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      display: flex;
+      min-height: 100vh;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { opacity: 0.85; }
+
+    /* === HAMBURGER / OVERLAY === */
+    .hamburger {
+      display: none; position: fixed; top: 12px; left: 12px;
+      z-index: 200; font-size: 24px; cursor: pointer;
+      background: var(--bg-card); border: 1px solid var(--border);
+      width: 40px; height: 40px; border-radius: 8px;
+      text-align: center; line-height: 40px;
+    }
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+
+    /* === SIDEBAR === */
+    .sidebar {
+      position: fixed; top: 0; left: 0;
+      width: var(--sidebar-w); height: 100vh;
+      background: #0a0f1a; border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; z-index: 100; overflow-y: auto;
+    }
+    .sidebar-logo { padding: 24px 20px 20px; border-bottom: 1px solid var(--border); }
+    .sidebar-logo h1 { font-size: 16px; font-weight: 800; letter-spacing: 0.5px; color: var(--accent); }
+    .sidebar-logo span { font-size: 10px; color: var(--text-secondary); letter-spacing: 2px; text-transform: uppercase; }
+    .sidebar-nav { flex: 1; padding: 16px 0; }
+    .sidebar-nav a {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; color: var(--text-secondary);
+      font-size: 13px; font-weight: 500; transition: all 0.2s;
+      border-left: 3px solid transparent; cursor: pointer;
+    }
+    .sidebar-nav a:hover, .sidebar-nav a.active {
+      color: var(--text-primary); background: rgba(0,255,204,0.05);
+      border-left-color: var(--accent);
+    }
+    .sidebar-nav a .icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); font-size: 11px; }
+    .sidebar-footer a { color: var(--text-secondary); font-size: 11px; display: block; padding: 4px 0; }
+    .sidebar-footer a:hover { color: var(--accent); }
+
+    /* === MAIN === */
+    .main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; }
+    .container { max-width: 1500px; margin: 0 auto; padding: 28px 32px 40px; }
+
+    /* === HERO === */
+    .hero { margin-bottom: 24px; animation: fadeIn 0.6s ease; }
+    .hero h1 {
+      font-size: 28px; font-weight: 800;
+      background: linear-gradient(135deg, var(--text-primary), var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p { color: var(--text-secondary); font-size: 14px; margin-top: 2px; letter-spacing: 0.3px; }
+    .stat-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-top: 18px; }
+    .stat-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px 18px; text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .stat-card .stat-icon { font-size: 24px; margin-bottom: 4px; }
+    .stat-card .stat-number { font-size: 24px; font-weight: 700; }
+    .stat-card .stat-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+    /* === TABS === */
+    .tab-bar {
+      display: flex; gap: 4px; margin-bottom: 24px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 4px; overflow-x: auto;
+    }
+    .tab-btn {
+      flex: 1; min-width: 140px; padding: 10px 16px;
+      border: none; border-radius: 8px; background: transparent;
+      color: var(--text-secondary); font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+      text-align: center; white-space: nowrap;
+    }
+    .tab-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.04); }
+    .tab-btn.active { color: #fff; background: var(--bg-secondary); }
+    .tab-btn .tab-indicator {
+      display: block; width: 24px; height: 3px; border-radius: 2px;
+      margin: 6px auto 0; transition: all 0.2s;
+    }
+    .tab-btn.active .tab-indicator { width: 40px; }
+
+    /* === PIPELINE PANEL === */
+    .pipeline-panel { display: none; animation: fadeIn 0.4s ease; }
+    .pipeline-panel.active { display: block; }
+    .pipeline-panel .pl-header {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 18px 24px; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .pipeline-panel .pl-header .pl-icon { font-size: 32px; flex-shrink: 0; }
+    .pipeline-panel .pl-header .pl-info { flex: 1; min-width: 160px; }
+    .pipeline-panel .pl-header .pl-info h2 { font-size: 18px; font-weight: 700; }
+    .pipeline-panel .pl-header .pl-info p { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+    .pipeline-panel .pl-header .pl-stat {
+      text-align: center; padding: 6px 14px;
+      background: var(--bg-secondary); border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .pipeline-panel .pl-header .pl-stat .pl-num { font-size: 20px; font-weight: 700; }
+    .pipeline-panel .pl-header .pl-stat .pl-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* === TOOLBAR === */
+    .toolbar {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 16px; flex-wrap: wrap;
+      padding: 12px 16px; background: var(--bg-secondary);
+      border: 1px solid var(--border); border-radius: 10px;
+    }
+    .toolbar select, .toolbar input {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+      font-family: 'Inter', sans-serif;
+    }
+    .toolbar select:focus, .toolbar input:focus { border-color: var(--accent); }
+    .toolbar .btn {
+      padding: 0.4rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .toolbar .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .toolbar .btn-primary { background: var(--accent); color: #0f172a; border-color: var(--accent); }
+    .toolbar .btn-primary:hover { opacity: 0.9; }
+    .toolbar .refresh-timer {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-left: auto;
+    }
+
+    /* === KANBAN BOARD === */
+    .kanban-container {
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+    .kanban-board {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      min-height: 400px;
+    }
+    .kanban-col {
+      min-width: 260px;
+      max-width: 260px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+    .kanban-col .col-header {
+      padding: 0.7rem 1rem;
+      font-weight: 600;
+      font-size: 0.85rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .kanban-col .col-header .col-stage-num {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      font-weight: 400;
+      margin-right: 6px;
+    }
+    .kanban-col .col-header .col-count {
+      background: var(--bg-primary);
+      padding: 0.15rem 0.5rem;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .kanban-col .col-body {
+      padding: 0.5rem;
+      min-height: 60px;
+    }
+
+    /* === TASK CARD === */
+    .task-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .task-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,255,204,0.08);
+    }
+    .task-card .task-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+    .task-card .task-meta {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .task-card .task-assignee {
+      display: inline-block;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+    .task-card .task-assignee.writer {
+      background: rgba(59,130,246,0.15);
+      color: #60a5fa;
+    }
+    .task-card .task-assignee.marketing {
+      background: rgba(139,92,246,0.15);
+      color: #a78bfa;
+    }
+    .task-card .task-assignee.sales {
+      background: rgba(34,197,94,0.15);
+      color: #4ade80;
+    }
+    .task-card .task-assignee.consultant {
+      background: rgba(249,115,22,0.15);
+      color: #fb923c;
+    }
+    .task-card .task-assignee.analyst {
+      background: rgba(6,182,212,0.15);
+      color: #22d3ee;
+    }
+    .task-card .task-priority {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .priority-high { background: var(--danger); }
+    .priority-normal { background: var(--warning); }
+    .priority-low { background: var(--text-secondary); }
+
+    .task-card .task-id {
+      font-size: 0.65rem;
+      color: var(--text-secondary);
+      font-family: monospace;
+      margin-bottom: 0.2rem;
+    }
+    .task-card .task-body {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.4rem;
+      padding-top: 0.4rem;
+      border-top: 1px solid var(--border);
+      display: none;
+      line-height: 1.5;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .task-card .task-body.expanded {
+      display: block;
+    }
+    .task-card .task-created {
+      font-size: 0.65rem;
+      color: var(--text-secondary);
+      margin-left: auto;
+    }
+
+    /* === EMPTY STATE === */
+    .empty-state {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+    .empty-col {
+      text-align: center;
+      padding: 1.5rem 0.5rem;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+    }
+
+    /* === LOADING === */
+    .loading {
+      display: flex; align-items: center; justify-content: center;
+      padding: 60px 20px; color: var(--text-secondary); font-size: 1rem;
+      gap: 10px;
+    }
+    .loading .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    /* === ANIMATIONS === */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 900px) {
+      .hamburger { display: block; }
+      .overlay.open { display: block; }
+      .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; }
+      .container { padding: 16px; padding-top: 56px; }
+      .stat-row { grid-template-columns: 1fr 1fr; }
+      .kanban-col { min-width: 220px; max-width: 220px; }
+      .tab-btn { min-width: 100px; font-size: 11px; padding: 8px 10px; }
+    }
+
+    /* === SCROLLBAR === */
+    .kanban-container::-webkit-scrollbar { height: 8px; }
+    .kanban-container::-webkit-scrollbar-track { background: var(--bg-secondary); border-radius: 4px; }
+    .kanban-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .kanban-container::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    /* === FOOTER === */
+    .footer {
+      margin-top: 32px; padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 11px; color: var(--text-secondary);
+      text-align: center;
+    }
+    .footer a { color: var(--text-secondary); margin: 0 6px; }
+    .footer a:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<div class="hamburger" onclick="toggleSidebar()">☰</div>
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<!-- === SIDEBAR === -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <h1>MIFECO</h1>
+    <span>Pipeline Kanban</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="active" onclick="switchTab('books-creation'); closeSidebar()"><span class="icon">✍️</span> Books Creation</a>
+    <a onclick="switchTab('books-marketing'); closeSidebar()"><span class="icon">📣</span> Books Marketing</a>
+    <a onclick="switchTab('saas'); closeSidebar()"><span class="icon">💻</span> SaaS</a>
+    <a onclick="switchTab('human-consulting'); closeSidebar()"><span class="icon">🤝</span> Human Consulting</a>
+    <a onclick="switchTab('virtual-consulting'); closeSidebar()"><span class="icon">🌐</span> Virtual Consulting</a>
+    <hr style="border:none;border-top:1px solid #334155;margin:8px 20px;">
+    <a href="pipeline-dashboard.html" onclick="closeSidebar()"><span class="icon">📊</span> Pipeline Dashboard</a>
+    <a href="content-command-center.html" onclick="closeSidebar()"><span class="icon">📝</span> Content Command</a>
+    <a href="outreach-dashboard.html" onclick="closeSidebar()"><span class="icon">📈</span> Outreach</a>
+    <a href="hermes-dashboard.html" onclick="closeSidebar()"><span class="icon">🤖</span> Hermes</a>
+    <a href="index.html" onclick="closeSidebar()"><span class="icon">🏠</span> Hub</a>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="https://mifeco.com" target="_blank">🌐 MIFECO.com</a>
+    <a href="index.html">🏠 Back to Hub</a>
+  </div>
+</aside>
+
+<!-- === MAIN === -->
+<div class="main">
+  <div class="container">
+
+    <!-- HERO -->
+    <div class="hero">
+      <h1>📋 Kanban — Pipeline Task Board</h1>
+      <p>Tasks grouped by product pipeline and stage · Real-time task tracking</p>
+      <div class="stat-row" id="heroStats"></div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tab-bar" id="tabBar">
+      <button class="tab-btn active" onclick="switchTab('books-creation')" data-tab="books-creation">
+        ✍️ Books Creation
+        <span class="tab-indicator" style="background:#3b82f6"></span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('books-marketing')" data-tab="books-marketing">
+        📣 Books Marketing
+        <span class="tab-indicator" style="background:#8b5cf6"></span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('saas')" data-tab="saas">
+        💻 SaaS
+        <span class="tab-indicator" style="background:#22c55e"></span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('human-consulting')" data-tab="human-consulting">
+        🤝 Human Consulting
+        <span class="tab-indicator" style="background:#f97316"></span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('virtual-consulting')" data-tab="virtual-consulting">
+        🌐 Virtual Consulting
+        <span class="tab-indicator" style="background:#06b6d4"></span>
+      </button>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar" id="toolbar">
+      <select id="filter-assignee">
+        <option value="">All Assignees</option>
+      </select>
+      <select id="filter-priority">
+        <option value="">All Priorities</option>
+        <option value="high">🔴 High</option>
+        <option value="normal">🟡 Normal</option>
+        <option value="low">⚪ Low</option>
+      </select>
+      <input type="text" id="search-tasks" placeholder="🔍 Search tasks...">
+      <span class="refresh-timer" id="refreshTimer">Auto-refresh: 30s</span>
+    </div>
+
+    <!-- PIPELINE PANELS -->
+    <div id="pipelinePanels"></div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      MIFECO Pipeline Kanban Board · Data from kanban-data.php
+      <br><a href="pipeline-dashboard.html">📊 Pipeline Dashboard</a> · <a href="outreach-dashboard.html">📈 Outreach</a> · <a href="hermes-dashboard.html">🤖 Hermes</a>
+    </footer>
+
+  </div>
+</div>
+
+<script>
+// ======================================================================
+// PIPELINE DEFINITIONS
+// ======================================================================
+const PIPELINE_META = {
+  'books-creation': {
+    name: 'Books Creation Pipeline',
+    icon: '✍️',
+    description: 'From market research through writing, editing, and KDP publication',
+    color: '#3b82f6',
+    bg: 'rgba(59,130,246,0.1)',
+    stages: [
+      'Review Market', 'Build Book Bible', 'Build Framework', 'Write',
+      'Enrich', 'Edit', 'Prep for KDP', 'Finish'
+    ]
+  },
+  'books-marketing': {
+    name: 'Books Marketing Pipeline',
+    icon: '📣',
+    description: 'Content marketing, outreach, and campaign optimization for book promotion',
+    color: '#8b5cf6',
+    bg: 'rgba(139,92,246,0.1)',
+    stages: [
+      'Marketing Content', 'Infographic', 'Discovery', 'Promote',
+      'Outreach', 'Nurture Sequence', 'Analyze Results', 'Optimize Campaigns'
+    ]
+  },
+  'saas': {
+    name: 'SaaS Pipeline',
+    icon: '💻',
+    description: 'Lead generation through qualification, demo, transaction, and upsell',
+    color: '#22c55e',
+    bg: 'rgba(34,197,94,0.1)',
+    stages: [
+      'Identified', 'Contacted', 'Qualified', 'Process',
+      'Demo/Free Trial', 'Complete Transaction', 'Followup', 'Upsell/Cross-sell'
+    ]
+  },
+  'human-consulting': {
+    name: 'Human Consulting Pipeline',
+    icon: '🤝',
+    description: 'High-touch consulting — from lead to strategy session to closed won',
+    color: '#f97316',
+    bg: 'rgba(249,115,22,0.1)',
+    stages: [
+      'Lead', 'Contact', 'Qualified', 'Intent',
+      'Strategy Session', 'Proposal Sent', 'Negotiation', 'Closed Won'
+    ]
+  },
+  'virtual-consulting': {
+    name: 'Virtual Consulting Pipeline',
+    icon: '🌐',
+    description: 'Automated consulting — qualification, fulfillment, and delivery',
+    color: '#06b6d4',
+    bg: 'rgba(6,182,212,0.1)',
+    stages: [
+      'Lead', 'Contacted', 'Qualifier', 'Buy',
+      'Process', 'Deliverables', 'Edit', 'Complete Delivery'
+    ]
+  }
+};
+
+const PIPELINE_IDS = ['books-creation', 'books-marketing', 'saas', 'human-consulting', 'virtual-consulting'];
+
+// ======================================================================
+// STATE
+// ======================================================================
+let allTasks = [];
+let currentPipeline = 'books-creation';
+let refreshInterval;
+
+// ======================================================================
+// DATA FETCHING
+// ======================================================================
+async function fetchTasks() {
+  try {
+    const resp = await fetch('kanban-data.php');
+    if (resp.ok) return await resp.json();
+    return { tasks: [], error: 'API unavailable' };
+  } catch(e) {
+    return { tasks: [], error: e.message };
+  }
+}
+
+// ======================================================================
+// RENDER: Hero Stats
+// ======================================================================
+function renderHeroStats(data) {
+  const container = document.getElementById('heroStats');
+  const tasks = data && data.tasks ? data.tasks : [];
+  const pipelineCounts = {};
+  PIPELINE_IDS.forEach(id => { pipelineCounts[id] = 0; });
+  tasks.forEach(t => {
+    if (pipelineCounts.hasOwnProperty(t.pipeline)) {
+      pipelineCounts[t.pipeline]++;
+    }
+  });
+  const stats = [
+    { icon: '✍️', count: pipelineCounts['books-creation'] || 0, label: 'Books Creation', color: '#3b82f6' },
+    { icon: '📣', count: pipelineCounts['books-marketing'] || 0, label: 'Books Marketing', color: '#8b5cf6' },
+    { icon: '💻', count: pipelineCounts['saas'] || 0, label: 'SaaS', color: '#22c55e' },
+    { icon: '🤝', count: pipelineCounts['human-consulting'] || 0, label: 'Human Consulting', color: '#f97316' },
+    { icon: '🌐', count: pipelineCounts['virtual-consulting'] || 0, label: 'Virtual Consulting', color: '#06b6d4' }
+  ];
+  container.innerHTML = stats.map(s => `
+    <div class="stat-card">
+      <div class="stat-icon">${s.icon}</div>
+      <div class="stat-number" style="color:${s.color}">${s.count}</div>
+      <div class="stat-label">${s.label}</div>
+    </div>
+  `).join('');
+}
+
+// ======================================================================
+// RENDER: Pipeline Panels
+// ======================================================================
+function renderAllPanels() {
+  const container = document.getElementById('pipelinePanels');
+  container.innerHTML = PIPELINE_IDS.map(id => renderPanel(id)).join('');
+  // Activate first pipeline panel
+  document.querySelector('.pipeline-panel')?.classList.add('active');
+}
+
+function renderPanel(pipelineId) {
+  const meta = PIPELINE_META[pipelineId];
+  const color = meta.color;
+  const icon = meta.icon;
+  const tasks = allTasks.filter(t => t.pipeline === pipelineId);
+  const stageCounts = {};
+  meta.stages.forEach((_, i) => { stageCounts[i + 1] = 0; });
+  tasks.forEach(t => {
+    const s = parseInt(t.stage) || 1;
+    if (stageCounts.hasOwnProperty(s)) stageCounts[s]++;
+  });
+
+  return `
+  <div class="pipeline-panel" id="panel-${pipelineId}" data-pipeline="${pipelineId}">
+    <!-- Pipeline Header -->
+    <div class="pl-header" style="border-left: 4px solid ${color};">
+      <div class="pl-icon">${icon}</div>
+      <div class="pl-info">
+        <h2>${meta.name}</h2>
+        <p>${meta.description}</p>
+      </div>
+      <div class="pl-stat">
+        <div class="pl-num" style="color:${color}">${tasks.length}</div>
+        <div class="pl-label">Total Tasks</div>
+      </div>
+      <div class="pl-stat">
+        <div class="pl-num" style="color:${color}">${meta.stages.length}</div>
+        <div class="pl-label">Stages</div>
+      </div>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="kanban-container">
+      <div class="kanban-board" id="kanban-${pipelineId}">
+        ${meta.stages.map((stageName, idx) => renderColumn(pipelineId, idx + 1, stageName, tasks, color)).join('')}
+      </div>
+    </div>
+  </div>
+  `;
+}
+
+function renderColumn(pipelineId, stageNum, stageName, tasks, color) {
+  const stageTasks = tasks.filter(t => parseInt(t.stage) === stageNum);
+  const cards = stageTasks.map(t => renderCard(t)).join('');
+
+  return `
+  <div class="kanban-col" data-pipeline="${pipelineId}" data-stage="${stageNum}">
+    <div class="col-header" style="border-bottom-color: ${color}33;">
+      <span>
+        <span class="col-stage-num">${stageNum}.</span>
+        ${escapeHtml(stageName)}
+      </span>
+      <span class="col-count">${stageTasks.length}</span>
+    </div>
+    <div class="col-body">
+      ${cards || '<div class="empty-col">—</div>'}
+    </div>
+  </div>
+  `;
+}
+
+function renderCard(task) {
+  const assigneeClass = (task.assignee || '').toLowerCase();
+  const body = task.body || task.description || '';
+  const bodyPreview = body.length > 120 ? body.substring(0, 120) + '…' : body;
+
+  return `
+  <div class="task-card" onclick="toggleBody(this)"
+       data-assignee="${escapeHtml(task.assignee || '')}"
+       data-priority="${task.priority || 'normal'}"
+       data-search="${escapeHtml((task.title || '') + ' ' + (task.assignee || '') + ' ' + (task.id || ''))}">
+    ${task.id ? `<div class="task-id">${escapeHtml(task.id)}</div>` : ''}
+    <div class="task-title">${escapeHtml(task.title || task.task || 'Untitled')}</div>
+    <div class="task-meta">
+      <span class="task-priority priority-${task.priority || 'normal'}"></span>
+      ${task.assignee ? `<span class="task-assignee ${assigneeClass}">${escapeHtml(task.assignee)}</span>` : ''}
+      ${task.created_at ? `<span class="task-created">${escapeHtml(formatDate(task.created_at))}</span>` : ''}
+    </div>
+    ${body ? `<div class="task-body">${escapeHtml(body)}</div>` : ''}
+  </div>
+  `;
+}
+
+// ======================================================================
+// RERENDER current pipeline (after filter/refresh)
+// ======================================================================
+function rerenderCurrentPipeline() {
+  const panel = document.getElementById('panel-' + currentPipeline);
+  if (!panel) return;
+  const meta = PIPELINE_META[currentPipeline];
+  const color = meta.color;
+  const tasks = allTasks.filter(t => t.pipeline === currentPipeline);
+  const board = panel.querySelector('.kanban-board');
+  if (!board) return;
+
+  board.innerHTML = meta.stages.map((stageName, idx) => renderColumn(currentPipeline, idx + 1, stageName, tasks, color)).join('');
+  applyFilters();
+}
+
+// ======================================================================
+// TOGGLE BODY (click to expand/collapse)
+// ======================================================================
+function toggleBody(card) {
+  const body = card.querySelector('.task-body');
+  if (body) {
+    body.classList.toggle('expanded');
+  }
+}
+
+// ======================================================================
+// FILTERS
+// ======================================================================
+function applyFilters() {
+  const assignee = document.getElementById('filter-assignee').value.toLowerCase();
+  const priority = document.getElementById('filter-priority').value;
+  const search = document.getElementById('search-tasks').value.toLowerCase().trim();
+
+  document.querySelectorAll('#panel-' + currentPipeline + ' .task-card').forEach(card => {
+    const matchAssignee = !assignee || (card.dataset.assignee || '').toLowerCase() === assignee;
+    const matchPriority = !priority || card.dataset.priority === priority;
+    const matchSearch = !search || (card.dataset.search || '').toLowerCase().includes(search);
+    card.style.display = (matchAssignee && matchPriority && matchSearch) ? '' : 'none';
+  });
+
+  // Update column counts
+  document.querySelectorAll('#panel-' + currentPipeline + ' .kanban-col').forEach(col => {
+    const visibleCards = col.querySelectorAll('.task-card[style*="display: none"]');
+    const totalCards = col.querySelectorAll('.task-card').length;
+    // Always show the count badge as total, not filtered count
+  });
+}
+
+// ======================================================================
+// SWITCH TAB
+// ======================================================================
+function switchTab(pipelineId) {
+  currentPipeline = pipelineId;
+
+  // Update tabs
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === pipelineId);
+  });
+
+  // Update sidebar links
+  document.querySelectorAll('.sidebar-nav a').forEach(a => {
+    a.classList.toggle('active', a.textContent.trim().includes(PIPELINE_META[pipelineId]?.name?.replace(' Pipeline','') || pipelineId));
+  });
+
+  // Show/hide panels
+  document.querySelectorAll('.pipeline-panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'panel-' + pipelineId);
+  });
+
+  applyFilters();
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('open');
+}
+
+// ======================================================================
+// UTILITY
+// ======================================================================
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(String(text)));
+  return div.innerHTML;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const now = new Date();
+    const diff = Math.floor((now - d) / 1000);
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch(e) {
+    return dateStr;
+  }
+}
+
+// ======================================================================
+// EVENT LISTENERS
+// ======================================================================
+document.getElementById('filter-assignee').addEventListener('change', applyFilters);
+document.getElementById('filter-priority').addEventListener('change', applyFilters);
+document.getElementById('search-tasks').addEventListener('input', applyFilters);
+
+// ======================================================================
+// MAIN REFRESH
+// ======================================================================
+async function refresh() {
+  try {
+    const data = await fetchTasks();
+    allTasks = (data && data.tasks) ? data.tasks : [];
+    renderHeroStats(data);
+
+    // Update assignee filter
+    const assigneeSelect = document.getElementById('filter-assignee');
+    const currentVal = assigneeSelect.value;
+    const assignees = [...new Set(allTasks.map(t => t.assignee).filter(Boolean))].sort();
+    assigneeSelect.innerHTML = '<option value="">All Assignees</option>' +
+      assignees.map(a => `<option value="${a}">${escapeHtml(a)}</option>`).join('');
+    assigneeSelect.value = currentVal;
+
+    // Rebuild panels if first load, otherwise just rerender
+    if (!document.querySelector('.pipeline-panel')) {
+      renderAllPanels();
+      // Activate correct tab
+      switchTab(currentPipeline);
+    } else {
+      rerenderCurrentPipeline();
+    }
+
+    document.getElementById('refreshTimer').textContent = 'Auto-refresh: 30s';
+  } catch(e) {
+    console.warn('Refresh error:', e);
+  }
+}
+
+// ======================================================================
+// INIT
+// ======================================================================
+refresh();
+refreshInterval = setInterval(refresh, 30000);
+</script>
+</body>
+</html>

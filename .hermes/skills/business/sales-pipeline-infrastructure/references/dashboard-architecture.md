@@ -37,9 +37,14 @@ Sources: scan `/home/bob/books/` for manuscript.md, PDF, and FINAL_PACKAGE direc
 - mifeco.com Website — GitHub: `https://github.com/Robertstar2000/mifeco_web.git` — DreamHost (no production URL exposed)
 Local code paths: `/home/bob/saas/Project_Hypatia_Pro/`, `/home/bob/saas/Project_Management_Accelerator/`, `/home/bob/saas/VibraEngineer/`, `/home/bob/mifeco_web/`
 
-### Consulting Pipeline
-10 leads, 3 tiers ($199/$1,499/$3,999). AgentMail inbox: crowdedbutton536@agentmail.to
-Pipeline flow: Lead Intake → Web Enrichment → Email Nurture (5/10d) → Strategy Session → Upsell
+### Consulting Pipeline  
+8 leads (human consulting), 3 tiers ($199/$1,499/$3,999). AgentMail inbox: crowdedbutton536@agentmail.to  
+Pipeline flow: Lead → Contact → Qualified → Intent → Strategy Session → Proposal Sent → Negotiation → Closed Won  
+Nurture: 5 emails over 10 days
+
+### Virtual Consulting Pipeline
+No leads yet, 3 tiers ($199/$1,499/$3,999). Email: backdoor@mifeco.com  
+Pipeline flow: Lead → Contacted → Qualifier → Buy → Process → Deliverables → Edit → Complete Delivery
 
 ### Lead & Promotion
 Cross-pipeline stats. Links to Content Command Center and Outreach SVG dashboard.

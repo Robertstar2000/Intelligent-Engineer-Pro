@@ -1,11 +1,23 @@
-SaaS Stack (2026-06-07): 3 products on Cloud Run. MIFECO VibraEngineer ($19/mo, Intelligent-Engineer repo, port 3001), MIFECO PM Accelerator ($29/mo, Project-management-accelerator repo, port 3002), MIFECO Hypatia Pro ($29/mo, HypatiaPro repo, port 3003). Free/pro tiers + Stripe scaffold. "MIFECO" prefix ensures uniqueness. Start: ~/start-mifeco-saas.sh. FL-Hermes private repo for GitHub backup. Nightly backup cron cf9aad854695. SaaS GitHub backup cron 66b8c9411afe. WordPress integration at mifeco.com with /hypatia, /accelerator, /vibraengineer pages.
+## 5 Product Pipelines (rebuilt 2026-06-09)
+1. Books Creation (8 stages): Review Market → Bible → Framework → Write → Enrich → Edit → KDP Prep → Finish
+2. Books Marketing (8 stages): Content → Infographic → Discovery → Promote → Outreach → Nurture → Analyze → Optimize
+3. SaaS (8 stages): Identified → Contacted → Qualified → Process → Demo/Trial → Transaction → Followup → Upsell. Product HMAP Project Accelerator replaced PM Accelerator.
+4. Human Consulting (8 stages): Lead → Contact → Qualified → Intent → Strategy Session → Proposal → Negotiation → Closed Won
+5. Virtual Consulting (8 stages): Lead → Contacted → Survey → Research → Generate Reports → Quality Review → Delivery → Complete. **CORRECTED: reports are SINGLE PDFs NOT KDP packages.** Each PDF: integrated cover + cover letter + TOC + 30+ page report from survey+LLM+web search. SKILL.md v4.0.0.
+
+**User site content preferences (2026-06-09):**
+- Specific book titles listed, not generic series references
+- "Ai" caps used in: Ai Assessment, Ai generated strategic roadmap, Ai Solutions
+- Money-back guarantee emphasized on Virtual Consulting card
+- Human Expert Consulting is separate card with "Request a Quote" (no price)
+- Don't change CSS/formatting when replacing text
+- Blog link in main navigation
+- Source code at /mnt/usb_4tb/project-dirs/mifeco_web/mifeco-website/
 §
-MIFECO Virtual Consulting Credentials: SSH/SFTP, MySQL, Stripe (placeholders), Python API, backdoor login, file paths, site URLs. MemPalace Event ID: f1dd1327-83e7-49a4-a3c4-45171c1c94c8
+DreamHost backup saved to /mnt/usb_4tb/Mifeco_Web_Backup/ (~332 MB, 17,287 files). Backup script at scripts/backup_dreamhost.py uses pexpect to pass SSH password from .env to rsync.
 §
-MemPalace System: Storage at ~/.hermes/mempalace/, FAISS index (384-dim, IndexFlatIP), embedding model all-MiniLM-L6-v2, search via embed.search_embeddings(query, k=5), modules: capture.py, tag.py, embed.py
+Project-management-accelerator repo remote updated to production version: project-management-accelerator--production-version on GitHub. Local repo reset to production HEAD (full React/TS app with AWS Lambda, server, auth, Stripe).
 §
-2026-07-03 Skills disabled 90/202 to reduce system prompt tokens from ~5,704 to ~3,634 (-36%). Disabled ML ops, gaming, social media, email, red teaming, reference profiles, heavy dev workflows. Configured via yaml module (not hermes config set which mangles JSON-in-YAML). Skills snapshot cache cleared; gateway restart needed from shell.
+Pipeline management skill created: mifeco-pipeline-management (devops class). Covers JSON data files, SVG flow diagrams, kanban DB seeding, dashboard rendering, DreamHost sync with cleanup. Key pattern: rsync is additive, must run cleanup_dreamhost.py after removing files locally. Kanban DB at ~/.hermes/kanban.db with tenant=pipeline, stage=1-8 columns.
 §
-Memory management: When MEMORY.md gets full (near 2,200 char limit), offload to MemPalace. Don't keep shrinking entries. Use: import sys, os; sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace')); import embed; embed.init_embedding(...); embed.add_entry(text, tags=[...]). Always compact memory entries before adding new ones.
-§
-2026-07-03: Created FL-Hermes private GitHub backup repo (Robertstar2000/FL-Hermes). Backed up config (redacted), skills, mempalace, memories, scripts, cron jobs. .env excluded. SSH push works. gh CLI v2.83.0 installed at ~/.local/bin/gh. Added hermes-backup-pattern.md reference to github-repo-management skill.
+22 MIFECO book titles: No Blue Sky (5), Lunar Foundation (4), Tomorrow Remembered, AI That Works for Small Business, Age of Lightships (4), Cindy Lou (3), Owner's Manual for AI Agents, Crisis Ready Company = 20. Need to identify the remaining 2 titles.
