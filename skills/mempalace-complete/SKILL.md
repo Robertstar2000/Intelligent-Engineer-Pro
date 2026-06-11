@@ -459,7 +459,11 @@ After implementation, verify:
 - Monitor archive growth to ensure important memories aren't being pruned incorrectly
 - Periodically check for stale FAISS entries using the cross-reference script in `references/faiss-stale-vectors.md`
 - After any bulk import eventually, run `cleanup_extractions.py` with `--rebuild-only` to purge stale vectors
-- **After Memory-Full Offload Procedure or bulk memory operations**, run `scripts/comprehensive_rebuild_index.py` to rebuild the FAISS index from all memory sources
+- **After Memory-Full Offload Procedure or bulk memory operations**, run the FAISS index rebuild using the cleanup script:
+```bash
+cd ~/.hermes/mempalace && python3 scripts/cleanup_extractions.py --rebuild-only
+```
+This rebuilds the FAISS index from all meaningful memory events in the raw store.
 - **After any maintenance operation**, run verification: `python3 scripts/check_stale_vectors.py` and `python3 verify_offload.py`
 - Adjust scoring weights based on observed performance
 
@@ -480,8 +484,9 @@ See `references/cron_job_direct_imports.md` for a complete guide on using direct
 **Procedure:**
 1. For a complete rebuild that includes all memory entries (recommended after bulk operations or offload procedures):
    ```bash
-   cd ~/.hermes/mempalace && python3 scripts/comprehensive_rebuild_index.py
+   cd ~/.hermes/mempalace && python3 scripts/cleanup_extractions.py --rebuild-only
    ```
+   This rebuilds the FAISS index from all meaningful memory events in the raw store.
 
 2. For verification after rebuild:
    ```bash
@@ -819,5 +824,5 @@ event_id = capture.capture_event({
 ## References
 - `references/direct-module-import-workaround.md` - Guidance for importing MemPalace modules in cron jobs
 - `references/faiss-stale-vectors.md` - Procedures for detecting and recovering from stale FAISS vectors
-- `scripts/comprehensive_rebuild_index.py` - Complete FAISS index rebuild processing both .json and .jsonl raw memory files
-- `scripts/check_stale_vectors.py` - Verification script for detecting stale FAISS vectors after maintenance operations
+- `references/cron_job_direct_imports.md` - Complete guide to direct module imports for reliable MemPalace operations in cron jobs
+- `scripts/verify_system.py` - Verification script for detecting stale FAISS vectors and checking system health after maintenance operations

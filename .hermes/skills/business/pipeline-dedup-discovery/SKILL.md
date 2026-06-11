@@ -1,7 +1,7 @@
 ---
 name: pipeline-dedup-discovery
 description: Pipeline deduplication and discovery system — maintains a master lead registry, prevents duplicate leads from being added across pipeline runs, and provides a CLI dedup checker. Integrates with the daily pipeline orchestrator as Step 0.
-version: 1.2.0
+version: 1.3.0
 author: MIFECO
 tags: [pipeline, dedup, discovery, leads, crm, enrichment]
 related_skills:
@@ -181,7 +181,7 @@ Field name normalization across pipelines:
 |---------|---------------|--------------|
 | **Registry uses aggregate format** | `leads-registry.json` only stores pipeline-level IDs | Fix already applied: `dedup-check.py` auto-detects and builds dedup index from `unified-pipeline.json` |
 | **Per-pipeline `leads` arrays are POC SAMPLES, not exhaustive** | Registry shows books: 5 IDs, consulting: 4, saas: 4 — but actual lead counts are 3, 10, 5. These arrays appear to be proof-of-concept examples, not comprehensive lists. | NEVER use `len(registry['pipelines'][p]['leads'])` for count verification. Use `registry['pipelines'][p]['total_leads']` and `registry['total_leads_all']` as the authoritative counts. |
-| **Unified pipeline is a subset** | `unified-pipeline.json` may only contain 10 of 18 total leads — it's a separate convenience view, not a full reflection of all pipeline data. | Cross-reference unified IDs against per-pipeline lead IDs. Don't assume unified contains everything. |
+| **Unified pipeline has DIFFERENT data, not just fewer leads** | `unified-pipeline.json` stores enrichment/persona data with names, orgs, and emails that often DON'T MATCH the actual pipeline JSON records. Example: actual books B-001 is "Dr. Sarah Chen, Northfield Academy, schen@northfieldacademy.edu" but unified lead-001 is "Sarah Chen, Galactic Reads Bookstore, sarah@galacticreads.com". Because `dedup-check.py` builds its dedup index from unified-pipeline.json (when registry uses aggregate format), the name/org/email triples never match — so it returns `{"is_duplicate": false}` for EVERY actual pipeline lead. | Do NOT rely on `dedup-check.py` for verifying existing leads are in the registry — it will always return false for actual pipeline leads due to the unified data mismatch. For that, cross-reference pipeline IDs directly against the registry's `pipelines[].leads[]` arrays. The dedup check is only reliable for catching true duplicates of truly NEW leads that haven't been through the pipeline system before. After running dedup-check against any lead, verify by testing against a known-registered lead first to confirm the index reflects your actual data. |
 | **Enrichment engine `--report` misreads pipeline structure** | `enrichment-engine.py --report` calls `data.get(\"leads\", ...)` on each pipeline JSON file, but the actual data lives at `data[\"pipeline\"][\"leads\"]`. This means the report only finds 1 lead total (the first unrelated key) instead of all leads. | Use the enrichment engine for stale-detection heuristics only. For accurate per-lead enrichment status, read each pipeline JSON directly and check individual `enriched_at`, `verification_status`, and `contact_email` fields. The reusable `scripts/daily-pipeline-analysis.py` handles this correctly. |
 | **Case sensitivity** | "Acme Corp" vs "acme corp" | Lead_key normalizes to lowercase |
 | **Whitespace** | " John " vs "John" | Script trims all values |

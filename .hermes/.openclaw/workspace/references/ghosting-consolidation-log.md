@@ -98,3 +98,28 @@
 | researcher | 🟡 Cycle 1 — consolidated May 29. 1 pending task (ceo-researcher-20260528-001). Monitor for claiming. |
 | publisher | 🟡→🔴 Cycle 2 — CEO executing 6 KDP packages Saturday. If pattern continues, permanent CEO-executes. |
 | writer | ✅ N/A — books pipeline manuscripts complete |
+
+### 2026-06-10 — Wednesday Consulting + Sales push
+- **Ghosting cleanup:** ceo-writer-20260609-001 (KDP descriptions) + ceo-writer-20260609-002 (Author Central bio) + ceo-publisher-20260609-001 (submission readiness) marked failed as superseded.
+- **Writer rationale:** All 22 books complete — no writing or description work needed. Books are live on mifeco.com storefront. Superseding frees writer for potential future work but clears stale backlog.
+- **Publisher:** OFFLINE Cycle 2 confirmed. All KDP packaging work CEO-executed (Tomorrow_Remembered KDP_PACKAGE created today, Cindy Lou enriched).
+- **CEO-executed actions:** 
+  - Tomorrow_Remembered KDP_PACKAGE created (6.9MB, 12 files, 3 EPUBs)
+  - Cindy Lou Legal Capers enriched: marketing materials added (1 file -> 7 files each), re-zipped
+  - 5 new consulting lead profiles created (Subject, Gizmo, Simbie AI, Knowunity, Nexus Clinical)
+  - Market intelligence updated to June 2026 (supersedes stale May 2026 reference)
+  - Product inventory updated for June 10, 2026
+- **Researcher status:** 2 pending tasks (ceo-researcher-20260606-001 + -008-001) both due June 10. Researcher OFFLINE — tasks documenting needed work.
+- **Engineer/saas-ops:** Still pending from June 8. Document blocked deployments for Bob (gcloud CLI not installed).
+- **Active agents update:**
+  | Agent | Status |
+  |-------|--------|
+  | writer | ✅ Active (all books complete, stale tasks cleaned) |
+  | publisher | 🔴 OFFLINE Cycle 2 — all KDP work CEO-executed |
+  | researcher | 🔴 OFFLINE — 2 pending (both due today) |
+  | consultant | 🔴 OFFLINE Cycle 2 — 5 new leads created by CEO |
+  | sales | 🔴 OFFLINE Cycle 1 — pricing strategy filed |
+  | engineer | 🔴 OFFLINE — security headers task pending (blocked by gcloud) |
+  | saas-ops | 🔴 OFFLINE — SQLite fix task pending (blocked by gcloud) |
+  | brand-advocate | 🔴 OFFLINE Cycle 3+ — social posts filed as pending |
+  | security | 🔴 OFFLINE — CEO compensates |

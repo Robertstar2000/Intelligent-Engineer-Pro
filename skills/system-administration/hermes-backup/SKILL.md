@@ -159,6 +159,83 @@ fi
 - Must verify USB is mounted before running (`mountpoint /mnt/usb_4tb`)
 - Excludes caches, trash, `node_modules`, `.cache`, etc.
 
+## Restoring from Backups
+
+The backup skill also serves as the restore source when critical files or directories go missing from your project. Backups are stored as `.tar.gz` archives with a flat directory structure mirroring the live data.
+
+### Finding the Latest Backup
+
+```bash
+# Determine backup directory (same logic as create)
+if [ -z "$HERMES_BACKUP_DIR" ]; then
+    if mountpoint -q /mnt/usb_4tb 2>/dev/null; then
+        HERMES_BACKUP_DIR="/mnt/usb_4tb/backups"
+    else
+        HERMES_BACKUP_DIR="$HOME/backups"
+    fi
+fi
+
+LATEST=$(ls -t "$HERMES_BACKUP_DIR"/hermes-*.tar.gz 2>/dev/null | head -1)
+echo "Latest backup: $LATEST"
+```
+
+### Listing Contents to Find a Missing File
+
+```bash
+# Search for a specific file or directory inside the backup
+tar tzf "$LATEST" | grep -i "hermes_publish/config.py"
+tar tzf "$LATEST" | grep -i "hermes_publish/"          # entire directory
+tar tzf "$LATEST" | grep -i "books/\|manuscript"        # book-related files
+```
+
+### Restoring a Directory or File
+
+**Extract to a temp dir, then copy into place (safer — preserves permissions):**
+
+```bash
+TMPDIR=$(mktemp -d)
+tar xzf "$LATEST" -C "$TMPDIR"
+BACKUP_ROOT=$(basename "$LATEST" .tar.gz)
+
+# Restore a missing directory
+cp -a "$TMPDIR/$BACKUP_ROOT/books/hermes_publish/" /mnt/usb_4tb/books/hermes_publish/
+
+# Or restore a single file
+cp -a "$TMPDIR/$BACKUP_ROOT/books/hermes_publish/config.py" /mnt/usb_4tb/books/hermes_publish/
+
+rm -rf "$TMPDIR"
+```
+
+**Direct extraction to the target (with --strip-components):**
+
+```bash
+# Extract hermes_publish/ directory directly to /mnt/usb_4tb/books/
+tar xzf "$LATEST" -C /mnt/usb_4tb/books/ --strip-components=1 \
+  "$(basename "$LATEST" .tar.gz)/books/hermes_publish/"
+```
+
+### Common Restore Scenario: Missing Python Package Directory
+
+When a CLI entrypoint exists but its supporting package directory is missing, the error looks like:
+
+```
+ModuleNotFoundError: No module named 'hermes_publish.config'; 'hermes_publish' is not a package
+```
+
+**Fix:** Restore the package directory from the latest backup:
+
+1. Check backup: `tar tzf "$LATEST" | grep "hermes_publish/"`
+2. Restore with `cp -a` (preferred) or direct `tar xzf --strip-components=N`
+3. Verify: `ls hermes_publish/*.py`
+
+This applies generically to any missing project files — manuscripts, configs, scripts, or critical subdirectories captured in the last backup.
+
+### Pitfall: Archive Structure
+
+- The `tar.gz` stores everything under a timestamped root dir (e.g., `hermes-20260609-010550/`), then mirrors the live layout
+- Pay attention to `--strip-components` when extracting — the archive root is NOT the bare files
+- Always verify restored content before proceeding with downstream operations
+
 ## Pitfalls
 
 - `rsync -a --relative` with absolute source paths (e.g., `/home/bob/.hermes/config.yaml`) creates the full path hierarchy inside the backup directory, making it hard to verify or restore. Use `cp -a` for files and plain `rsync -a` for directories instead — this keeps a simple flat `.hermes/` structure in the archive.
@@ -170,7 +247,8 @@ fi
 - **Always verify the USB is mounted** before running (`mountpoint /mnt/usb_4tb`). If the drive is not mounted, backups will silently land on the SSD — defeating the purpose.
 - Do NOT back up the hermes-agent/ directory — it's 8.2GB and can be re-cloned from GitHub.
 - Ensure sufficient free disk space on the destination before running (at least 2x expected backup size).
-+ - The GitHub sync step (rsync) can take a long time for large .hermes directories and may time out in automated contexts. Consider increasing the timeout or running the sync in the background if using automation.
+- The GitHub sync step (rsync) can take a long time for large .hermes directories and may time out in automated contexts. Consider increasing the timeout or running the sync in the background if using automation.
+- If the backup directory path appears empty or incorrectly set (e.g., due to missing HERMES_BACKUP_DIR), the script may attempt to write to the root directory causing permission errors. Always verify that HERMES_BACKUP_DIR and BACKUP_DIR are set correctly before proceeding; the procedure already includes auto-detection but ensure the script runs in a shell where variables are preserved.
 ## Verification
 - Unusually small backup files (e.g., 4K) may indicate a failed backup. Regularly check for these using the verification script or by scanning the backup directory for files significantly smaller than expected.
 - **If `~/books` is a symlink** (e.g., to `/mnt/usb_4tb/books`), resolve it with `readlink -f` before rsync to avoid backing up the symlink itself.

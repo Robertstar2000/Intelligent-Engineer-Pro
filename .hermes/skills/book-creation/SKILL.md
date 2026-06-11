@@ -61,7 +61,7 @@ The Books Creation pipeline has 8 stages that map to the MIFECO product pipeline
 | 3 | Build Framework | Create list of characters (name from random US top 50 names), create list of chapters, write chapter beats |
 | 4 | Write | Write chapter contents for all chapters |
 | 5 | Enrich | Add front matter, TOC and page numbering, and back matter, add B&W images where needed |
-| 6 | Edit | Review everything including grammar, spelling, formatting, images, etc. |
+| 6 | Edit | Run iterative editorial review loop (see `publishing/book-editorial-review` skill): load skill, examine book > compare to bestselling genre benchmarks > create `book-review.md` with A-F rating. If A, pass to Step 7. If below A, incorporate changes into BOOK SOURCE FILES (not just the review), recompile MANUSCRIPT.md, and re-run review. Repeat until A achieved. **WARNING:** Existing book-review.md may be stale — read actual MANUSCRIPT.md to verify what still needs fixing. |
 | 7 | Prep for KDP | Create front cover color image, description, back cover materials, author bio, keywords, etc. |
 | 8 | Finish | Save book project, update in dashboards, Hermes memory and mifeco.com/books |
 
@@ -138,19 +138,51 @@ Also create:
 
 ### Stage 4: Build EPUB + Print PDF
 
-**EPUB:** Build from manuscript chapter files. Convert RGBA images to RGB before building:
+**Available tools on this system:**
+- **EPUB:** Pure Python via `zipfile` + `xml.sax.saxutils` — no external dependencies needed
+- **PDF:** `fpdf2` (install via `pip3 install fpdf2`). **WeasyPrint is NOT available** on this system.
+- **Fonts:** DejaVuSerif.ttf and DejaVuSerif-Bold.ttf at `/usr/share/fonts/truetype/dejavu/`. No `DejaVuSerif-Italic.ttf` — use DejaVuSerif as italic fallback.
+
+**EPUB — Build from manuscript chapter files:**
+
 ```python
-from PIL import Image
-import glob
-for path in glob.glob('generated_images/**/*.png', recursive=True):
-    img = Image.open(path)
-    if img.mode == 'RGBA':
-        bg = Image.new('RGB', img.size, (255, 255, 255))
-        bg.paste(img, mask=img.split()[3])
-        bg.save(path)
+import zipfile, io, re
+from xml.sax.saxutils import escape as xmlescape
+from datetime import datetime, timezone
+# Split content on # and ## headings, build content.opf + nav.xhtml + toc.ncx
+# Write as ZIP with uncompressed mimetype entry
+# See publishing/reader-magnet-production skill for full implementation
 ```
 
-**Print PDF (6×9"):** Use WeasyPrint. TOC with page numbers requires 2-pass rendering. No `<a>` tags in TOC cells. No `string-set` on h1/h2.
+Convert RGBA images to RGB before building:
+```bash
+python3 -c "
+from PIL import Image; import glob
+for p in glob.glob('generated_images/**/*.png', recursive=True):
+    img = Image.open(p)
+    if img.mode == 'RGBA':
+        bg = Image.new('RGB', img.size, (255, 255, 255))
+        bg.paste(img, mask=img.split()[3]); bg.save(p)
+"
+```
+
+**Print PDF (6x9 inch):** Use fpdf2 (NOT WeasyPrint — it is not installed). 6x9" = 152.4x228.6 mm:
+
+```python
+from fpdf import FPDF
+W, H = 152.4, 228.6
+MARGIN = 14  # ~0.55 inches
+FS = 11
+pdf = FPDF(orientation='P', unit='mm', format=(W, H))
+pdf.set_auto_page_break(auto=True, margin=MARGIN)
+pdf.add_font("D", "", "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf")
+pdf.add_font("D", "B", "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf")
+pdf.add_font("D", "I", "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf")  # no italic variant
+```
+
+**Page count estimate at 6x9 with 11pt:** ~280-320 words per page of body text. 7,000 words ≈ 22-25 pages. Front/back matter adds ~4-5 pages.
+
+**AUTHOR line encoding bug:** When writing Python build scripts via write_file, the line `AUTHOR=*** J Mills"` frequently corrupts (characters replaced with `***`). After writing, verify: `grep -n "^AUTHOR" build_script.py`. If corrupted, patch carefully.
 
 ### Stage 5: Assemble KDP Package
 
@@ -231,22 +263,6 @@ Total: X complete | X incomplete | X blocked
 - Fallback: `black-forest-labs/flux.2-max`
 - Minimum 1024×1024 resolution for covers
 - For print PDF: embed images at 200+ DPI
-
-## RGBA Pitfall (EPUB)
-
-EPUB builders require RGB images. LLM-generated PNGs are often RGBA. Convert BEFORE building EPUB:
-```bash
-python3 -c "
-from PIL import Image; import glob
-for p in glob.glob('generated_images/**/*.png', recursive=True):
-    img = Image.open(p)
-    if img.mode == 'RGBA':
-        bg = Image.new('RGB', img.size, (255,255,255))
-        bg.paste(img, mask=img.split()[3]); bg.save(p)
-"
-```
-
-Also convert cover PNG to RGB before embedding. If EPUB build fails with "cannot write mode RGBA as JPEG", this is the cause.
 
 ## TOC Duplicate Pitfall
 

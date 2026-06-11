@@ -1,7 +1,7 @@
 ---
 name: mifeco-pipeline-management
 description: Manage MIFECO product pipeline data — JSON definitions, SVG flow diagrams, kanban DB seeding, and dashboard rendering. Covers the full lifecycle from editing pipeline stages to syncing dashboards to DreamHost.
-triggers: ["pipeline", "kanban", "pipeline dashboard", "pipeline data", "pipeline stages", "books pipeline", "saas pipeline", "consulting pipeline", "virtual consulting pipeline", "human consulting pipeline", "books creation", "books marketing", "kanban sync", "seed kanban", "pipeline sync", "rebuild pipeline", "update pipeline", "pipeline flow", "svg flow"]
+triggers: ["pipeline", "kanban", "pipeline dashboard", "pipeline data", "pipeline stages", "books pipeline", "saas pipeline", "consulting pipeline", "virtual consulting pipeline", "human consulting pipeline", "books creation", "books marketing", "kanban sync", "seed kanban", "pipeline sync", "rebuild pipeline", "update pipeline", "pipeline flow", "svg flow", "promotion pipeline", "promotion generation", "promo-gen", "daily pipeline run", "promotion run", "content generator", "content-generator", "social-content-books", "generated-social-content", "linkedin-outreach", "promotion inventory"]
 ---
 
 # MIFECO Pipeline Management
@@ -167,6 +167,102 @@ scp -o StrictHostKeyChecking=no ~/.hermes/kanban.db dh_mwpxuu@iad1-shared-b8-42.
 ```
 
 If SQLite isn't available on DreamHost, `kanban-data.php` automatically falls back to reading JSON pipeline files.
+
+## Promotion Pipeline Daily Run
+
+A recurring cron workflow that inventories all promotion content, validates the content generator, and syncs updated counts to the dashboard. Trigger: the `promotion-orchestrator` cron job or any request to "run the promotion pipeline."
+
+### Workflow Steps
+
+#### 1. Load & Inspect Pipeline State
+
+Read `pipeline-state.json` to capture:
+- `promo-gen` pipeline: `items`, `active`, `queued`, `currentStage`, `lastRun`, `contentSummary`
+- Note stale vs actual counts (contentSummary is often out of sync with real file inventory)
+
+#### 2. Inventory All Content Sources
+
+The promotion pipeline draws from 4 independent JSON files. Count each:
+
+| Source | What It Contains | How to Count |
+|--------|-----------------|--------------|
+| `social-content-books.json` | Pre-written book promotion drafts (LinkedIn + X) | Read the array length; cross-check `post_type`/`platform` fields |
+| `generated-social-content.json` | Pipeline-generated social posts from qualified leads | Read the `stats` header object for `linkedin_posts`, `x_posts`, `total_posts` (skip the header entry itself) |
+| `generated-blog-posts.json` | Blog articles + comparison posts | Read the `stats` header for generated count; then count any extra entries (comparison posts) manually |
+| `linkedin-outreach-messages.json` | Outreach message templates (not sent counts) | Array length — these are templates, not sent messages |
+
+**Compute totals:**
+- LinkedIn posts = social-content-books LinkedIn count + generated-social-content LinkedIn count
+- X posts = social-content-books X count + generated-social-content X count
+- Blog posts = total entries in generated-blog-posts (excluding header)
+- Outreach = total entries in linkedin-outreach-messages
+- Total items = sum of all above
+
+#### 3. Check Content Generator Status
+
+Run the content generator in report mode to see if new content is needed:
+
+```bash
+cd ~/.hermes/pipeline-engine
+python3 data/content-generator.py --report
+```
+
+This reports:
+- Total leads in pipeline
+- Qualified leads (score >= 15) by pipeline (books/consulting/saas)
+- How many social posts and blog posts would be generated
+
+**Decision rule:** If the number of qualified leads and posts-to-generate matches the existing `generated-social-content.json` stats, no new generation is needed. The existing output is current.
+
+#### 4. Update pipeline-state.json
+
+Update these fields in the `promo-gen` pipeline:
+- `lastRun` — timestamp
+- `updatedAt` — top-level timestamp
+
+Update `contentSummary`:
+- `x-posts`, `linkedin-posts`, `blog-posts`, `linkedin-msgs` — computed inventory
+- `totalItems` — sum of all content
+- `queuedItems` — same as totalItems if nothing has been sent/approved
+- `sentItems`, `approvedItems` — leave at 0 unless confirmed otherwise
+
+Leave `items`, `active`, `queued` under the `promo-gen` pipeline object unchanged (these represent pipeline flow items, not content counts).
+
+#### 5. Sync to Dashboard
+
+```bash
+cp ~/.hermes/pipeline-engine/data/pipeline-state.json ~/.hermes/pipeline-engine/dashboard/pipeline-state.json
+```
+
+### Content Generator (`content-generator.py`)
+
+Located at `data/content-generator.py`. Key modes:
+- `--report` — dry-run showing what would be generated, no file writes
+- `--pipeline books` — filter to books pipeline only
+- `--social only` — social posts only
+- `--blog only` — blog posts only
+
+Requires these data files:
+- `unified-pipeline.json` — lead pipeline data
+- `leads-registry.json` — lead registry
+- `social-content-books.json` — existing book social posts (used to avoid duplicates)
+- `nurture-sequences.json` — nurture sequence templates
+
+Output files:
+- `generated-social-content.json` — LinkedIn + X posts, one per qualified lead per platform
+- `generated-blog-posts.json` — blog articles covering AI/Tech, PM/SaaS, and Books/Space themes
+
+### Content Inventory Reference
+
+Current known post types and their typical pipelines:
+- **LinkedIn book promos**: templates for No Blue Sky series, Tomorrow Is Still Open memoir
+- **LinkedIn consulting promos**: AI adoption frameworks, compliance AI use cases
+- **LinkedIn SaaS promos**: tool sprawl, transparency, project management
+- **X book promos**: concise book quotes, space exploration hooks
+- **X consulting promos**: AI adoption stats, quick tips
+- **X SaaS promos**: productivity stats, tool insights
+- **Blog posts**: long-form articles (AI transformation, project management, space/science fiction)
+- **Outreach templates**: personalized email drafts for SaaS (Hypatia/PMA/Vibra) and Consulting ($199/Dive/Transform) targets
 
 ## Pitfalls
 

@@ -1,7 +1,7 @@
 ---
 name: ceo-agent-orchestrator
 description: "CEO Agent — daily strategic orchestrator that actively assigns growth tasks to the multi-agent network via AGENTS.md protocol"
-version: 1.9.0
+version: 1.10.0
 author: CEO Agent
 metadata:
   hermes:
@@ -45,8 +45,11 @@ Load and follow:
 **Other reference files in this skill:**
 - `references/ghosting-consolidation-log.md` — Durable tracker for agent ghosting cycles (load at STEP 2 before writing new tasks)
 - `references/market-intelligence-may2026.md` — Condensed competitive intelligence for researcher and strategy briefings
+- `references/market-intelligence-june2026.md` — June 2026 market intelligence update (supersedes May reference)
 - `references/saas-deployment-structure.md` — Cloud Run deployment details and app source paths
-- `references/kdp-packaging-gap-may2026.md` — KDP packaging gap pattern: EPUBs in output/ but not in KDP_PACKAGE/ (May 2026 finding)
+- `references/kdp-packaging-gap-may2026.md` — KDP packaging gap pattern: EPUBs in output/ but not in KDP_PACKAGE/
+- `references/kdp-packaging-patterns-june2026.md` — KDP packaging patterns: orphan enrichment, thin package enrichment, NBS naming variants, upgrade patterns
+- `references/kanban-merge-june2026.md` — Kanban merge architecture documentation
 
 ## Steps
 
@@ -715,6 +718,21 @@ The 3 Cindy Lou Legal Capers books have KDP_PACKAGE dirs with only 1 file each (
 - `Author_Photo.jpg`
 
 The marketing text files exist in the book root directories — they just need to be copied into `KDP_PACKAGE/Marketing_and_Compliance/`.
+
+**Fix pattern (CEO-executable inline, ~5s per book):**
+This pattern generalizes beyond Cindy Lou — any book with a KDP_PACKAGE having <4 files needs enrichment. Check the book root for `Author_Bio.txt`, `Book_Description.txt`, `Keywords.txt`, `Back_Cover.txt`, `Title.txt`, `Author_Photo.jpg` and copy existing ones into `Marketing_and_Compliance/`, then re-zip. See `references/kdp-packaging-patterns-june2026.md` for the full enrich pattern.
+
+### KDP_PACKAGE orphan books (June 2026)
+
+Some books listed in the product inventory as "KDP-ready" may have NO `KDP_PACKAGE/` directory at all — only EPUBs and marketing files scattered in the book root directory. These are "orphan" books.
+
+**Case study:** Tomorrow_Remembered — had 3 EPUBs, 6 marketing .txt files, Author_Photo.jpg, and a cover image all in the root directory, but no KDP_PACKAGE dir. A zip existed in the central `KDP_Packages/` archive, which is why the inventory falsely reported it as complete.
+
+**Detection:** Run `find ~/books/ -maxdepth 2 -name "*.epub" -not -path "*/output/*" -not -path "*/KDP_PACKAGE/*"` — any results whose parent dir lacks a `KDP_PACKAGE/` subdir are orphans.
+
+**Fix:** Create `KDP_PACKAGE/Kindle/` and `KDP_PACKAGE/Marketing_and_Compliance/`. Copy all EPUBs into Kindle/, all marketing .txt files into Marketing_and_Compliance/, and the cover + Author_Photo. Then create the per-book zip. See `references/kdp-packaging-patterns-june2026.md` for the full orphan enrichment pattern and exact code.
+
+**Prevention:** When a book is "finished" (final EPUB generated, marketing files written), immediately create its KDP_PACKAGE directory as part of the completion workflow, not as a separate step. The root directory should never contain final EPUBs — they belong in KDP_PACKAGE/Kindle/.
 
 ### ~/books/ contains utility directories (June 2026)
 Inside `~/books/Cindy_Lou_Legal_Capers/` there is a nested `cindy-lou-series/` directory that is a **build workspace** (contains build scripts, covers/, marketing/, series-bible/, kdp-packages/). This directory has its own KDP_PACKAGE dirs for the same 3 Cindy Lou books, creating duplicate counts.

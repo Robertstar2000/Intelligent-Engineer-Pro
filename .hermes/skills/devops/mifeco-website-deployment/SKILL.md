@@ -3,6 +3,7 @@ name: mifeco-website-deployment
 title: MIFECO Website Deployment
 description: Access instructions for DreamHost panel and deploying updates to mifeco.com and books.mifeco.com
 category: devops
+related_skills: [reader-magnet-production]
 triggers: ["dreamhost", "mifeco deploy", "website update", "deploy books", "panel.dreamhost", "blank page", "white screen", "site not loading", "spa not rendering"]
 ---
 
@@ -283,6 +284,21 @@ All images are in `/mnt/usb_4tb/books/Cindy_Lou_Legal_Capers/books-mifeco-websit
 - `lunar-foundation-magnet-cover.jpg`
 - `no-blue-sky-magnet-cover.jpg`
 
+## Post-Deploy Verification — Three-Location Check
+
+After deploying updated magnet files, verify ALL three locations reference the correct filenames:
+
+1. **Series landing page** — `grep "magnet\|old-filename" /home/dh_mwpxuu/mifeco.com/books/cindy-lou/index.html`
+2. **Subscribe API** — `grep "old-filename\|cindy-lou" /home/dh_mwpxuu/mifeco.com/books/api/subscribe.php` — **BOTH** code paths (returning subscriber ~line 73, new subscriber ~line 116)
+3. **Main books index** — `grep "old-filename\|cindy-lou" /home/dh_mwpxuu/mifeco.com/books/index.html`
+
+Filennames change between deployments (e.g., `cindy-lou-missing-retainer.pdf` → `cindy-lou-magnet.pdf`). A partial update (uploading the new file but NOT updating the HTML) produces a broken download link. Always check all three.
+
+Then verify no stale references remain:
+```bash
+ssh -o StrictHostKeyChecking=no dh_mwpxuu@iad1-shared-b8-42.dreamhost.com "grep -rn 'old-filename' /home/dh_mwpxuu/mifeco.com/books/ || echo 'Clean'"
+```
+
 ## Post-Deploy Checklist
 - [ ] Verify https://books.mifeco.com loads
 - [ ] Test all series pages
@@ -504,7 +520,7 @@ When syncing pipeline changes to DreamHost (new stages, products, leads):
 See the `mifeco-pipeline-management` skill for the full pipeline rebuild workflow.
 
 For the full consulting pipeline architecture, survey flow, database schema, common issues, and credentials, see:
-For the reader magnet PDF replacement workflow (updating the HTML card, subscribe.php API in both response paths, and uploading the new PDF), see:
+For the reader magnet generation and replacement workflow (generating EPUB + PDF from novella source using `scripts/build_reader_magnet.py`, updating the landing page HTML, updating subscribe.php API in both response paths, uploading both files, and removing old stale files), see:
 `references/reader-magnet-replacement.md`
 
 See `references/consulting-pipeline-reference.md`

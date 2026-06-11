@@ -177,6 +177,14 @@ scp_upload("/tmp/blog-content-<slug>.html", "/home/dh_mwpxuu/mifeco.com/tmp/<slu
 scp_upload("/tmp/blog-image-*.png", "/home/dh_mwpxuu/mifeco.com/images/<slug>.png")
 ```
 
+**Verify files landed**: After SCP, run a quick SSH check to confirm the files exist on the remote server before attempting to publish. Failed SCPs (wrong paths, full disk) produce no terminal error output but leave missing files that cause WP publish to fail silently:
+```python
+# Verify uploads landed
+verify = ssh_run(f"ls -la {REMOTE_BASE}/tmp/{slug}.html {REMOTE_BASE}/images/{slug}.png", timeout=15)
+if "No such file" in verify:
+    # SCP failed silently — retry or report
+```
+
 ### Step 7: Publish to WordPress
 ```bash
 ssh dh_mwpxuu@IAD1-SHARED-B8-42.DREAMHOST.COM \
@@ -265,6 +273,17 @@ cmd = (
 **`.env credential store blocks read_file`**: `read_file("~/.hermes/.env")` returns "Access denied". Use `terminal("source ~/.hermes/.env && ...")` for env-consuming commands, or `terminal("cat ~/.hermes/.env | grep KEY_NAME")` to extract individual values.
 
 **Gemini image generation**: Uses `gemini-2.5-flash-image` model via Google AI Studio API (`GOOGLE_AI_STUDIO_KEY` from `~/.hermes/.env`). Returns base64-encoded PNG. Two modes: `cover-inspired` (book posts) and `infographic` (SaaS/consulting posts).
+
+**CRITICAL: `--mode` is REQUIRED even with `--prompt`**. The script's argparse enforces `--mode` as a mandatory positional. Omitting it causes `error: the following arguments are required: --mode` even when providing a custom `--prompt`. Always include `--mode=cover-inspired` or `--mode=infographic`.
+
+**For comparative/fusion images (two books or two products)**, use `--prompt` with a custom description instead of the structured `--book-title`/`--series` params. The `build_cover_prompt()` helper generates text like "the book 'X' from the 'Y' series" which reads awkwardly when comparing two different works. A custom `--prompt` describing the visual fusion of both themes produces better results:
+```bash
+python3 scripts/generate-blog-image.py \
+  --mode=cover-inspired \
+  --prompt="Create a stunning book-cover-inspired illustration that fuses the visual themes of two books... [describe both themes blending]" \
+  --output=/tmp/blog-image-book.png
+```
+
 - If image generation fails → publish post without featured image
 - If WP publish returns duplicate slug error → modify slug (add suffix) and retry
 - If SSH times out → retry once, then report error and continue
