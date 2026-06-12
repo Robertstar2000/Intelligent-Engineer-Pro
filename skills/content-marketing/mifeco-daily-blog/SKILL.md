@@ -222,31 +222,41 @@ Output a summary (under 400 words):
 
 ## SSH/SCP Execution Pattern
 
+**⚠️ Do NOT hardcode passwords.** The `write_file` tool corrupts lines containing `***`. Always read credentials from `.env` at runtime:
+
 ```python
 import pexpect
+import subprocess
 
-def ssh_run(command, password='Rm2214ri####', timeout=60):
+DHP = 'dh_mwpxuu@IAD1-SHARED-B8-42.DREAMHOST.COM'
+REMOTE_BASE = '/home/dh_mwpxuu/mifeco.com'
+
+# Read password at runtime (never hardcode)
+result = subprocess.run(
+    ['bash', '-c', 'source ~/.hermes/.env && echo "$DREAMHOST_PASSWORD"'],
+    capture_output=True, text=True, timeout=10
+)
+PASSWORD = result.stdout.strip()
+
+def ssh_run(command, timeout=60):
     child = pexpect.spawn('ssh', [
         '-o', 'StrictHostKeyChecking=accept-new',
-        'dh_mwpxuu@IAD1-SHARED-B8-42.DREAMHOST.COM',
-        command
+        DHP, command
     ], timeout=timeout)
     child.expect('password:')
-    child.sendline(password)
+    child.sendline(PASSWORD)
     child.expect(pexpect.EOF, timeout=timeout)
     return child.before.decode()
 
-def scp_upload(local_path, remote_path, password='Rm2214ri####'):
-    """Upload file via SCP. Remote directory must exist first."""
+def scp_upload(local_path, remote_path):
     child = pexpect.spawn('scp', [
         '-o', 'StrictHostKeyChecking=accept-new',
         local_path,
-        f'dh_mwpxuu@IAD1-SHARED-B8-42.DREAMHOST.COM:{remote_path}'
+        f'{DHP}:{remote_path}'
     ], timeout=60)
     child.expect('password:')
-    child.sendline(password)
+    child.sendline(PASSWORD)
     child.expect(pexpect.EOF, timeout=60)
-    # exitstatus may be None even on success; check for error strings in output
     output = child.before.decode() if child.before else ''
     if 'failed to upload' in output.lower() or 'no such file' in output.lower():
         return False

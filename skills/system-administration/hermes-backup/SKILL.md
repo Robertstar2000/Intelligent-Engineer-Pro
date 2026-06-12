@@ -133,20 +133,21 @@ if [ -d "$FL_HERMES_DIR/.git" ]; then
     --exclude='image_cache' --exclude='audio_cache' \
     --exclude='node' --exclude='checkpoints' \
     --exclude='sandboxes' --exclude='bin' \
-    --exclude='state-snapshots' --exclude='.git' \
+    --exclude='state-snapshots' \
+    --exclude='mempalace-vector' \
     "$DATA_DIR/" .hermes/
 
-  rsync -av --delete --exclude='.git' "$DATA_DIR/skills/" skills/
-  rsync -av --delete "$DATA_DIR/scripts/" scripts/
-  rsync -av --delete "$DATA_DIR/cron/" cron/
-  rsync -av --delete "$DATA_DIR/memories/" memories/
-  rsync -av --delete "$DATA_DIR/mempalace/" mempalace/
-  rsync -av --delete "$DATA_DIR/pipeline-engine/" pipeline-engine/
-  rsync -av --delete "$DATA_DIR/consulting-reports/" consulting-reports/
+  rsync -av --delete --exclude='.git' --exclude='mempalace-vector' "$DATA_DIR/skills/" skills/
+  rsync -av --delete --exclude='mempalace-vector' "$DATA_DIR/scripts/" scripts/
+  rsync -av --delete --exclude='mempalace-vector' "$DATA_DIR/cron/" cron/
+  rsync -av --delete --exclude='mempalace-vector' "$DATA_DIR/memories/" memories/
+  rsync -av --delete --exclude='mempalace-vector' "$DATA_DIR/mempalace/" mempalace/
+  rsync -av --delete --exclude='mempalace-vector' "$DATA_DIR/pipeline-engine/" pipeline-engine/
+  rsync -av --delete --exclude='mempalace-vector' "$DATA_DIR/consulting-reports/" consulting-reports/
 
   # Sync SaaS products if they exist
   if [ -d "$HOME/saas" ]; then
-    rsync -av --delete --exclude='node_modules' --exclude='.git' \
+    rsync -av --delete --exclude='node_modules' --exclude='.git' --exclude='mempalace-vector' \
       --exclude='dist' --exclude='database.sqlite' \
       "$HOME/saas/" saas/
   fi

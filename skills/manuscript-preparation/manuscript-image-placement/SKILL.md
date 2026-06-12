@@ -167,6 +167,54 @@ print(f"Chapters still missing images: {sorted(missing_after)}")
 ### **Pitfall**: Image paths may need adjustment
 **Solution**: Use the same path pattern as existing images
 
+## Gemini API Image Generation (Markdown Manuscripts)
+
+Modern fiction books use Markdown manuscripts with `## Chapter N:` headers. This section covers generating B&W pencil sketch images via Gemini API and inserting them.
+
+### API Setup
+
+```python
+result = subprocess.run(["bash", "-c", "source ~/.hermes/.env && echo $GOOGLE_AI_STUDIO_KEY"],
+                       capture_output=True, text=True)
+api_key = result.stdout.strip()
+API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key={api_key}"
+```
+
+### Prompt Style
+
+Append to every image prompt:
+```
+Style: black and white pencil sketch illustration for a book chapter, detailed cross-hatching, dramatic lighting, cinematic composition, no color, book illustration quality.
+```
+
+### Rate Limiting
+
+Wait **6 seconds** between API calls. Decode inline base64 data:
+```python
+img_data = base64.b64decode(p["inlineData"]["data"])
+img = Image.open(BytesIO(img_data)).convert("L").resize((600, 600), Image.LANCZOS)
+img.save(f"chapter_images/ch{N:02d}.png")
+```
+
+### Chapter Header Pitfalls (Books Have Different Formats)
+
+**Critical:** Book manuscripts do NOT all use the same chapter header format. Detect the format before generating/inserting images:
+
+| Format | Example | Regex | Books |
+|--------|---------|-------|-------|
+| Single hash | `# Chapter 1 -- Title` | `^# Chapter \d+` | AoLS, LF, NBS |
+| Double hash | `## Chapter 1: Title` | `^## Chapter \d+:` | CLLC Bk 1 & 3 |
+| Worded numbers | `## Chapter One: Title` | `Chapter (One|Two|...):` | Tomorrow Remembered |
+| Inline (no preceding newline) | `...imagine.## Chapter Two:` | Search entire content, not per-line | Tomorrow Remembered |
+| Non-sequential | 1,2,3,5,7,10,13... | Insert only for existing headers | CLLC Bk 1 |
+
+**Procedure:**
+1. Check BOTH `MANUSCRIPT.md` AND `{book-name}_MANUSCRIPT.md` (some books use different files)
+2. Use `grep` to find chapter headers BEFORE writing generation/insertion code
+3. For inline headers, insert a `\n` before the header when adding images
+4. Save images as `chapter_images/ch{N}.png` (600x600, grayscale)
+4. Check for existing images before generating to avoid duplicates
+
 ## Verification Steps
 1. Count total chapters in TOC vs. actual content
 2. Verify each chapter has exactly one image tag

@@ -164,6 +164,95 @@ Then restart: `sudo systemctl restart hermes-gateway`
 - Fallback loading: `gateway/run.py` `_load_fallback_model()` (line 1047)
 - Fallback chain: `run_agent.py` `AIAgent.__init__()` (reads `fallback_model` parameter, line 596)
 
+## Delegation (Subagent) Timeout Configuration
+
+Subagents (`delegate_task` children) have two independent timeout layers that are easy to confuse:
+
+### Layer 1: Session Duration (`child_timeout_seconds`)
+
+Controls how long a subagent is allowed to run **in total** (wall clock):
+
+```yaml
+delegation:
+  child_timeout_seconds: 600    # default: 600 (10 min). Max: user-defined.
+  max_iterations: 50            # default: 50 tool calls per subagent
+```
+
+**What this controls:** The entire subagent lifespan. When the wall clock exceeds `child_timeout_seconds`, the subagent is killed regardless of how many calls it made. The error message says: `Subagent timed out after 600.0s with N API call(s) completed`.
+
+**How to change:** `hermes config set delegation.child_timeout_seconds 1200`
+
+### Layer 2: Per-API-Call Timeout (`timeout_seconds`)
+
+Controls how long a **single LLM API call** within a subagent is allowed to wait before timing out. This is an HTTP-level timeout on the request to the model provider.
+
+```yaml
+delegation:
+  timeout_seconds: 600           # no default — defaults to httpx client default
+```
+
+**What this controls:** Individual `chat.completions.create()` call. When the model provider is slow (common with DeepSeek during peak hours), this timeout fires before `child_timeout_seconds` is reached. The error message says exactly the same thing: `timed out after 600.0s with N API call(s) completed` — making it impossible to tell from the error text which timeout fired.
+
+**How to set:** `hermes config set delegation.timeout_seconds 1200`
+
+### Critical: Which Timeout Is Firing?
+
+Because both layers produce the same error message, you must check which one your subagent is hitting:
+
+| Observation | Likely culprit |
+|-------------|---------------|
+| Subagent ran for ~600s (exactly `child_timeout_seconds` default) | Session duration limit |
+| Subagent made few API calls (15-30) but still timed out | Per-call timeout — model response slow |
+| Subagent made 45-50 calls (near `max_iterations`) then timed out | Tool iteration limit, not timeout |
+| Even after doubling `child_timeout_seconds`, subagent still times out at 600s | Per-call timeout — set `timeout_seconds` too |
+| Increasing `timeout_seconds` didn't help | Set both. The setting may not have persisted (verify with `grep delegation ~/.hermes/config.yaml`) |
+
+**The common failure pattern in this setup:** Subagent with model `deepseek/deepseek-v4-flash` on OpenRouter hits a slow API response. The per-call HTTP timeout (Layer 2) fires after ~600s. Only 15-26 API calls completed because the agent spent most of its time waiting on the single slow call. Doubling `child_timeout_seconds` alone does NOT fix this — `timeout_seconds` must also be increased (or the model changed to a faster provider).
+
+### Verification
+
+```bash
+grep -A10 "^delegation:" ~/.hermes/config.yaml
+# Look for:
+#   child_timeout_seconds: 1200
+#   max_iterations: 100
+#   timeout_seconds: 1200
+```
+
+### Config Schema (from hermes_cli/config.py)
+
+The `delegation` section lives under `config.yaml` at the top level. Key fields:
+
+```yaml
+delegation:
+  model: openai-codex              # model used for subagents
+  provider: openai-codex           # provider for subagents
+  max_iterations: 50               # max tool calls per subagent (default 50)
+  child_timeout_seconds: 600       # max wall-clock seconds (default 600)
+  timeout_seconds: <not set>       # per-API-call HTTP timeout (no default — uses httpx client default)
+  reasoning_effort: ''             # reasoning effort for supported providers
+  max_concurrent_children: 3       # max parallel subagents (default 3)
+  max_spawn_depth: 1               # max subagent nesting depth (default 1)
+```
+
+## Agent Loop Configuration
+
+The `agent:` section controls the main agent's conversational limits (different from delegation, which controls subagents):
+
+```yaml
+agent:
+  max_turns: 90                 # max conversational iterations before forcing a stop (default 90)
+  gateway_timeout: 1800         # gateway session timeout in seconds (default 1800, 30 min)
+  gateway_timeout_warning: 900  # warning sent to user before timeout (default 900)
+  clarify_timeout: 600          # how long the agent waits for user clarification (default 600)
+  api_max_retries: 3            # API retries on transient failures (default 3)
+  tool_use_enforcement: auto    # tool-use policy
+```
+
+**`max_turns` vs `delegation.max_iterations`:** Don't confuse these. `max_turns` limits the *main agent's* conversation iterations (the back-and-forth between user messages and your responses). `delegation.max_iterations` limits *subagent* tool calls (each subagent's internal loop). Raising `max_turns` to 200 gives the main agent more room to work through complex multi-step tasks without being cut off.
+
+**How to change:** `hermes config set agent.max_turns 200`
+
 ## API Retry & Stream Timeout Configuration
 
 For OpenRouter streaming failures (e.g., `RemoteProtocolError` mid-tool-call after many iterations):

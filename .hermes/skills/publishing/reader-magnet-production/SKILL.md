@@ -245,9 +245,11 @@ h2 { font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; page-
 p { margin: 0.3em 0; text-indent: 1.2em; }
 ```
 
-## PDF Generation (fpdf2, 6x9" Trim)
+## PDF Generation (fpdf2, 6x9 Trim)
 
-Use `fpdf2` (installed via pip). Generate at 6x9" (152.4×228.6 mm) with DejaVu Serif:
+Use `fpdf2` (installed via pip). Generate at 6x9 (152.4×228.6 mm) with DejaVu Serif:
+
+**Cover embedding:** After generating the interior PDF, prepend the cover image as the first page using the workflow in `references/cover-embedding-pdf.md`. This is essential for reader magnet PDFs served as direct downloads — readers opening the file should see the cover first.
 
 ```python
 from fpdf import FPDF
@@ -281,8 +283,17 @@ Site URL: mifeco.com/books/ (NOT books.mifeco.com — that subdomain isn't confi
 
 ```python
 import pexpect
+import os
 
-PASS = 'Rm2214ri####'
+# Read password from .env (never hardcode)
+env_path = os.path.expanduser("~/.hermes/.env")
+PASS = None
+with open(env_path) as f:
+    for line in f:
+        if "DREAMHOST_PASSWORD" in line and "=" in line:
+            PASS = line.split("=", 1)[1].strip().strip('"').strip("'")
+            break
+
 REMOTE_DIR = "/home/dh_mwpxuu/mifeco.com/books/magnets"
 
 for local_path in [epub_path, pdf_path]:
@@ -339,6 +350,8 @@ The user reviews work through Telegram and provides feedback or sign-off there.
 ## Session-Specific Details
 
 See the `mifeco-website-deployment` skill's `references/reader-magnet-replacement.md` for the single-PDF replacement workflow.
+
+See `references/cover-embedding-pdf.md` for the PIL+PyPDF2 workflow to prepend cover images to reader magnet PDFs before deployment.
 
 See session history for specific editorial specs for each reader magnet novella.
 

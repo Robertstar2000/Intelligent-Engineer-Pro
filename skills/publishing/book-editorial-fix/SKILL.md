@@ -5,7 +5,7 @@ description: Process for applying editorial fixes from book-review.md files to e
 category: publishing
 tags: [editorial, fix, rewrite, manuscript, chapter, revision, subagent]
 related_skills: [book-editorial-review, book-publishing, manuscript-restoration, reader-magnet-production]
-triggers: [apply review, fix per review, update book, rewrite chapters, implement editorial, apply book-review.md recommendations, second pass fixes]
+triggers: [apply review, fix per review, update book, rewrite chapters, implement editorial, apply book-review.md recommendations, second pass fixes, front matter, back matter, copyright page, table of contents, also by, acknowledgments, template differentiation, genre shift, bulk sed replace, Moon to Mars, template chapters, crisis injection]
 ---
 
 # Book Editorial Fix Workflow
@@ -57,7 +57,17 @@ Books may have new `.md` chapters in `chapters/` AND old `.xhtml` chapters in `m
 
 ### Writing Updated Chapters
 
-Write new `.md` files to `manuscript_src/` (not `chapters/`) so the next compile picks them up automatically. If writing to `chapters/`, note that you'll need to move them afterward.
+For bulk content work across a full manuscript, **write_file() is more reliable than patch().** The patch tool fails when its fuzzy matching can't find the old_string — this happens frequently with long, complex manuscripts. write_file() always succeeds.
+
+When to use each:
+
+| Tool | Best For | Avoid When |
+|------|----------|------------|
+| write_file() | Whole-file content, new chapters, major expansions | Replacing tiny sections in an otherwise-good file |
+| patch() | Targeted fixes, name changes, AI artifact removal | Files with heavy repetition (patch may match wrong instance) |
+| terminal (sed) | Bulk find-and-replace across multiple files | Any change where you need to verify context before replacing |
+
+**Write new `.md` files to `manuscript_src/`** (not `chapters/`) so the next compile picks them up automatically. If writing to `chapters/`, note that you'll need to move them afterward.
 
 **Chapter naming convention:** `ch001.md`, `ch002.md`, etc. (zero-padded 3-digit numbers for proper sort order).
 
@@ -168,13 +178,26 @@ The compiled MANUSCRIPT.md should:
 
 ## Phase 5: Build EPUB and PDF
 
-Use the standard build pattern (see `reader-magnet-production` skill for full implementation):
+After applying fixes, regenerate EPUB and PDF using the script in this skill:
 
-**EPUB:** zipfile-based EPUB 3 with mimetype STORED, META-INF/container.xml, OEBPS/content.opf, OEBPS/nav.xhtml, OEBPS/toc.ncx, OEBPS/styles/epub.css
+```bash
+python3 /home/bob/.hermes/skills/publishing/book-editorial-fix/scripts/generate-ebook.py /path/to/book/dir
+```
 
-**PDF:** fpdf2 at 6x9" (152.4 x 228.6 mm), DejaVu Serif at 11pt
+This handles:
+- Multi-format chapter headers (## Chapter N:, # Chapter N —, worded numbers)
+- CLLC _MANUSCRIPT.md vs MANUSCRIPT.md file selection
+- EPUB via ebooklib with proper CSS
+- PDF via WeasyPrint at 6x9" with configurable formatting
 
-Save output files as `book-name.epub` and `book-name.pdf` in the book's root directory.
+**Page count check after build:** Verify the generated PDF is 160-190 pages:
+```bash
+python3 -c "from PyPDF2 import PdfReader; r=PdfReader('book.pdf'); print(f'{len(r.pages)} pages')"
+```
+
+If outside 160-190 range, adjust formatting (10pt/0.7in margins for fewer pages, 11pt/1in for more) or expand/trim content. See `book-editorial-review` → `references/page-count-target.md`.
+
+For reader magnet novellas (shorter works), use the fpdf2-based generation in `reader-magnet-production` skill instead.
 
 ## Parallel Work Strategy
 
@@ -188,7 +211,83 @@ When fixing multiple books simultaneously:
 
 **Timeout-safe pattern:** For complete rewrites (Books 4-5 style), delegate ONE BOOK per subagent, not a series. Each book takes ~4-6 chapter rewrites at ~1500 words each, which fits in a 300-400s subagent window.
 
-**Important:** After ALL subagents complete, verify files directly before declaring done. Do not trust the subagent's self-report.
+### Fix Only — Don't Delegate Review Writing
+
+The most reliable pattern is: **delegate ONLY the fix work to subagents, write the review yourself after verifying.**
+
+Include this instruction in every subagent goal:
+```
+DO NOT write the review — I'll handle that. Just make the actual edits to the manuscript file.
+```
+
+**Why:**
+- Subagents consistently over-report results. One subagent claimed 63K words written but only 44K were actually present. The fixes were real but the quantity was inflated.
+- Subagents have a 50-call tool limit. Spending calls on review writing steals from content changes.
+- Writing reviews yourself lets you verify actual file contents before rating.
+
+**Workflow:**
+1. Delegate fix-only subagents (no review-writing in their goal)
+2. After all complete, verify actual word counts: `wc -w path/to/book/*MANUSCRIPT*.md`
+3. Read key sections to confirm changes were applied
+4. Write the new book-review.md yourself
+
+### Tool Call Budget Management
+
+Subagents hit 50 tool calls before the 600s timeout. Budget their calls:
+
+| Phase | Calls Needed | Strategy |
+|-------|-------------|----------|
+| Read & analyze | 10-15 | read_file + search_files + grep to understand current state |
+| Apply changes | 25-30 | write_file() for new content (faster than patch, which often fails on unmatched old_string) |
+| Verify | 5-10 | wc -w, grep for patterns, spot-read |
+
+For bulk content work across a full manuscript, **write_file() is more reliable than patch().** The patch tool fails when its fuzzy matching can't find the old_string — this happens frequently with long, complex manuscripts. write_file() always succeeds.
+
+### Per-Book Fix Gains by Type
+
+Different book profiles yield different gains per subagent pass:
+
+| Book Type | Typical Start | Typical Gain/Pass | Iterations to Target |
+|-----------|--------------|-------------------|---------------------|
+| Cozy/Legal Mystery | 25-40K | 5-10K (chapters, B-plot, texture) | 4-8 |
+| Sci-Fi Colonization Thriller | 23-30K | 3-6K (thread insertion, expansion) | 10-16 |
+| Non-Fiction/Business | 15-40K | 2-4K (cases, examples, build fixes) | 10-20 |
+
+Set expectations accordingly. A single pass won't triple word count.
+
+### Critical: Which MANUSCRIPT.md to Work On
+
+Some books have MULTIPLE `*MANUSCRIPT*.md` files. Always check which is authoritative:
+
+```bash
+ls -la path/to/book/*MANUSCRIPT*.md
+wc -w path/to/book/*MANUSCRIPT*.md
+```
+
+Common problem: `MANUSCRIPT.md` is a 620-line excerpt or old compilation, while `retainer-to-trouble_MANUSCRIPT.md` is the active 5,900-line manuscript. Tell subagents explicitly which file to edit.
+
+### Important: After ALL subagents complete, verify files directly before declaring done. Do not trust the subagent's self-report.
+
+---
+
+### Common Mistake: Multiple Chapter Header Formats
+
+Subagents may add chapter headers in bold (`**Chapter 1:**`) instead of markdown `## Chapter 1:`. Both will render but the bold format loses markdown structure (TOC generation, anchor links). If you see `**Chapter N:**` at the top of chapters, convert them.
+
+```bash
+# Check format
+head -1 path/to/chapter-file.md
+```
+
+**Standard:** `## Chapter N: Descriptive Subtitle` (H2 with subtitle)
+**Non-standard:** `**Chapter N:** Descriptive Subtitle` (bold only)
+
+Also note: subagents that expanded a book via `patch()` may leave behind `||` pipe artifacts in headers (e.g., `||## Epilogue:`) from adjacent text being consumed during the replacement. These should be cleaned up.
+
+**Duplicate chapter numbering:** When subagents expand a manuscript by inserting new chapter headers, they sometimes create duplicate numbers (e.g., two "Chapter 3" headers) or fractional numbers (e.g., "Chapter 29.5"). Fix these by:
+1. List all headers: `grep "^## Chapter" path/to/MANUSCRIPT.md`
+2. Rename duplicates: add "(Continued)" suffix or renumber
+3. Rename fractions: promote "29.5" to "30" and renumber subsequent chapters
 
 ## Common Book Fix Types
 
@@ -220,8 +319,252 @@ When fixing multiple books simultaneously:
 ### Type E: Word Count Adjustment
 - Cut: remove redundant scenes, compress dialogue, merge chapters
 - Expand: add scenes, develop subplots, increase sensory detail
+- Over: see Type G below — when a book is 10K+ over target and trimming fails
 
-## Subagent Instructions Template
+### Type H: Add Front Matter (Copyright, Dedication, TOC)
+Add a complete front matter section to MANUSCRIPT.md before Chapter 1:
+
+```markdown
+# [Book Title]
+
+[Series name, if applicable]
+
+**Copyright © 2026 Bob J Mills**
+
+All rights reserved. No part of this book may be reproduced in any form or by any electronic or mechanical means, including information storage and retrieval systems, without written permission from the author, except for the use of brief quotations in a book review.
+
+This is a work of fiction. Names, characters, places, and incidents either are the product of the author's imagination or are used fictitiously. Any resemblance to actual persons, living or dead, events, or locales is entirely coincidental.
+
+ISBN: [placeholder]
+
+First Edition: 2026
+
+---
+
+## Table of Contents
+
+- [Chapter 1: Title](#chapter-1-title)
+- [Chapter 2: Title](#chapter-2-title)
+...
+
+---
+
+## Acknowledgments
+
+[Thank you text]
+
+---
+
+```
+
+### Type I: Add Back Matter (Also by + Author Bio)
+Add a complete back matter section at the end of MANUSCRIPT.md after the final chapter:
+
+```markdown
+---
+
+## Also by Bob J Mills
+
+### The Age of Lightships Series
+- [**Sunward Exodus**](https://www.amazon.com/dp/XXXXXXXXXX)
+- [**The Mercury Accord**](https://www.amazon.com/dp/XXXXXXXXXX)
+- [**Ghosts Beyond Neptune**](https://www.amazon.com/dp/XXXXXXXXXX)
+- [**The Last Photon Fleet**](https://www.amazon.com/dp/XXXXXXXXXX)
+
+### The Lunar Foundation Series
+- [**Moon Rock**](https://www.amazon.com/dp/XXXXXXXXXX)
+- [**Mooncoming**](https://www.amazon.com/dp/XXXXXXXXXX)
+- [**Waters End**](https://www.amazon.com/dp/XXXXXXXXXX)
+- [**Waters Horizon**](https://www.amazon.com/dp/XXXXXXXXXX)
+
+### No Blue Sky Series
+- [**Built from Dust**](https://www.amazon.com/dp/XXXXXXXXXX)
+- [**The Oxygen Gamble**](https://www.amazon.com/dp/XXXXXXXXXX)
+- [**Rivers Under Mars**](https://www.amazon.com/dp/XXXXXXXXXX)
+- [**The Red Charter**](https://www.amazon.com/dp/XXXXXXXXXX)
+- [**The First Martian Nation**](https://www.amazon.com/dp/XXXXXXXXXX)
+
+### Cindy Lou Legal Capers Series
+- [**Retainer to Trouble**](https://www.amazon.com/dp/XXXXXXXXXX)
+- [**Clause for Alarm**](https://www.amazon.com/dp/XXXXXXXXXX)
+- [**Affidavits and Alibis**](https://www.amazon.com/dp/XXXXXXXXXX)
+
+### Business / Non-Fiction
+- [**The Crisis-Ready Company**](https://www.amazon.com/dp/XXXXXXXXXX)
+- [**AI That Works**](https://www.amazon.com/dp/XXXXXXXXXX)
+- [**The Owner's Manual for AI Agents**](https://www.amazon.com/dp/XXXXXXXXXX)
+
+### Memoir
+- [**Tomorrow Remembered**](https://www.amazon.com/dp/XXXXXXXXXX)
+
+---
+
+**Get free prequel novellas** at [mifeco.com/books](https://www.mifeco.com/books)
+
+**Visit the author's website:** [mifeco.com](https://www.mifeco.com)
+
+---
+
+## About the Author
+
+Bob J Mills is a [brief bio]. He lives in [location]. This is his [Nth] book.
+
+---
+
+```
+
+### Type J: Remove Cover Images from MANUSCRIPT.md
+Check if any images at the start of MANUSCRIPT.md are cover-style images (full-page graphic with title text). If found, remove them — covers go in the EPUB/PDF build pipeline, not the manuscript source. Search: `grep -n "cover\\|Cover\\|COVER" MANUSCRIPT.md` should return zero matches for actual cover images.
+
+### Type K: Template Differentiation (43-Chapter Template Fix)
+
+When a book has 40+ chapters all following the identical structure (same scene beats, same character lineup, same emotional arc), **do NOT delegate all chapters to one subagent.** A single subagent cannot differentiate 43 chapters in 50 tool calls.
+
+**The 3-pass split pattern:**
+
+- **Pass 1 (subagent):** Fix the antagonist + climax + final 10 chapters. The highest leverage is creating a genuine antagonist with ideology and giving the ending real stakes. This alone can lift C+→B-.
+- **Pass 2 (subagent):** Differentiate chapters 1-20. Change POV characters, vary the problem type, add rising tension. Each block of 5 chapters should feel distinct.
+- **Pass 3 (subagent):** Differentiate chapters 21-33 (or wherever the template still repeats). Consolidate template chapters into scene-based arcs using the antagonist subplot as engine.
+- **Parent review after each pass:** Re-rate before deciding whether to loop again.
+
+**What makes a template chapter:**
+```
+Alert → Mission AI query → bullet points → great-grandparent reflection → Kaito channel → tear-wiping → 5-point framework → resolution
+```
+Every variant maps to this structure. The fix is to break the pattern: different character combinations, different problems, different emotional stakes per chapter block.
+
+### Type L: Genre/Setting Bulk Shift (e.g., Moon→Mars)
+
+When a book is set on the wrong planet/territory (Moon instead of Mars):
+1. **Bulk sed replacements first** (fastest, most reliable):
+```bash
+sed -i 's/\blunar\b/Martian/g' MANUSCRIPT.md
+sed -i 's/\bMoon\b/Mars/g' MANUSCRIPT.md
+sed -i 's/Shackleton Crater/Valles Marineris/g' MANUSCRIPT.md
+sed -i 's/LunaNet/MarsNet/g' MANUSCRIPT.md
+# Verify:
+grep -ci '\blunar\b' MANUSCRIPT.md  # Must be 0
+grep -ci '\bMoon\b' MANUSCRIPT.md   # Must be 0
+```
+2. **Fix artifacts** from bulk replace: "the Mars" → "Mars", "the The Red Charter" → "The Red Charter"
+3. **Rewrite climax chapters** (20-25) with planet-correct content: dust storms, thin atmosphere, specific Martian geography
+4. **Verify:** 0 old-territory references, 120+ new-territory references
+
+This approach can lift a D to B+ in a single pass because the climax is the highest-leverage target.
+
+### Type F: Central Crisis Injection (Sci-Fi Pattern)
+
+When a book has 40+ chapters all following the identical structure (same scene beats, same character lineup, same emotional arc), **do NOT delegate all chapters to one subagent.** A single subagent cannot differentiate 43 chapters in 50 tool calls.
+
+**The 3-pass split pattern:**
+
+- **Pass 1 (subagent):** Fix the antagonist + climax + final 10 chapters. The highest leverage is creating a genuine antagonist with ideology and giving the ending real stakes. This alone can lift C+→B-.
+- **Pass 2 (subagent):** Differentiate chapters 1-20. Change POV characters, vary the problem type, add rising tension. Each block of 5 chapters should feel distinct.
+- **Pass 3 (subagent):** Differentiate chapters 21-33 (or wherever the template still repeats). Consolidate template chapters into scene-based arcs using the antagonist subplot as engine.
+- **Parent review after each pass:** Re-rate before deciding whether to loop again.
+
+**What makes a template chapter:**
+```
+Alert → Mission AI query → bullet points → great-grandparent reflection → Kaito channel → tear-wiping → 5-point framework → resolution
+```
+Every variant maps to this structure. The fix is to break the pattern: different character combinations, different problems, different emotional stakes per chapter block.
+
+### Type L: Genre/Setting Bulk Shift (e.g., Moon→Mars)
+
+When a book is set on the wrong planet/territory (Moon instead of Mars):
+1. **Bulk sed replacements first** (fastest, most reliable):
+```bash
+sed -i 's/\blunar\b/Martian/g' MANUSCRIPT.md
+sed -i 's/\bMoon\b/Mars/g' MANUSCRIPT.md
+sed -i 's/Shackleton Crater/Valles Marineris/g' MANUSCRIPT.md
+sed -i 's/LunaNet/MarsNet/g' MANUSCRIPT.md
+# Verify:
+grep -ci '\blunar\b' MANUSCRIPT.md  # Must be 0
+grep -ci '\bMoon\b' MANUSCRIPT.md   # Must be 0
+```
+2. **Fix artifacts** from bulk replace: "the Mars" → "Mars", "the The Red Charter" → "The Red Charter"
+3. **Rewrite climax chapters** (20-25) with planet-correct content: dust storms, thin atmosphere, specific Martian geography
+4. **Verify:** 0 old-territory references, 120+ new-territory references
+
+This approach can lift a D to B+ in a single pass because the climax is the highest-leverage target.
+
+For plotless sci-fi books where chapters are independent "construction diary" episodes, the single highest-impact fix is to inject a central engineering or political crisis at the midpoint.
+
+**The full timeline pattern (crisis → cascade → antagonist → resolution):**
+
+When executing a crisis injection, structure the arc across 12-14 chapters at the book's midpoint:
+
+```
+Chapter N (midpoint):    Crisis appears — visible, specific, personal
+Chapter N+1:             Initial fix attempt fails — crisis worsens
+Chapter N+2:             Underlying cause discovered (e.g., contamination)
+Chapter N+3:             Cascade — secondary systems start failing
+Chapter N+4:             New character or expertise arrives (e.g., estranged child)
+Chapter N+5:             New solution attempted — partial success buys time
+Chapter N+6 (60% mark):  Antagonist makes first move — external pressure appears
+Chapter N+7:             Protagonist counters / takes dangerous action
+Chapter N+8:             Antagonist escalates — recall order, threat, leverage
+Chapter N+9-10:          Desperate gamble — last resort, high-risk solution
+Chapter N+11 (75% mark): Crisis resolution — partial victory, permanent cost
+```
+
+The antagonist should NOT appear before the 60% mark. Their introduction IS the escalation — it transforms the crisis from engineering problem to political/ethical choice. Before introducing the antagonist, the crisis is a puzzle; after, it's an enemy.
+
+**Sci-fi crisis types** (choose one, don't mix):
+- Life support failure (CO2 scrubber, oxygen generator, water recycler)
+- Micrometeorite strike (hull breach, module decompression)
+- Power system cascade (solar array failure, battery thermal runaway)
+- Structural failure (stress crack in critical load-bearing element / contamination weakening all components)
+- Communication loss (antenna damage, cannot coordinate with Earth for help)
+
+The contamination type (structural failure via material impurity) is the most versatile because it naturally cascades: every component made from the contaminated batch is ticking time bomb.
+
+**Real example — Mooncoming (Book 2 of Lunar Foundation):**
+- Before: 39 independent construction episodes — no rising tension, no through-line
+- Fix: Ch16 — Critical Systems Failure (power node overload at 85°C→120°C, repair in 1:47, crack pattern matches a bridge collapse). Cascade through Ch17-25: contamination revealed → cascade failure → daughter arrives → impurity trap → Cole's First Move (InterSolar) → Remote Mine → Recall Order → Desperate Gamble → Resolution
+- Antagonist (Harrison Cole/InterSolar) introduced at Ch21 (60% mark) with a recall order that Tom counters using bridge-collapse evidence
+- Cole's escalation: Article 14 → 48-hour evacuation → negotiated to 72-hour extension
+- Result: B+ → A- in one iteration; word count hit 80K target
+
+**How to apply:**
+```python
+# Find chapters around the midpoint
+midpoint = total_chapters // 2  # For 39 chapters, ~19-20
+# Look for a 'lull' chapter — one where nothing important happens
+# Replace it with a chapter titled "Chapter N: [The Crisis Name]"
+# Write the crisis as: problem appears → initial solution attempt fails → 
+#   crisis worsens → new solution attempted → partial success buys time →
+#   crisis is contained but revealed a worse underlying problem
+```
+
+### Type G: Over-Word-Count Acceptance
+
+Not every book needs trimming. When a book is 10K+ over its genre word-count target but the voice, plot, and character work are strong, the editorial judgment call is to **accept the natural length** rather than force a cut that damages the voice.
+
+**When to use:**
+- Book is at 85-100K in a genre targeting 60-75K (e.g., cozy mystery)
+- The extra length comes from procedural or genre-hybrid content (e.g., court scenes, cross-examinations, depositions)
+- The voice is distinctive, the plot is complete, the character work is consistent
+- Multiple subagent trimming attempts timed out or produced poor results (trimming dispersed bloat programmatically often fails)
+- The reader's experience is "enjoyable and immersive" not "bloated and slow"
+
+**Signs that trimming is NOT the answer:**
+- The book is over target but readers enjoy spending time with the protagonist
+- The genre is a hybrid (cozy-legal, thriller-romance, sci-fi-political) — hybrid formats naturally run longer than pure genre
+- The extra word count comes from entertaining dialogue and character scenes, not redundant exposition
+- Trimming subagents consistently time out because the manuscript is too large to read (>85K words) — this signals the book is at its natural working size
+
+**Real example — Cindy Lou Legal Capers, Book 1 (88K vs 60-75K target):**
+- Two subagent passes timed out. The dispersed bloat (redundant cross-examination rounds, extended descriptions) was impossible to target programmatically without damaging voice
+- The review's own assessment: "Accept 85-95K as the book's natural length. At this length the book has strong voice, complete plot, and consistent character work."
+- Decision: Accepted at B+ (above B threshold) at natural length 88K words
+- The hybrid cozy-legal format readers (Evanovich/Osman audience) prefer longer books where they can spend time with characters they enjoy
+
+**If you must trim (subagent keeps timing out):**
+1. Use `terminal` with inline Python (`python3 << 'PYEOF'`) to analyze chapter word counts — `execute_code` may be blocked on Telegram
+2. Identify the 3 longest chapters (typically 8-10K words each in a 30-chapter book)
+3. Target ~1,000-1,500 words from each by patching out one redundant scene per chapter
+4. This reduces total by ~3-4K without affecting voice, character, or plot
 
 When delegating a book fix, include this in the context:
 
@@ -237,3 +580,20 @@ or any template structure that repeats across chapters. Each chapter must be uni
 
 Write ~1500 words per chapter. Use write_file tool.
 ```
+
+## Support Files
+
+This skill provides:
+
+### Templates (copy-and-adapt for manuscript fixes)
+- `templates/front-matter.md` — copyright page + TOC + acknowledgments boilerplate
+- `templates/back-matter.md` — "Also by Bob J Mills" full book list across all 6 series
+
+### Scripts (run directly)
+- `scripts/generate-ebook.py` — regenerate EPUB + PDF from MANUSCRIPT.md using ebooklib + WeasyPrint
+  - Usage: `python3 scripts/generate-ebook.py /path/to/book/dir`
+  - Auto-detects CLLC _MANUSCRIPT.md vs MANUSCRIPT.md
+  - Reports page count and target compliance
+
+### References
+- See `book-editorial-review` → `references/page-count-target.md` for the 160-190 page target specification

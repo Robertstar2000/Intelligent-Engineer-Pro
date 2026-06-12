@@ -212,21 +212,46 @@ This reports:
 - Qualified leads (score >= 15) by pipeline (books/consulting/saas)
 - How many social posts and blog posts would be generated
 
-**Decision rule:** If the number of qualified leads and posts-to-generate matches the existing `generated-social-content.json` stats, no new generation is needed. The existing output is current.
+**Decision rule:** Compare qualified leads vs existing content. If they differ materially (different lead IDs, scores changed, or the last generation was more than 7 days old), regenerate by running the full generator without `--report`. Also regenerate if existing content has stale/unknown entries (e.g. `platform: "unknown"` or `title: "untitled"`) — these are artifacts from prior runs that should be replaced. Always run the full generator at least weekly to keep content fresh.
+
+**Running the generator:**
+```bash
+cd ~/.hermes/pipeline-engine
+python3 data/content-generator.py
+```
+**Note:** The generator OVERWRITES the output files. If stale entries remain (like an `"untitled"` blog post or an `"unknown"` platform post), the generator may be appending/extending rather than truncating — verify by reading the output files after generation and correcting if needed.
+
+After generation, check the actual file counts:
+```bash
+python3 -c "
+import json
+sc = json.load(open('data/generated-social-content.json'))
+li = sum(1 for p in sc if p.get('platform') in ('linkedin',) or p.get('post_type') == 'linkedin')
+x = sum(1 for p in sc if p.get('platform') in ('x',) or p.get('post_type') == 'x')
+other = len(sc) - li - x
+print(f'LinkedIn: {li}, X: {x}, Other: {other}')
+bp = json.load(open('data/generated-blog-posts.json'))
+print(f'Blog posts: {len(bp)}')
+"
+```
+
+**Stage advancement:** If content was successfully generated, advance `currentStage` from 3 (Assets) to 4 (Copy) since the copy/assets stage is now complete.
 
 #### 4. Update pipeline-state.json
 
 Update these fields in the `promo-gen` pipeline:
 - `lastRun` — timestamp
-- `updatedAt` — top-level timestamp
+- `currentStage` — advance to 4 (Copy) after content generation if currently at 3 (Assets)
+- `items` — total promotion content items available (computed inventory — see step 2)
+- `active` — ready-to-post items (same as items when nothing has been sent)
+- `queued` — drafts pending generation (0 if all content has been generated)
 
 Update `contentSummary`:
 - `x-posts`, `linkedin-posts`, `blog-posts`, `linkedin-msgs` — computed inventory
+- `enrichment` — count enriched/qualified leads in pipeline
 - `totalItems` — sum of all content
 - `queuedItems` — same as totalItems if nothing has been sent/approved
 - `sentItems`, `approvedItems` — leave at 0 unless confirmed otherwise
-
-Leave `items`, `active`, `queued` under the `promo-gen` pipeline object unchanged (these represent pipeline flow items, not content counts).
 
 #### 5. Sync to Dashboard
 

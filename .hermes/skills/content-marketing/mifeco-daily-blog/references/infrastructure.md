@@ -53,14 +53,21 @@ cd /home/dh_mwpxuu/mifeco.com && php scripts/wp-publish-post.php \
 
 ## SSH/SCP Pattern (pexpect)
 
+**⚠️ CRITICAL: Never hardcode passwords in written scripts.** The `write_file` tool auto-mangles lines containing `***` (credential pattern detection), corrupting `PASSWORD='***'` into `PASSWORD=*** Always read passwords from `.env` at runtime using `subprocess.run`:
+
 ```python
 import pexpect
+import subprocess
 
 DHP = 'dh_mwpxuu@IAD1-SHARED-B8-42.DREAMHOST.COM'
 DHOST_PATH = '/home/dh_mwpxuu/mifeco.com'
-PASSWORD = '***'  # From ~/.hermes/.env DREAMHOST_PASSWORD
 
-def ssh_run(command, timeout=60):
+# Read password at runtime — DO NOT hardcode
+result = subprocess.run(
+    ['bash', '-c', 'source ~/.hermes/.env && echo "$DREAMHOST_PASSWORD"'],
+    capture_output=True, text=True, timeout=10
+)
+PASSWORD=result...ndef ssh_run(command, timeout=60):
     child = pexpect.spawn('ssh', [
         '-o', 'StrictHostKeyChecking=accept-new', DHP, command
     ], timeout=timeout)
@@ -82,6 +89,8 @@ def scp_upload(local_path, remote_path, timeout=60):
 # ALWAYS create remote dirs before SCP:
 ssh_run(f'mkdir -p {DHOST_PATH}/tmp {DHOST_PATH}/images')
 ```
+
+**Why pexpect and not `<<<` or heredocs**: SSH reads the password directly from the TTY, not from stdin. Commands like `ssh user@host command <<< "$PASSWORD"` or `echo "$PASSWORD" | ssh ...` or `sshpass` all fail with "Permission denied". Only pexpect's `sendline()` — which writes to the SSH process's TTY — works reliably for password auth.
 
 ## Gemini Image Generation
 
@@ -135,12 +144,31 @@ with open('/home/bob/.hermes/.env') as f:
             pw = line.split('=',1)[1].strip("'\"")
 ```
 
-### WP publish script argument quoting
+### WordPress publish script argument quoting
 The PHP script uses `getopt()` which parses `--key=value` syntax. When passing arguments through SSH from a Python pexpect script:
 - **Use double quotes**, not single quotes, around values: `--title="My Title"`
 - Python single-quoted strings pass double quotes through to the shell correctly
 - Wrong: `--title='My Title'` → PHP gets literal single quotes in the value
 - Right: `--title="My Title"` in a Python `'...'` string
 
-### SSH timeout for WP publish
-The `wp-publish-post.php` script can take 60-180 seconds (particularly with large featured images that PHP uploads via `wp_upload_bits` followed by `wp_generate_attachment_metadata`). Always use `timeout=180` for publish commands, not the default 60.
+### Apostrophes in tags break quoting through SSH
+When a tag contains an apostrophe (e.g., `Water's Horizon`), the single quote conflicts with Python's single-quoted f-strings that wrap the SSH command. **Fix**: Omit apostrophes from tag values — use `"Waters Horizon"` instead of `"Water's Horizon"`. Slugify tags to avoid special characters:
+```python
+# WRONG — breaks Python f-string quoting:
+f'--tags="Business,Water\'s Horizon,MIFECO books"'
+
+# RIGHT — no apostrophes:
+f'--tags="Business,Waters Horizon,MIFECO books"'
+```
+
+### `generated-blog-posts.json[0]` is metadata, not a post
+The file at `~/.hermes/pipeline-engine/data/generated-blog-posts.json` has index `[0]` as a metadata dictionary (`generator`, `version`, `description`, `stats`). Real posts start at index 1. When appending new posts, preserve index 0:
+```python
+data = json.load(open(path))
+# Index 0 is metadata — always preserve it
+data.append(new_post)  # correct — appends after existing posts
+```
+If you ever replace the file wholesale, include the metadata header at index 0.
+
+### SSH timeout for WP publish (180s minimum)
+The `wp-publish-post.php` script can take 60-180 seconds (particularly with large featured images that PHP uploads via `wp_upload_bits` followed by `wp_generate_attachment_metadata`). Always pass `timeout=180` to `ssh_run()` for publish commands — the default 60s will cut the upload short and return incomplete JSON.
