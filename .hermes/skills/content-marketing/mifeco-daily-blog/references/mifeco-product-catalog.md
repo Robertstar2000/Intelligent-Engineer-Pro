@@ -76,6 +76,7 @@ All three: Free open-source (MIT) + Pro waitlist (cloud-hosted, managed).
 - Always compare books from DIFFERENT series (e.g., No Blue Sky vs Lunar Foundation, not Built from Dust vs The Oxygen Gamble)
 - Cross-genre comparisons work well: Sci-Fi vs Business, Sci-Fi vs Memoir, Sci-Fi vs Cozy Mystery
 - Both books should be available on Amazon (published status)
+  - **⚠️ Exception**: Cindy Lou Legal Capers titles are `status: "draft"` (no Amazon ASIN) but appear on mifeco.com/books as comparison targets. Use MIFECO books page links as fallback CTAs for these.
 - Do NOT plagiarize — write original comparative analysis
 
 ### SaaS/Consulting Comparisons

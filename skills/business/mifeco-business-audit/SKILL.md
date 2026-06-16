@@ -1,7 +1,7 @@
 ---
 name: mifeco-business-audit
-description: Comprehensive business operations audit for MIFECO — analyzes website, pipeline engine, cron jobs, book catalog, SaaS products, consulting, and revenue opportunities. Produces a prioritized improvement proposal with implementation roadmap. Use when the user asks for business analysis, revenue optimization, growth strategy, or "what should I do next" for MIFECO.
-triggers: ["analyze mifeco", "business audit", "revenue opportunities", "growth strategy", "what should I do next", "improve mifeco", "make more money", "business operations"]
+description: "Comprehensive business operations audit for MIFECO -- analyzes website, pipeline engine, cron jobs, book catalog, SaaS products, consulting, and revenue opportunities across four promotion modes: Book Promotion, SaaS Marketing, Human Consulting, Virtual Consulting. Produces a prioritized improvement proposal with implementation roadmap. Use when the user asks for business analysis, revenue optimization, growth strategy, or 'what should I do next' for MIFECO."
+triggers: ["analyze mifeco", "business audit", "revenue opportunities", "growth strategy", "what should I do next", "improve mifeco", "make more money", "business operations", "promotion audit", "marketing audit"]
 ---
 
 ## 🔍 MemPalace Query (MANDATORY FIRST STEP)
@@ -25,36 +25,46 @@ Produce a comprehensive, actionable analysis of MIFECO's business operations acr
 
 Run these checks simultaneously:
 
-1. **Website audit** — `web_extract` mifeco.com, check React site components, identify gaps
-2. **Pipeline engine** — read ARCHITECTURE.md, pipeline-state.json, all pipeline data files
-3. **Cron jobs** — `cronjob list`, check last_status for errors, identify failed/stale jobs
-4. **Book catalog** — scan ~/books/ directories, check EPUB/PDF/KDP package completeness
-5. **Business config** — check .env for email/Stripe/API keys (note: .env is not directly readable; check config.yaml and skill files)
-6. **Skills inventory** — `skills_list` to see what automation already exists
+1. **Website audit** -- `web_extract` mifeco.com, check React site components, identify gaps
+2. **Pipeline engine** -- read ARCHITECTURE.md, pipeline-state.json, all pipeline data files
+3. **Cron jobs** -- `cronjob list`, check last_status for errors, identify failed/stale jobs
+4. **Book catalog** -- scan ~/books/ directories, check EPUB/PDF/KDP package completeness
+5. **Business config** -- check .env for email/Stripe/API keys (note: .env is not directly readable; check config.yaml and skill files)
+6. **Skills inventory** -- `skills_list` to see what automation already exists
 
-### Phase 2: Gap Analysis
+### Phase 2: Gap Analysis (Four Promotion Modes)
 
-For each business line, identify:
+For each promotion mode, identify:
 
-**Books:**
+**Book Promotion (Books Pipeline):**
 - Published vs unpublished count
 - KDP metadata completeness (description, keywords, cover, categories)
 - Marketing automation (email sequences, ads, cross-promotion)
 - Series page and "Also by" links
+- Genre-specific marketing (sci-fi, cozy women's fiction, business/non-fiction)
 
-**SaaS:**
+**SaaS Marketing (SaaS Pipeline):**
 - Product landing page quality
 - Download/waitlist counts
 - Payment integration (Stripe)
 - Onboarding email sequence
 - Open-source vs Pro feature split
+- Free tool lead magnets
 
-**Consulting:**
-- Intake form → pipeline connection
+**Human Consulting Marketing (Human Consulting Pipeline):**
+- Intake form to pipeline connection
 - Email nurture sequences
 - Pricing page clarity
 - Testimonials and social proof
 - Re-engagement of past clients
+- Tech/AI assessment lead magnets
+
+**Virtual Consulting Marketing (Virtual Consulting Pipeline):**
+- Self-service web flow
+- AI-driven consulting delivery
+- Pricing page clarity
+- Online booking/fulfillment
+- AI-driven consulting on any subject
 
 ### Phase 3: Revenue Leakage
 
@@ -66,15 +76,15 @@ For each gap, estimate:
 ### Phase 4: Proposal Output
 
 Produce a structured proposal with:
-1. **Executive summary** — current state, projected revenue impact
-2. **Top 5 immediate actions** — highest ROI, lowest effort
-3. **Priority matrix** — P0 (revenue now), P1 (growth engine), P2 (scale), P3 (moats)
-4. **Implementation roadmap** — week-by-week for 90 days
-5. **New skills needed** — what to build
-6. **New plugins/integrations** — what to install
-7. **Projected revenue table** — month-by-month for 12 months
-8. **Key metrics to track** — weekly dashboard items
-9. **Risks & mitigations** — what could go wrong
+1. **Executive summary** -- current state, projected revenue impact
+2. **Top 5 immediate actions** -- highest ROI, lowest effort
+3. **Priority matrix** -- P0 (revenue now), P1 (growth engine), P2 (scale), P3 (moats)
+4. **Implementation roadmap** -- week-by-week for 90 days
+5. **New skills needed** -- what to build
+6. **New plugins/integrations** -- what to install
+7. **Projected revenue table** -- month-by-month for 12 months
+8. **Key metrics to track** -- weekly dashboard items
+9. **Risks & mitigations** -- what could go wrong
 
 ## Key Files to Reference
 

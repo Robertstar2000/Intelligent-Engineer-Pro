@@ -177,9 +177,25 @@ def main():
 
     # ── Auto-advance ──
     h(2, "🔄 Auto-Advance")
+    advanced_count = 0
     if saas_auto:
         for l in saas_auto:
             emit(f"- {l['id']} ({l['name']}) — Stage 1 → 2")
+            # Actually advance the lead in the pipeline JSON
+            lead_id = l['id']
+            for lead in saas['pipeline']['leads']:
+                if lead['id'] == lead_id and lead.get('stage', 1) == 1:
+                    lead['stage'] = 2
+                    lead['advanced_at'] = datetime.now(timezone.utc).isoformat()
+                    lead['entered_stage'] = lead['advanced_at']
+                    advanced_count += 1
+                    break
+        # Save the updated pipeline JSON
+        if advanced_count > 0:
+            saas_path = os.path.join(DATA_DIR, "pipeline-saas.json")
+            with open(saas_path, 'w', encoding='utf-8') as f:
+                json.dump(saas, f, indent=2)
+            emit(f"  ✅ Advanced {advanced_count} leads in pipeline-saas.json")
         emit(f"> {len(saas_auto)} SaaS leads due for advancement.")
         emit("> Rule: Stage 1 ≥7d → advance to Stage 2.")
     else:

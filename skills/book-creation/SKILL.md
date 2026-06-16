@@ -249,6 +249,82 @@ Total: X complete | X incomplete | X blocked
 6. No `string-set` on h1/h2 (breaks WeasyPrint)
 7. No `target-counter()` (doesn't work in WeasyPrint)
 
+## The 11 Editorial Review Rules (WRITE TO THESE FROM DAY ONE)
+
+Every manuscript must be built with these 11 checks as design requirements, not afterthoughts. These are the editorial review criteria that determine the book's rating (A-F). Writing to them from the start prevents fix loops.
+
+### Structural Checks (1-6) — Front/Back Matter & Layout
+
+**1. Chapter Images Placement**
+- Every chapter needs `![](chapter_images/chNN.png)` AFTER the chapter header and BEFORE the chapter content — NOT before the header, not after the content
+- Verify the image file exists in `chapter_images/` directory
+- NO covers should be embedded in MANUSCRIPT.md (covers go in the EPUB/PDF build pipeline)
+
+**2. Copyright and Acknowledgments Page**
+- Must include: Copyright © [year] Bob J Mills, book title/series, all rights reserved, ISBN placeholder, fiction disclaimer, edition info
+- Acknowledgments section thanking contributors
+- Must appear as front matter BEFORE Chapter 1
+
+**3. Table of Contents (TOC)**
+- All chapter titles listed and synced with actual headers
+- No numbering gaps, no wrong titles, no missing chapters
+- Front matter (copyright, dedication) included if present
+- Handle worded numbers (`Chapter One`) and non-sequential numbering correctly
+- Page number references are for print layout, not markdown
+
+**4. Back Matter — Complete Book List**
+- Every book MUST end with "Also by Bob J Mills" listing ALL 6 series in reading order
+- Include reader magnet novella mention: "Get the free prequel novella at mifeco.com/books"
+- Include author website: mifeco.com
+- Cross-promote all series even if the current book is in only one
+
+**5. No Cover Images in MANUSCRIPT.md**
+- Cover images MUST NOT appear in the manuscript markdown
+- Covers go in the EPUB/PDF build pipeline only
+- Verify: `grep "cover" MANUSCRIPT.md` should return NO matches for cover-type images
+
+**6. Page Count Target (160-190 Pages)**
+- Every full-length book must generate a 6×9" PDF between 160 and 190 pages
+- Word count target: ~50K-70K words depending on formatting density (use ~275 words/page estimate)
+- Below 160 pages → P0: Must expand. Above 190 pages → P1: Must trim or tighten formatting
+
+### Series-Level & Readability Checks (7-11) — Writing Quality
+
+**7. Consistent Character Identity (Names & Personas)**
+- Character names must be stable across every chapter — no name-switching (Tom/Thomas/Tommy)
+- Cross-book consistency: same character in Book 1 and Book 4 must have the same name, personality baseline, relationships
+- Character personas must be coherent — brave in Ch 3 not cowardly in Ch 12 without arc explanation
+- Name inconsistency across a series = -1 full letter grade. Persona drift = -0.5
+
+**8. Series Flow (Transition Between Books)**
+- Each book should feel like the next chapter of a saga, not a reboot
+- Previous events acknowledged with consequences that carry forward (not summarized)
+- Ending hook pulls toward next book: mystery unsolved, a choice that will ripple, a new threat glimpsed
+- Tone continuity: Book 1's genre/mood should evolve organically in Book 2, not abruptly shift
+- Tone break = -1 letter grade. Missing/excessive recap = -0.5. Continuity error = -1
+
+**9. Engagement & Bestseller Readability**
+- Every chapter must end with a reason to keep reading (cliffhanger, revelation, emotional punch, new question)
+- Pacing: story should not drag in the middle; tension curve has proper peaks and valleys
+- Emotional resonance: reader must CARE about the outcome
+- Sentence-level rhythm: read 3 paragraphs aloud — do they flow or feel mechanical?
+- Technically correct but boring = capped at B. Pacing problems = -0.5. Page-turner quality = +0.5
+
+**10. Plot Coherence (Follow-Through)**
+- Every setup must have a payoff — no loose threads
+- Cause and effect visible: characters' decisions ripple through later chapters
+- No deus ex machina: problems solved by character actions, not coincidence or sudden new abilities
+- Subplots must have clear resolution (even if resolution is "character accepts the mystery")
+- Dropped plot thread = -1 per thread. Deus ex machina climax = -1.5
+
+**11. Genre-Appropriate Formatting**
+- Chapter header format consistent: same style, punctuation, spacing for EVERY chapter
+- Scene break convention uniform: all `---` or all `***`, never mixed
+- Paragraph style fits genre: business uses headers + boxes, fiction uses prose only (no bullet lists), memoir avoids script-style
+- Dialogue formatting: consistent quotation marks, proper punctuation, new speaker = new paragraph
+- White space adequate: fiction chapters should not look like dense legal documents
+- Inconsistent format = -0.5. Genre-mismatched = -1 (e.g., bullet lists in novel prose)
+
 ## Subagent Batch Rules
 
 - Max 2-3 chapters per `delegate_task` (10-chapter batches timeout at 600s)

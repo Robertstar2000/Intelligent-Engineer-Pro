@@ -197,8 +197,25 @@ When enriching leads:
 2. If contact name/email found for a lead that had none → update the registry entry
 3. Update `enriched_at` timestamp in both pipeline JSON and registry
 
+## Step 7: Registry Integrity — Resolving Count Mismatches
+
+When Step 7 flags a registry count mismatch (e.g., registry claims 10 consulting leads but only 8 exist in the pipeline file), follow this diagnostic flow:
+
+1. **Compare registry `total_leads` counts vs actual lead IDs in each pipeline JSON**
+2. **Identify missing leads** — cross-reference lead IDs (C-001, C-002, etc.) against the registry's `pipelines[p].leads[]` arrays
+3. **Two resolution paths:**
+
+   | Scenario | Resolution |
+   |----------|-----------|
+   | **Lead was moved to closed_lost** (exists in pipeline JSON at stage 9 but missing from registry) | Add it back to the pipeline JSON's `leads` array as-is; registry count is correct |
+   | **Lead was deleted from pipeline JSON entirely** (dead lead purged from file) | Decrement the registry's `pipelines[p].total_leads` and `total_leads_all` to match actual counts. Do NOT restore deleted dead leads just to satisfy the count — the count should reflect reality |
+
+4. After fixing, update `last_updated` in the registry and regenerate the daily report to confirm ✅ PASS
+
+> **Key principle:** The registry's `total_leads_all` must equal the sum of all actual lead entries in all pipeline JSON files. When leads are deliberately removed from pipeline files (e.g., dead leads purged from `pipeline-consulting.json`), decrement the registry counters in lockstep. Never leave a gap — a permanent 🔴 FAIL means downstream dashboards, reports, and daily briefings all inherit a broken number.
+
 ## Maintenance
 
-- Registry is append-only — never delete entries (set `status: "inactive"` instead)
+- Registry is append-only — never delete entries (set `status: "inactive"` instead). However, when leads are **removed from pipeline JSON files** (e.g., dead leads C-005, C-008 deleted from `pipeline-consulting.json`'s `leads` array), you MUST decrement the registry's `pipelines[p].total_leads` and `total_leads_all` counters to match. Otherwise every orchestrator run reports a permanent 🔴 FAIL.
 - Pipeline orchestrator detects registry mismatches and flags them in the daily report
-- **Dead leads still count toward pipeline value** — Leads with `verification_status: "Dead"` (e.g., C-005 "Summit Nonprofit Alliance", C-008 "Golden Gate Tech Incubator") remain in the pipeline JSON with their original `value_estimate`. This inflates total pipeline value. Either mark dead leads as `closed_lost` (move to final stage) or set `value_estimate: 0` so they don't skew pipeline totals.
+- **Dead leads still count toward pipeline value** — Leads with `verification_status: "Dead"` (e.g., C-005 "Summit Nonprofit Alliance", C-008 "Golden Gate Tech Incubator") that are still present in the pipeline JSON retain their original `value_estimate`. This inflates total pipeline value. Either mark dead leads as `closed_lost` (move to final stage) or set `value_estimate: 0` so they don't skew pipeline totals. If you delete dead leads from the JSON file instead, also decrement the registry counters (see above).

@@ -1,7 +1,7 @@
 ---
 name: sales-pipeline-infrastructure
-description: Build a complete lead-to-revenue pipeline automation system for one or more product lines — intake forms, data trackers, email nurture sequences, LinkedIn discovery, social media content generation, content deployment dashboard with SEND/DELETE, unified cross-product pipeline, and cron-based orchestration.
-version: 2.0.0
+description: "Build a complete lead-to-revenue pipeline automation system for MIFECO's four product lines aligned with promotion modes: Books (Creation + Marketing) for Book Promotion, SaaS for SaaS Marketing, Human Consulting for Human Consulting Marketing, Virtual Consulting for Virtual Consulting Marketing. Each has intake forms, data trackers, email nurture sequences, LinkedIn discovery, social media content generation, content deployment dashboard with SEND/DELETE, unified cross-product pipeline, and cron-based orchestration."
+version: 3.0.0
 author: Hermes Agent
 tags:
   - sales
@@ -11,12 +11,17 @@ tags:
   - dashboard
   - automation
   - agentmail
+  - book-promotion
+  - saas-marketing
+  - consulting-marketing
 related_skills:
   - ceo-agent-orchestrator
   - virtual-consulting
   - complex-task-orchestration
   - book-marketing-launch
   - pipeline-dedup-discovery
+  - openclaw-marketing
+  - openclaw-brand-advocacy
 ---
 
 ## 🔍 MemPalace Query (MANDATORY FIRST STEP)

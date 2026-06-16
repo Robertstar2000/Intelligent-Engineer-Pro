@@ -91,13 +91,29 @@
 
 ---
 
+
+
+### 2026-06-12 — Friday Strategy Review + KDP gap fix
+- **SaaS:** All 4 apps operational (Hypatia Pro, PM Accelerator, VibraEngineer, mifeco.com).
+- **Books:** 6 missing KDP zips created for LF B1-3 and Business Series 3. Owners Manual KDP_PACKAGE enriched from 1 to 10 files.
+- **Researcher:** ceo-researcher-20260606-001 + ceo-researcher-20260608-001 marked overdue (deadline June 10). Researcher now Cycle 2.
+- **consultant/sales:** Tasks from June 10 still pending (2 days old, within SLA). Both OFFLINE.
+- **Engineer tasks:** ceo-engineer-20260608-001 + ceo-saas-ops-20260608-001 pending (deadline June 13). Both OFFLINE - doc-only.
+- **KDP zips:** 21 per-book zips created (was 15). ~63 total across all locations including KDP_Packages/ archive.
+
 ## Active Agents (no ghosting detected)
 
 | Agent | Status |
 |-------|--------|
-| researcher | 🟡 Cycle 1 — consolidated May 29. 1 pending task (ceo-researcher-20260528-001). Monitor for claiming. |
-| publisher | 🟡→🔴 Cycle 2 — CEO executing 6 KDP packages Saturday. If pattern continues, permanent CEO-executes. |
-| writer | ✅ N/A — books pipeline manuscripts complete |
+| writer | Active - all 22 books complete |
+| researcher | OFFLINE Cycle 2 - 2 tasks overdue, no new assignments |
+| publisher | OFFLINE Cycle 2 - all KDP work CEO-executed |
+| engineer | OFFLINE Cycle 1 - gcloud blocked, doc-only |
+| security | OFFLINE - CEO compensates |
+| brand-advocate | OFFLINE Cycle 3+ - no new tasks |
+| consultant | OFFLINE Cycle 2 - no new tasks |
+| sales | OFFLINE Cycle 1 - no new tasks |
+| saas-ops | OFFLINE - doc-only |
 
 ### 2026-06-10 — Wednesday Consulting + Sales push
 - **Ghosting cleanup:** ceo-writer-20260609-001 (KDP descriptions) + ceo-writer-20260609-002 (Author Central bio) + ceo-publisher-20260609-001 (submission readiness) marked failed as superseded.

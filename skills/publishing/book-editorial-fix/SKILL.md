@@ -5,7 +5,7 @@ description: Process for applying editorial fixes from book-review.md files to e
 category: publishing
 tags: [editorial, fix, rewrite, manuscript, chapter, revision, subagent]
 related_skills: [book-editorial-review, book-publishing, manuscript-restoration, reader-magnet-production]
-triggers: [apply review, fix per review, update book, rewrite chapters, implement editorial, apply book-review.md recommendations, second pass fixes, front matter, back matter, copyright page, table of contents, also by, acknowledgments, template differentiation, genre shift, bulk sed replace, Moon to Mars, template chapters, crisis injection]
+triggers: [apply review, fix per review, update book, rewrite chapters, implement editorial, apply book-review.md recommendations, second pass fixes, front matter, back matter, copyright page, table of contents, also by, acknowledgments, template differentiation, genre shift, bulk sed replace, Moon to Mars, template chapters, crisis injection, placeholder removal, thematic rewrite, severe corruption, copy-paste removal]
 ---
 
 # Book Editorial Fix Workflow
@@ -19,7 +19,8 @@ triggers: [apply review, fix per review, update book, rewrite chapters, implemen
 
 ## Overview
 
-The fix workflow has 5 phases:
+The fix workflow has 6 phases:
+0. **Diagnose:** Quantify placeholder damage before choosing a fix strategy
 1. **Read:** Understand the review's instructions and the current manuscript state
 2. **Apply:** Rewrite/edit chapter files based on review recommendations
 3. **Verify:** Confirm changes were applied as instructed
@@ -53,6 +54,259 @@ Books may have new `.md` chapters in `chapters/` AND old `.xhtml` chapters in `m
 - Checking file modification dates
 - Checking if the review was already partially applied (look for review fix patterns in the text)
 
+## Phase 0: Quantitative Damage Assessment
+
+Before choosing a fix strategy, quantify how much of the manuscript is copy-pasted placeholder content. This diagnostic determines whether you need a targeted fix (Type A / C) or a complete rewrite (Type R).
+
+### Step 1: Baseline — Word Count & Uniqueness Ratio
+
+```bash
+cd /path/to/book
+
+# Total vs unique word count
+total=$(wc -w < MANUSCRIPT.md)
+unique=$(cat MANUSCRIPT.md | tr ' ' '\n' | sort -u | wc -l)
+ratio=$(echo "scale=2; $unique * 100 / $total" | bc)
+echo "Total words: $total"
+echo "Unique words: $unique"
+echo "Uniqueness ratio: $ratio%"
+```
+
+**Interpretation:**
+| Ratio | Diagnosis | Recommended Fix |
+|-------|-----------|-----------------|
+| >30% | Healthy — some repetition but salvageable | Targeted fixes (Type A/B/C) |
+| 15-30% | Moderate damage — significant placeholder content | Type C + partial rewrite |
+| <15% | Severe corruption — majority is copy-pasted from other books | Type R (complete rewrite) |
+
+### Step 2: Known Placeholder Phrase Scan
+
+Run a multi-phrase grep for common template blocks that get copy-pasted across books:
+
+```bash
+for phrase in \
+  "work required patience and precision" \
+  "drill bit sang into the regolith" \
+  "equipment hummed softly" \
+  "silence of the habitat was broken" \
+  "monitor flickered, casting blue light" \
+  "too far to fail now" \
+  "regolith underfoot was finer than talc" \
+  "familiar pressure of the EVA gloves" \
+  "drifted from technical to personal" \
+  "sound conducted through bone" \
+  "small table that served as both" \
+  "family forged in the crucible" \
+  "pressed their palm against the cool glass" \
+  "silent communion with the planet" \
+  "Sarah's hands were raw" \
+  "puzzle with no edge pieces" \
+  "Self-Correction:" \
+  "Word count:"; \
+do
+  count=$(grep -ci "$phrase" MANUSCRIPT.md 2>/dev/null || echo 0)
+  [ "$count" -gt 0 ] && echo "PLACEHOLDER ($count): $phrase"
+done
+```
+
+Each match > 0 indicates copy-pasted block from another manuscript. Add any new phrases you discover during the fix to this list for future diagnostics.
+
+### Step 3: Inter-Book Content Check
+
+Scan for content from the WRONG book in the series — pandemic plots, alien signals, or crisis scenes from a different installment:
+
+```bash
+for phrase in "alien signal" "spread pattern" "mortality rate" "airborne vector" "pandemic" "water reclamation"; do
+  count=$(grep -ci "$phrase" MANUSCRIPT.md 2>/dev/null || echo 0)
+  [ "$count" -gt 0 ] && echo "CROSS-BOOK LEAK ($count): $phrase"
+done
+```
+
+### Step 4: Character Name Audit & Character Map (MANDATORY)
+
+Count occurrences of every character name variant to detect inconsistent naming AND verify a Character Map exists:
+
+```bash
+# Character Map verification
+if [ -f "CHARACTER_MAP.md" ]; then
+  echo "CHARACTER_MAP.md found — verifying against manuscript"
+  # Check each canonical name from the map
+  while IFS='|' read -r canonical aliases role chapter relationships voice books; do
+    [ -z "$canonical" ] && continue
+    canonical=$(echo "$canonical" | xargs)
+    count=$(grep -c "$canonical" MANUSCRIPT.md 2>/dev/null || echo 0)
+    echo "  $canonical: $count occurrences"
+  done < CHARACTER_MAP.md
+else
+  echo "WARNING: No CHARACTER_MAP.md found — creating one is required"
+fi
+
+# Name variant audit
+for name in "Elena Vargas" "Elena Varga" "Elena Chen"; do
+  echo "$name: $(grep -c "$name" MANUSCRIPT.md 2>/dev/null || echo 0)"
+done
+
+for auth in "Bob Mills" "Bob J Mills"; do
+  echo "$auth: $(grep -c "$auth" MANUSCRIPT.md 2>/dev/null || echo 0)"
+done
+```
+
+**Character Map Requirements (must exist for every book):**
+- **Per Book (CHARACTER_MAP.md in book directory):** Canonical name, aliases/nicknames, role, first appearance chapter, key relationships, voice/persona notes, books appearing in
+- **Per Series (SERIES_CHARACTER_MAP.md at series level):** Cross-book canonical reference for every recurring character, with deliberate changes explained
+- **Naming Rules Enforced:**
+  1. One canonical name per character (no Tom/Thomas/Tommy switching)
+  2. Surnames stable (no mid-book or cross-book changes without in-story explanation)
+  3. No duplicate names for different characters (Jane Wilson ≠ 4 different people)
+  4. Pronouns intentional and consistent (they/them must be deliberate and stable)
+  4. Title/rank consistency (pick ONE reference style per scene context)
+
+**Plot Map Requirements (must exist for every book):**
+- **Per Book (PLOT_MAP.md in book directory):** Chapter-range table showing core conflict, stakes, key twist/revelation, cause→effect link to next section, resolution status for each major structural segment (Ch1-5, Ch6-10, Ch11-15, Ch16-20, Ch21-25, Ch26-30, Ch31-35, Ch36-40)
+- **Per Series (SERIES_PLOT_MAP.md at series level):** Cross-book canonical reference showing each book's core conflict, stakes arc, key twists, how it sets up the next book, resolution status
+- **Flow Rules Enforced:**
+  1. Plot flows consistently — each scene causes the next, not "and then this happened"
+  2. Stakes escalate — complications multiply, tension curves upward, no sagging middle
+  3. No idiot plot — characters don't act stupidly just to advance the plot
+  4. No deus ex machina — resolutions earned through character agency, not coincidence
+  5. Subplots interweave with main plot, not run parallel without intersection
+  6. Ending is both surprising and inevitable — the only way it could have gone
+
+**Framework Map Requirements (for Non-Fiction / Business Books):**
+- **Per Book (FRAMEWORK_MAP.md in book directory):** Part-level table showing core thesis/claim, framework element, key case study, actionable takeaway ("The One Thing"), reader exercise/tool, cross-chapter link for each major part (Assess/Choose/Implement/Optimize or equivalent 4-part structure)
+- **Per Series (SERIES_FRAMEWORK_MAP.md at series level):** Cross-book canonical reference showing each book's core thesis, framework contribution, key frameworks introduced, how it builds on previous, reader journey position
+- **Quality Rules Enforced:**
+  1. Thesis clarity — core argument stated in Ch 1, reinforced every chapter
+  2. Framework utility — each chapter introduces/applies a reusable framework (not just advice)
+  3. Case study density — ≥1 concrete case study per chapter (real, specific, with numbers)
+  4. Personal storytelling — author's own failures/successes woven throughout
+  5. Provocative chapter headers — every title makes a CLAIM, not a description
+  6. Implementation apparatus — every chapter ends with "The One Thing" + exercise/checklist/template
+  7. No filler — every paragraph advances argument or illustrates framework
+  8. Cross-chapter coherence — frameworks build cumulatively
+  9. Reader journey clarity — positions reader at competency level (novice→practitioner→expert)
+  10. Companion resources — downloadable tools/templates referenced and exist
+
+**Verification:** After any fix pass, audit the manuscript against the Character Map AND (Plot Map for fiction OR Framework Map for non-fiction). Flag any deviations as P0 defects.
+
+### Step 5: Chapter Structure Map
+
+```bash
+echo "Chapter headers:"
+grep "^# Chapter " MANUSCRIPT.md
+echo ""
+echo "Old/generic titles still present (should be 0):"
+for title in "First Footsteps" "Site Selection" "Power Grid Online" "Helium-3 Discovery" "Resupply Mission"; do
+  count=$(grep -c "$title" MANUSCRIPT.md 2>/dev/null || echo 0)
+  [ "$count" -gt 0 ] && echo "  $title: $count"
+done
+```
+
+### Decision Tree
+
+```
+Quantify damage (Step 1-5)
+│
+├─ Uniqueness >30% AND no cross-book leaks AND <3 placeholder matches
+│   → Targeted fix (Type A/B/C/H/I/N)
+│
+├─ Uniqueness 15-30% OR 3-10 placeholder matches OR 1-2 cross-book leaks
+│   → Partial rewrite + targeted cleanup (Type A/C + H/I/N)
+│   └─ Keep salvageable chapters, rewrite contaminated ones
+│
+└─ Uniqueness <15% OR >10 placeholder matches OR cross-book leaks >2
+    → Complete rewrite (Type R)
+    └─ Discard all placeholder content, write new manuscript from scratch
+```
+
+### Subagent delegate_task Timeout (Critical)
+
+The `delegate_task` tool has a **hard internal timeout of ~600 seconds** regardless of the patched `DEFAULT_CHILD_TIMEOUT` setting (1800s). This was confirmed across multiple sessions: subagents consistently time out at 600s even when the config says 1800s.
+
+**Workaround:** For large editorial expansion tasks (expanding a book from 20K to 50K+ words), do NOT use `delegate_task`. Instead:
+
+1. Write a Python expansion script to a file (e.g., `expand_chapters.py`)
+2. Run it via `terminal`: `python3 /path/to/book/expand_chapters.py`
+3. The script reads the existing manuscript, generates expanded content, and writes the result
+4. Multiple expansion passes can be chained: `python3 expand_pass1.py && python3 expand_pass2.py`
+
+**When to use terminal scripts vs delegate_task:**
+| Task | Tool | Why |
+|------|------|-----|
+| Small fixes (name changes, AI artifact removal) | delegate_task | Fits in 600s |
+| Large expansion (20K -> 50K words) | terminal script | Needs 1000+ tool calls |
+| Complete rewrite of weak chapters | terminal script | Needs to write 15K+ words |
+| Multiple books in parallel | terminal scripts | No concurrency limit |
+
+### Chapter Expansion via Python Strings (Size Limit)
+
+Writing entire chapters as Python string literals in `write_file()` calls hits practical size limits (~8K tokens per call). For large chapters (2,500+ words), use one of these patterns:
+
+**Pattern 1: Terminal heredoc (preferred)**
+```bash
+python3 << 'PYEOF'
+import re
+with open('MANUSCRIPT.md', 'r') as f:
+    content = f.read()
+# ... expansion logic ...
+with open('MANUSCRIPT.md', 'w') as f:
+    f.write(content)
+PYEOF
+```
+
+**Pattern 2: Write expansion to separate file, then append**
+```bash
+# Generate expansion content
+python3 -c "
+expansion = '''[1500 words of new content]'''
+with open('expansion_ch11.txt', 'w') as f:
+    f.write(expansion)
+"
+# Append to chapter
+echo "" >> MANUSCRIPT.md
+cat expansion_ch11.txt >> MANUSCRIPT.md
+```
+
+**Pattern 3: Multiple smaller write_file calls**
+Break the expansion into 500-word chunks and write each separately.
+
+### User Communication: "Characters" vs "Words"
+
+When the user says "2500 to 3000 characters" in the context of chapter length, they almost certainly mean **words**, not characters. 2,500 characters is only ~400 words -- far too short for a chapter. Always interpret chapter length targets as words unless explicitly stated otherwise.
+
+### Rewrite vs Expand Preference
+
+When a book needs massive expansion (e.g., 23K -> 50K words), the user prefers **rewriting the weakest chapters from scratch** over appending expansion content to existing chapters. This produces more cohesive, higher-quality prose.
+
+**Approach:**
+1. Identify the weakest chapters (under 1,000 words, summary-like, or heavily templated)
+2. Rewrite them from scratch using genre benchmarks and humanizer rules
+3. Keep strong chapters (over 2,000 words) as-is
+4. Target 2,000-3,000 words per rewritten chapter
+5. Apply multiple expansion passes if needed, verifying word count after each pass
+
+### Expansion Pass Strategy
+
+For books needing 20K+ words of new content, use multiple expansion passes:
+
+| Pass | Target | Approach |
+|------|--------|----------|
+| 1 | +4-6K | Rewrite the 6-8 weakest chapters from scratch |
+| 2 | +4-6K | Expand remaining weak chapters with new scenes |
+| 3 | +3-5K | Add dialogue, sensory detail, internal monologue |
+| 4 | +2-3K | Final polish, ensure all chapters hit 2,000+ |
+
+After each pass, verify with `wc -w MANUSCRIPT.md` and check chapter-level distribution.
+
+### Tool Call Budget for Expansion Scripts
+
+When writing expansion scripts via terminal, be aware of the 50 tool call limit per script execution. For large expansions:
+
+1. **One script per chapter** -- don't try to expand all chapters in one script
+2. **Use file I/O** -- read/write files directly rather than making many small edits
+3. **Batch operations** -- use `cat >>` to append content rather than individual `write_file` calls
+4. **Verify after each script** -- run `wc -w` to confirm the expansion was applied
+
 ## Phase 2: Apply Fixes
 
 ### Writing Updated Chapters
@@ -66,6 +320,19 @@ When to use each:
 | write_file() | Whole-file content, new chapters, major expansions | Replacing tiny sections in an otherwise-good file |
 | patch() | Targeted fixes, name changes, AI artifact removal | Files with heavy repetition (patch may match wrong instance) |
 | terminal (sed) | Bulk find-and-replace across multiple files | Any change where you need to verify context before replacing |
+
+**⚠️ Pitfall: Overbroad find/replace creates cascading typos.** When using sed or patch for bulk replacements, ALWAYS verify the replacement didn't corrupt other words. A subagent's "I wa" → "I was" fix produced 22 new typos in one session: "I wanted" became "I wasnted", "I want" became "I wasnt", "I walked" became "I waslked", "I watched" became "I wastched". Prevention:
+```bash
+# After bulk fix, check for corruption
+grep -n "I wasnted\|I waslked\|I wastched\|I wastch" MANUSCRIPT.md
+```
+Always use `\b` word boundaries in sed: `sed -i 's/\bI wanted\b/I wanted/g'` not `sed -i 's/I wa/I was/g'`.
+
+**⚠️ Pitfall: Fix regressions from compilation layer.** In this session, fixes applied to `output/` HTML/PDF files or `manuscript_src/` chapter files did NOT propagate to the compiled `MANUSCRIPT.md`. The review would verify the source files were fixed, but the live manuscript still had the old errors. **Always verify changes in the final compiled `MANUSCRIPT.md`**, not just the source files. After any fix pass, re-compile and re-verify the compiled manuscript.
+
+**⚠️ Pitfall: Name fix regressions from partial patterns.** When fixing name inconsistencies (e.g., "Patricia Chen" → "Patricia Okonkwo"), search for ALL variants including hyphenated, accented, and partial matches ("Zhào", "Varma", "Osei"). Use `grep -i` with multiple patterns and verify zero hits remain for ALL variants. After applying fixes, re-run the full name audit including cross-checking against the series bible.
+
+**⚠️ Pitfall: read_file pipe characters leak into patch() calls.** When you read text from `read_file`, the output includes `LINE_NUM|CONTENT` formatting. If you copy text from a read_file result (including the `|` prefix) into a `patch()` old_string or new_string, those pipe characters end up in the actual file. **Always use `terminal` with `tail`/`head` to extract raw text for patch(), or use `cat >>` for end-of-file additions where old_string matching is not needed.**
 
 **Write new `.md` files to `manuscript_src/`** (not `chapters/`) so the next compile picks them up automatically. If writing to `chapters/`, note that you'll need to move them afterward.
 
@@ -85,12 +352,20 @@ grep -rn "OldName" path/to/book/output/* 2>/dev/null
 
 2. **Replace in EVERY file** — chapters, MANUSCRIPT.md, _MANUSCRIPT.md, HTML output, KDP package files. Forgetting one file means the old name survives.
 
-3. **Use `patch` tool for efficiency** — find all files with the wrong name, then apply `patch` to each with the same old_string/new_string pair. For bulk replacements across many files, use terminal with `sed`.
+3. **Use `patch` with `replace_all=true` for bulk replacements across large files** — safer than sed because patch has fuzzy matching and auto-runs syntax checks. For 400+ occurrences in a single file:
+```
+patch(mode='replace', path='MANUSCRIPT.md', old_string='OldName', new_string='NewName', replace_all=true)
+```
 
-4. **Verify zero instances remain**:
+Alternative: Use `terminal` with `sed` for very large replacement sets (>1000 occurrences) where patch may time out:
 ```bash
-grep -rn "OldName" path/to/book/ | grep -v "book-review.md" | wc -l
-# Should return 0
+sed -i 's/OldName/NewName/g' path/to/MANUSCRIPT.md
+```
+
+4. **Verify both old AND new names** — confirm the old count is zero AND the new count is the expected total:
+```bash
+grep -c "OldName" MANUSCRIPT.md   # Should be 0
+grep -c "NewName" MANUSCRIPT.md   # Should match expected total (e.g., 36 for "Elena Varga" in a full manuscript)
 ```
 
 ### Third-Person to First-Person Conversion (Memoir Pattern)
@@ -123,12 +398,44 @@ Common AI artifacts to find and remove:
 - "Nothing about [situation] was ever simple"
 - Visible generation instructions: "Word count: ~1050" or "(Self-Correction: I will expand...)"
 
-Search:
+**Mars-colonization-specific placeholders** (copy-pasted across No Blue Sky books):
+- "The drill bit sang into the regolith, a sound conducted through bone"
+- "The regolith underfoot was finer than talc, sharper than shattered glass"
+- "The equipment hummed softly in the background, a constant reminder"
+- "The monitor flickered, casting blue light across the huddle of exhausted faces"
+- "We've come too far to fail now... whatever it takes, whatever we have to sacrifice"
+- "Every movement was deliberate, every check double-verified"
+- "Drifted from technical to personal — a coping mechanism as old as exploration itself"
+- "A cylinder of Martian history, layers visible even in the monochrome suit lighting"
+- "Later that evening, back in the habitat's common module, the crew gathered"
+- "They pressed their palm against the cool glass, feeling the vibration"
+- "Sarah's hands were raw from gripping the same valve for three hours"
+- "Every hour brought a new data point. Every data point brought a new question."
+- "We have seventy-two hours... The water reclamation system is failing"
+- "The silence of Mars pressed in — not empty, but full of questions"
+- "Like assembling a puzzle with no reference image"
+
+Search for all at once:
+
 ```bash
-grep -rn "patience and precision\|patience, precision\|the silence of\|Self-Correction\|Word count:" path/to/book/manuscript_src/
+full_scan() {
+  local file="$1"
+  local count=0
+  for phrase in \
+    "patience and precision" "drill bit sang" "equipment hummed softly" \
+    "monitor flickered" "too far to fail" "regolith underfoot" \
+    "familiar pressure of the EVA gloves" "Sarah's hands were raw" \
+    "puzzle with no edge pieces" "Self-Correction:" "Word count:"; do
+    c=$(grep -ci "$phrase" "$file" 2>/dev/null || echo 0)
+    [ "$c" -gt 0 ] && echo "  HIT ($c): $phrase" && count=$((count + c))
+  done
+  echo "Total placeholder hits: $count"
+  [ "$count" -gt 0 ] && echo "WARNING: Placeholder content still present" || echo "CLEAN: No placeholder content detected"
+}
+full_scan MANUSCRIPT.md
 ```
 
-Remove by rewriting affected paragraphs to be specific and concrete.
+Remove by rewriting affected paragraphs to be specific and concrete. For severe cases (>10 hits), see Type R (Complete Thematic Rewrite).
 
 ## Phase 3: Verify
 
@@ -158,6 +465,37 @@ ls path/to/book/manuscript_src/*.md | wc -l
 | "Template content removed" | grep for unique template phrases | Old phrasing remains in compiled output |
 | "Book rewritten for Mars" | grep for "Moon" or "lunar" references | Old Moon-base content still in manuscript |
 | "All 39 chapters unique" | Check chapter 1, 20, 39 for identical structure | Same scene template repeated |
+
+### Uniqueness Ratio Check (Post-Fix Validation)
+
+After applying fixes, run a uniqueness ratio check to confirm placeholder content was replaced:
+
+```bash
+cd /path/to/book
+total=$(wc -w < MANUSCRIPT.md)
+unique=$(cat MANUSCRIPT.md | tr ' ' '\n' | sort -u | wc -l)
+ratio=$(echo "scale=2; $unique * 100 / $total" | bc)
+echo "Total: $total  Unique: $unique  Ratio: $ratio%"
+
+# Expected: ratio > 30% for a healthy manuscript after fix
+# If still < 20%, placeholder content remains
+```
+
+Also compare against the backup to confirm the fix reduced the total/unique ratio gap:
+
+```bash
+echo "=== Before ==="
+total=$(wc -w < MANUSCRIPT.md.ITERATION1_BACKUP)
+unique=$(cat MANUSCRIPT.md.ITERATION1_BACKUP | tr ' ' '\n' | sort -u | wc -l)
+echo "Scale=2; $unique * 100 / $total" | bc
+
+echo "=== After ==="
+total=$(wc -w < MANUSCRIPT.md)
+unique=$(cat MANUSCRIPT.md | tr ' ' '\n' | sort -u | wc -l)
+echo "Scale=2; $unique * 100 / $total" | bc
+```
+
+The after ratio should be notably higher than the before ratio — ideally >2x.
 
 ## Phase 4: Recompile MANUSCRIPT.md
 
@@ -230,6 +568,15 @@ DO NOT write the review — I'll handle that. Just make the actual edits to the 
 2. After all complete, verify actual word counts: `wc -w path/to/book/*MANUSCRIPT*.md`
 3. Read key sections to confirm changes were applied
 4. Write the new book-review.md yourself
+
+### Subagent Timeout Configuration
+
+The default subagent timeout is now **1800 seconds (30 minutes)** in three locations (patched from 600s/10 minutes):
+- `tools/delegate_tool.py`: `DEFAULT_CHILD_TIMEOUT = 1800`
+- `hermes_cli/config.py`: `delegation.child_timeout_seconds = 1800`
+- `cli.py`: `delegation.child_timeout_seconds = 1800` in defaults
+
+This allows large editorial fix tasks (expanding 20K+ words, converting HTML to markdown, trimming 15K+ words) to complete without timeout. For extremely large tasks (100K+ words), still consider the micro-goal delegation pattern described in `book-editorial-review` → Timeout Pitfall section.
 
 ### Tool Call Budget Management
 
@@ -416,126 +763,147 @@ Bob J Mills is a [brief bio]. He lives in [location]. This is his [Nth] book.
 ### Type J: Remove Cover Images from MANUSCRIPT.md
 Check if any images at the start of MANUSCRIPT.md are cover-style images (full-page graphic with title text). If found, remove them — covers go in the EPUB/PDF build pipeline, not the manuscript source. Search: `grep -n "cover\\|Cover\\|COVER" MANUSCRIPT.md` should return zero matches for actual cover images.
 
-### Type K: Template Differentiation (43-Chapter Template Fix)
+### Type M: Missing Chapter Addition (e.g., Brand-New Chapter 1)
 
-When a book has 40+ chapters all following the identical structure (same scene beats, same character lineup, same emotional arc), **do NOT delegate all chapters to one subagent.** A single subagent cannot differentiate 43 chapters in 50 tool calls.
+When a manuscript starts at Chapter 2 and needs a **new Chapter 1** written from scratch:
 
-**The 3-pass split pattern:**
-
-- **Pass 1 (subagent):** Fix the antagonist + climax + final 10 chapters. The highest leverage is creating a genuine antagonist with ideology and giving the ending real stakes. This alone can lift C+→B-.
-- **Pass 2 (subagent):** Differentiate chapters 1-20. Change POV characters, vary the problem type, add rising tension. Each block of 5 chapters should feel distinct.
-- **Pass 3 (subagent):** Differentiate chapters 21-33 (or wherever the template still repeats). Consolidate template chapters into scene-based arcs using the antagonist subplot as engine.
-- **Parent review after each pass:** Re-rate before deciding whether to loop again.
-
-**What makes a template chapter:**
+1. **Understand the series context first** — read the editorial review, Books I-II context, and the existing Chapter 2 to understand protagonist, setting, and established lore
+2. **The new chapter must:**
+   - Establish the protagonist (name, role, voice, physical description)
+   - Set the series/colony context (reference Books I-II events like the Oxygen Gamble, mention Mission AI, ground the story in the setting)
+   - Introduce the central hook (the anomalous signal, the alien threat, the crisis the book will follow)
+   - Run ~1,200–1,700 words as a proper scene with sensory detail and dialogue
+   - Include the image placeholder: `![](chapter_images/ch01.png)`
+3. **Write to `manuscript_src/ch001.md`** (not chapters/) so the compile picks it up
+4. **Add to the TOC** in MANUSCRIPT.md:
 ```
-Alert → Mission AI query → bullet points → great-grandparent reflection → Kaito channel → tear-wiping → 5-point framework → resolution
+Chapter 1 -- The Edge of Silence| 3  
+Chapter 2 -- Frequency Shift| 6  
 ```
-Every variant maps to this structure. The fix is to break the pattern: different character combinations, different problems, different emotional stakes per chapter block.
 
-### Type L: Genre/Setting Bulk Shift (e.g., Moon→Mars)
+### Type N: Image Placeholder Insertion (Markdown Manuscripts)
 
-When a book is set on the wrong planet/territory (Moon instead of Mars):
-1. **Bulk sed replacements first** (fastest, most reliable):
+When a Markdown manuscript needs `![](chapter_images/chNN.png)` placeholders after each chapter header:
+
+1. **Detect the existing chapter header format** — different books use different patterns:
+   - `# Chapter 2 -- Frequency Shift` (single hash, em-dash) — NBS, AoLS, LF series
+   - `## Chapter 1: Title` (double hash, colon) — CLLC series
+   - `## Chapter One: Title` (worded numbers) — Tomorrow Remembered
+2. **Add placeholders one chapter at a time** using `patch()` — target the unique `# Chapter N ...` header line:
+```
+patch(mode='replace', path='MANUSCRIPT.md', 
+  old_string='# Chapter 4 -- Title',
+  new_string='# Chapter 4 -- Title\n\n![](chapter_images/ch04.png)')
+```
+3. **For chapters 1-40, do them sequentially** — each patch is fast since the match is unique
+4. **Skip chapters that don't exist in the body** — if Chapter 4 is in the TOC but missing from the body, don't add a placeholder for it
+5. **Verify count**:
 ```bash
-sed -i 's/\blunar\b/Martian/g' MANUSCRIPT.md
-sed -i 's/\bMoon\b/Mars/g' MANUSCRIPT.md
-sed -i 's/Shackleton Crater/Valles Marineris/g' MANUSCRIPT.md
-sed -i 's/LunaNet/MarsNet/g' MANUSCRIPT.md
-# Verify:
-grep -ci '\blunar\b' MANUSCRIPT.md  # Must be 0
-grep -ci '\bMoon\b' MANUSCRIPT.md   # Must be 0
+grep -c '!\[\](chapter_images/ch' MANUSCRIPT.md  # Should match number of body chapters
 ```
-2. **Fix artifacts** from bulk replace: "the Mars" → "Mars", "the The Red Charter" → "The Red Charter"
-3. **Rewrite climax chapters** (20-25) with planet-correct content: dust storms, thin atmosphere, specific Martian geography
-4. **Verify:** 0 old-territory references, 120+ new-territory references
 
-This approach can lift a D to B+ in a single pass because the climax is the highest-leverage target.
+### Type O: TOC Formatting Consistency Fix
 
-### Type F: Central Crisis Injection (Sci-Fi Pattern)
-
-When a book has 40+ chapters all following the identical structure (same scene beats, same character lineup, same emotional arc), **do NOT delegate all chapters to one subagent.** A single subagent cannot differentiate 43 chapters in 50 tool calls.
-
-**The 3-pass split pattern:**
-
-- **Pass 1 (subagent):** Fix the antagonist + climax + final 10 chapters. The highest leverage is creating a genuine antagonist with ideology and giving the ending real stakes. This alone can lift C+→B-.
-- **Pass 2 (subagent):** Differentiate chapters 1-20. Change POV characters, vary the problem type, add rising tension. Each block of 5 chapters should feel distinct.
-- **Pass 3 (subagent):** Differentiate chapters 21-33 (or wherever the template still repeats). Consolidate template chapters into scene-based arcs using the antagonist subplot as engine.
-- **Parent review after each pass:** Re-rate before deciding whether to loop again.
-
-**What makes a template chapter:**
+When the Table of Contents has mixed entry styles (some using ` -- `, others using `: `):
+1. **Identify the inconsistent entries** — common pattern: Chapters 1-16 and 25-40 use em-dash, but Chapters 17-24 use colon
+2. **Fix each inconsistent entry via `patch()`** — the TOC entries include page numbers so they're uniquely identifiable:
 ```
-Alert → Mission AI query → bullet points → great-grandparent reflection → Kaito channel → tear-wiping → 5-point framework → resolution
+patch(mode='replace', path='MANUSCRIPT.md',
+  old_string='Chapter 17: Sub-Quantum Parlay| 68',
+  new_string='Chapter 17 — Sub-Quantum Parlay| 68')
 ```
-Every variant maps to this structure. The fix is to break the pattern: different character combinations, different problems, different emotional stakes per chapter block.
+3. **Also fix the chapter BODY headers** — they'll have the same inconsistency:
+```
+patch(mode='replace', path='MANUSCRIPT.md',
+  old_string='# Chapter 17: Sub-Quantum Parlay',
+  new_string='# Chapter 17 — Sub-Quantum Parlay')
+```
+4. **Verify**: `grep -c 'Chapter [0-9]*: ' MANUSCRIPT.md` should return 0
 
-### Type L: Genre/Setting Bulk Shift (e.g., Moon→Mars)
+### Type P: Duplicate Back Matter Removal
 
-When a book is set on the wrong planet/territory (Moon instead of Mars):
-1. **Bulk sed replacements first** (fastest, most reliable):
+When author bio or book list blocks appear multiple times at the end of a manuscript:
+
+1. **Read the last 80 lines** of MANUSCRIPT.md to see the full end-matter structure
+2. **Identify which block is the duplicate** — look for identical blocks (same bio, same book list) that appear serially
+3. **Remove the duplicate using `patch()`** — include enough surrounding context to make the old_string unique. Anchor on separator text:
 ```bash
-sed -i 's/\blunar\b/Martian/g' MANUSCRIPT.md
-sed -i 's/\bMoon\b/Mars/g' MANUSCRIPT.md
-sed -i 's/Shackleton Crater/Valles Marineris/g' MANUSCRIPT.md
-sed -i 's/LunaNet/MarsNet/g' MANUSCRIPT.md
-# Verify:
-grep -ci '\blunar\b' MANUSCRIPT.md  # Must be 0
-grep -ci '\bMoon\b' MANUSCRIPT.md   # Must be 0
-```
-2. **Fix artifacts** from bulk replace: "the Mars" → "Mars", "the The Red Charter" → "The Red Charter"
-3. **Rewrite climax chapters** (20-25) with planet-correct content: dust storms, thin atmosphere, specific Martian geography
-4. **Verify:** 0 old-territory references, 120+ new-territory references
-
-This approach can lift a D to B+ in a single pass because the climax is the highest-leverage target.
-
-For plotless sci-fi books where chapters are independent "construction diary" episodes, the single highest-impact fix is to inject a central engineering or political crisis at the midpoint.
-
-**The full timeline pattern (crisis → cascade → antagonist → resolution):**
-
-When executing a crisis injection, structure the arc across 12-14 chapters at the book's midpoint:
-
-```
-Chapter N (midpoint):    Crisis appears — visible, specific, personal
-Chapter N+1:             Initial fix attempt fails — crisis worsens
-Chapter N+2:             Underlying cause discovered (e.g., contamination)
-Chapter N+3:             Cascade — secondary systems start failing
-Chapter N+4:             New character or expertise arrives (e.g., estranged child)
-Chapter N+5:             New solution attempted — partial success buys time
-Chapter N+6 (60% mark):  Antagonist makes first move — external pressure appears
-Chapter N+7:             Protagonist counters / takes dangerous action
-Chapter N+8:             Antagonist escalates — recall order, threat, leverage
-Chapter N+9-10:          Desperate gamble — last resort, high-risk solution
-Chapter N+11 (75% mark): Crisis resolution — partial victory, permanent cost
+# Read the end to see the structure
+tail -80 MANUSCRIPT.md
 ```
 
-The antagonist should NOT appear before the 60% mark. Their introduction IS the escalation — it transforms the crisis from engineering problem to political/ethical choice. Before introducing the antagonist, the crisis is a puzzle; after, it's an enemy.
+### Type R: Complete Thematic Rewrite (Severe Corruption)
 
-**Sci-fi crisis types** (choose one, don't mix):
-- Life support failure (CO2 scrubber, oxygen generator, water recycler)
-- Micrometeorite strike (hull breach, module decompression)
-- Power system cascade (solar array failure, battery thermal runaway)
-- Structural failure (stress crack in critical load-bearing element / contamination weakening all components)
-- Communication loss (antenna damage, cannot coordinate with Earth for help)
+When >50% of the manuscript is copy-pasted placeholder text from other books in the series (uniqueness ratio <15%), do NOT patch individual chapters. The approach is to discard all placeholder content and write a new manuscript from scratch.
 
-The contamination type (structural failure via material impurity) is the most versatile because it naturally cascades: every component made from the contaminated batch is ticking time bomb.
+**When to use (diagnosed via Phase 0):**
+- Uniqueness ratio <15%
+- 10+ known placeholder phrase matches
+- Cross-book content leaks (alien plots, pandemic crises, wrong-character names)
+- Chapters 1-19 are generic colonization scenes unrelated to the book's actual theme
 
-**Real example — Mooncoming (Book 2 of Lunar Foundation):**
-- Before: 39 independent construction episodes — no rising tension, no through-line
-- Fix: Ch16 — Critical Systems Failure (power node overload at 85°C→120°C, repair in 1:47, crack pattern matches a bridge collapse). Cascade through Ch17-25: contamination revealed → cascade failure → daughter arrives → impurity trap → Cole's First Move (InterSolar) → Remote Mine → Recall Order → Desperate Gamble → Resolution
-- Antagonist (Harrison Cole/InterSolar) introduced at Ch21 (60% mark) with a recall order that Tom counters using bridge-collapse evidence
-- Cole's escalation: Article 14 → 48-hour evacuation → negotiated to 72-hour extension
-- Result: B+ → A- in one iteration; word count hit 80K target
+**Process:**
 
-**How to apply:**
-```python
-# Find chapters around the midpoint
-midpoint = total_chapters // 2  # For 39 chapters, ~19-20
-# Look for a 'lull' chapter — one where nothing important happens
-# Replace it with a chapter titled "Chapter N: [The Crisis Name]"
-# Write the crisis as: problem appears → initial solution attempt fails → 
-#   crisis worsens → new solution attempted → partial success buys time →
-#   crisis is contained but revealed a worse underlying problem
+1. **Backup first:** `cp MANUSCRIPT.md MANUSCRIPT.md.ITERATION1_BACKUP`
+
+2. **Identify salvageable chapters:** Scan late chapters (typically 20-25) for strong original content that fits the actual book theme. Note those chapter numbers/titles to integrate into the new structure.
+
+3. **Design a new chapter structure** around the book's actual theme. For a political/constitutional book:
+
 ```
+PART 1: THE GATHERING STORM
+  Ch 1-5:   Seeds of discontent, Earth ultimatum, delegates called, journey
+PART 2: THE CONVENTION
+  Ch 6-10:  Assembly opens, three factions present, stalemate
+PART 3: CRISIS AND COMPROMISE
+  Ch 11-15: External crisis forces unity, great debate, compromise framed
+PART 4: THE CHARTER
+  Ch 16-19: Vote, signing ceremony, new dawn, charter's first test
+LEGACY
+  Ch 20-23: Earth's response, foundations laid, a generation later, appendix
+```
+
+4. **Write the entire manuscript in one pass** using `write_file()` (NOT patch — patch cannot handle a complete rewrite). Each chapter should:
+   - Have a Mission AI context line
+   - Feature a character epigraph
+   - Contain ~400-600 words of original content (dialogue, description, political drama)
+   - Include the image placeholder after the chapter header: `![](chapter_images/chNN.png)`
+
+5. **Salvage the best existing chapters** by renumbering and integrating them into the new structure. Fix character names in those chapters.
+
+6. **Add front matter** in a single block before Chapter 1:
+   - Title, author (verify correct name: Bob J Mills, not Bob Mills)
+   - Copyright line with correct year and author
+   - All rights reserved boilerplate
+   - Disclaimer of fiction (names, places, incidents are fictional)
+   - Complete TOC listing all chapters
+
+7. **Add back matter** after the final chapter:
+   - "## About the Author" with correct name
+   - "## The No Blue Sky Series" listing all books
+   - Appendix with key document text (e.g., the complete charter for a constitution book)
+
+8. **Add image placeholders inline** — insert `![](chapter_images/chNN.png)` right after each `# Chapter N -- Title` header during writing. This is faster than adding them as a separate pass.
+
+**Key technique: write_file() wins for complete rewrites**
+
+For severely corrupted manuscripts, `write_file()` to write the ENTIRE manuscript at once is both faster and more reliable than patching individual chapters. The old content is so contaminated that nothing is worth saving except 3-5 late chapters.
+
+```bash
+# File size comparison confirms the rewrite
+ls -la MANUSCRIPT.md*
+wc -w MANUSCRIPT.md MANUSCRIPT.md.ITERATION1_BACKUP
+
+# Old had more total words but fewer unique — that's the placeholder signature
+```
+
+**Verification after Type R:**
+- Run Phase 0 diagnostic again — uniqueness ratio should now be >30%
+- All placeholder phrase counts should be 0
+- All cross-book leak counts should be 0
+- Character names should be correct (Elena Varga, not Vargas)
+- Image placeholder count should match chapter count (grep the `![](chapter_images/` pattern)
+- Front matter and back matter should each be present once
 
 ### Type G: Over-Word-Count Acceptance
 

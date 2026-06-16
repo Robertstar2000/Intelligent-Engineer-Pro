@@ -51,7 +51,7 @@
 | Agent | Status |
 |-------|--------|
 | researcher | 🟡 Watch — 2 pending: ceo-researcher-20260606-001 (KDP A10, due June 10, 2d old, within SLA) + ceo-researcher-20260608-001 (MS Project campaign, due June 10, fresh) |
-| writer | ✅ Active — no action needed (all 22 books written and packaged) |
+| writer | ✅ Active — no action needed (all 20 books written and packaged) |
 | publisher | 🔴 OFFLINE Cycle 2 — all KDP work CEO-executed permanently |
 | engineer | 🔴 OFFLINE Cycle 1 — confirmed May 31 (deadline-expired) |
 | security | 🔴 OFFLINE — task assigned but CEO compensates |
@@ -60,12 +60,45 @@
 | sales | 🔴 OFFLINE cycle 1 — no new tasks |
 | saas-ops | 🔴 OFFLINE — task assigned June 8, CEO compensates |
 
-### 2026-06-08 — Monday SaaS + Security focus
-- **Assignments:** ceo-engineer-20260608-001 (security headers doc), ceo-saas-ops-20260608-001 (SQLite fix doc), ceo-researcher-20260608-001 (MS Project campaign brief)
-- **Ghosting continued:** engineer, saas-ops assigned despite OFFLINE status — tasks document work for Bob since gcloud CLI not installed
-- **Key findings:** All 22 books KDP-ready (EPUBs in KDP_PACKAGE/Kindle/). Cindy Lou packages thin (1 file each). 63 duplicate zip files. All SaaS operational. Consulting stalled.
-- **No stale tasks to clean:** Only 1 pending task (ceo-researcher-20260606-001, 2d old, within SLA)
-- **execute_code blocked in cron mode:** Discovered execute_code is blocked when running as cron job. Used terminal() heredoc for JSONL appends and write_file() for file creation instead.
+### 2026-06-15 — Monday SaaS Focus — Book count corrected to 20; duplicate/workspace cleanup completed
+
+**Status:** All agents remain OFFLINE. Researcher confirmed Cycle 2 (13 lifetime tasks, 0 ever claimed — stop assigning unless critical). No new ghosting consolidations.
+
+**Executed:**
+- **Book count corrected 22→20:** The NBS Book V empty typo dir `Book_V_The_First_Martian_Nand` (empty shell, 8 bytes) was counted as a real book, inflating the inventory. Removed. Real count: 20 books with KDP_PACKAGE on disk.
+- **Duplicate zips removed:** `tomorrow-remembered_KDP_PACKAGE.zip` (kebab-case, 5MB) removed. Central `KDP_Packages/` archive (1 redundant zip) removed.
+- **Build workspace removed:** `cindy-lou-series/` (190 files, full duplicate KDP structure for 3 Cindy Lou books) removed.
+- **Result:** 20 canonical per-book PascalCase zips — zero duplicates, zero build artifacts.
+
+**New finding:** KDP scanning methodology matters. A `for sub in "$d"*/` loop (iterating subdirectories within a book root) incorrectly reports Tomorrow_Remembered as missing KDP_PACKAGE because it checks `chapter_images/`, `chapters/`, etc. instead of the book root. Always check `$book_dir/KDP_PACKAGE` directly.
+
+### 2026-06-13 — Saturday Deep Work — No new consolidations, all agents OFFLINE
+
+**Status:** All agents remain OFFLINE (brand-advocate cycle 3+, consultant cycle 2, sales cycle 1, engineer cycle 1, security, saas-ops, publisher cycle 2). CEO executed all Saturday Deep Work directly via inline scripts.
+
+**Executed:** KDP duplicate zip cleanup, canonical per-book zip creation, Tomorrow_Remembered flat structure fix, First Generation de-archiving, directory standardization across 22 books, Cindy Lou thin package enrichment.
+
+**No new ghosting consolidations** — no new tasks assigned to offline agents. One task assigned to consultant (ceo-consultant-20260613-003) for email infrastructure research, but consultant is OFFLINE cycle 2 — will not be claimed.
+
+**Key finding:** Books pipeline is now FULLY COMPLETE (22/22 KDP-ready). No more writing tasks needed. Saturday Deep Work has permanently shifted from writing → production/packaging.
+
+**execute_code note:** Discovered execute_code is blocked in cron mode. Used terminal() with python3 -c for all inline execution. write_file() and patch() also work in cron mode.
+
+### 2026-06-14 — Sunday CEO Strategic Briefing — No new consolidations, all agents OFFLINE
+
+**Status:** All agents remain OFFLINE (brand-advocate cycle 3+, consultant cycle 2, sales cycle 1, engineer cycle 1, security, saas-ops, publisher cycle 2). Sunday = no task assignments per rotation.
+
+**Executed:** CEO briefing only. SaaS health check via browser inline (all 4 apps operational). Books pipeline confirmed 22/22 KDP-ready. Consulting pipeline: 15 leads, 0 contacted. Stale task scan: 0 pending >7 days. business-improvements maintenance scripts all passed.
+
+**No new ghosting consolidations** — Sunday briefing day, no tasks assigned.
+
+**Key findings:**
+- Books pipeline FULLY COMPLETE — no writing tasks remain. Saturday Deep Work = production/packaging only.
+- LF Book 4 (Waters_Horizon) has kebab-case zip variant — needs PascalCase rename.
+- gcloud CLI blocker: 38 days and counting. Security headers + SQLite fix coded but undeployed.
+- No email infrastructure: consulting pipeline completely stalled despite 15 qualified leads.
+- All cron jobs healthy (18 active, all last runs successful).
+- researcher: Cycle 2 ghosting — 2 tasks overdue since Jun 10, no claim.
 
 ### 2026-05-30 — publisher (Cycle 2 confirmed — CEO executes all KDP work)
 - **Detected:** ceo-publisher-20260528-002 (6 KDP books) pending for 2+ days, unclaimed. Publisher Cycle 2.

@@ -289,6 +289,32 @@ Current known post types and their typical pipelines:
 - **Blog posts**: long-form articles (AI transformation, project management, space/science fiction)
 - **Outreach templates**: personalized email drafts for SaaS (Hypatia/PMA/Vibra) and Consulting ($199/Dive/Transform) targets
 
+### Inventory-Only Pass (When Generator is Skipped)
+
+When the content generator ran within the last 7 days and lead scores haven't changed meaningfully, skip regeneration and do a pure inventory pass:
+
+1. Count all posts from each source file individually (don't trust cached contentSummary — it can drift)
+2. Compute new totals from scratch
+3. Update `contentSummary` with fresh counts
+4. **Keep `currentStage` at its current value** — only advance to stage 4 (Copy) on actual generation runs
+5. Sync to dashboard
+
+**Decision rule for regeneration vs. inventory-only:**
+- Last run < 7 days AND same qualified leads: → **inventory-only** (this session's pattern)
+- Last run ≥ 7 days OR different lead IDs/scores OR stale entries in output: → **regenerate**
+- If uncertain, regenerate — running the generator is inexpensive
+
+### contentSummary Drift Warning
+
+The `contentSummary` in `pipeline-state.json` is **not automatically updated** by the content generator script. After a generation run, the summary still shows old counts until manually recomputed. Always count actual files after every run — generation or inventory-only — and update `contentSummary` from those real numbers, never from the previous cached values.
+
+### Reference Files
+
+| File | Pattern | Description |
+|------|---------|-------------|
+| `references/daily-promotion-run-2026-06-11.md` | Regeneration | Full content generation run (advancing Assets→Copy stage) |
+| `references/daily-promotion-run-2026-06-12.md` | Inventory-only | Quick count-and-sync when content is fresh |
+
 ## Pitfalls
 
 - **Always sync JSON + HTML + SVGs together** — the HTML fetches JSON at runtime, so mismatched versions cause display errors

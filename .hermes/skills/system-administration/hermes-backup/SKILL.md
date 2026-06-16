@@ -95,6 +95,8 @@ fi
 # Note: tar compression can take several minutes for large backups.
 # If running in a timed context (e.g., cron), ensure timeout is sufficient (e.g., 600 seconds).
 # Consider using background mode for automated backups to avoid timeout issues.
+# When running via cron, avoid using send_message or direct output delivery mechanisms.
+# Let the system handle output delivery automatically as configured.
 # Use the -C flag to change to the backups directory to avoid "Removing leading '/' from member names" warnings.
 tar czf "${BACKUP_DIR}.tar.gz" -C "$HERMES_BACKUP_DIR" "$(basename "$BACKUP_DIR")" --remove-files
 
@@ -250,10 +252,16 @@ This applies generically to any missing project files — manuscripts, configs, 
 - Ensure sufficient free disk space on the destination before running (at least 2x expected backup size).
 - The GitHub sync step (rsync) can take a long time for large .hermes directories and may time out in automated contexts. Consider increasing the timeout or running the sync in the background if using automation.
 - If the backup directory path appears empty or incorrectly set (e.g., due to missing HERMES_BACKUP_DIR), the script may attempt to write to the root directory causing permission errors. Always verify that HERMES_BACKUP_DIR and BACKUP_DIR are set correctly before proceeding; the procedure already includes auto-detection but ensure the script runs in a shell where variables are preserved.
+
+- The rsync step for skills (or other directories) can take a long time if there are many small files, and may timeout in automated contexts. Consider using --timeout, ionice, or --bwlimit to throttle, or run the sync in the background.
+
 ## Verification
 - Unusually small backup files (e.g., 4K) may indicate a failed backup. Regularly check for these using the verification script or by scanning the backup directory for files significantly smaller than expected.
 - **If `~/books` is a symlink** (e.g., to `/mnt/usb_4tb/books`), resolve it with `readlink -f` before rsync to avoid backing up the symlink itself.
 - **When HERMES_BACKUP_DIR is explicitly set**, the skill uses that value directly without auto-detection. This ensures predictable behavior for cron jobs and automated backups. See `references/hermes-backup-dir-behavior.md` for details.
+
+
+- The rsync step for skills (or other directories) can take a long time if there are many small files, and may timeout in automated contexts. Consider using --timeout, ionice, or --bwlimit to throttle, or run the sync in the background.
 
 ## Verification
 
@@ -265,6 +273,9 @@ hermes skills run hermes-backup:scripts/verify_backup.sh
 Or manually:
 
 ```bash
+
+- The rsync step for skills (or other directories) can take a long time if there are many small files, and may timeout in automated contexts. Consider using --timeout, ionice, or --bwlimit to throttle, or run the sync in the background.
+
 ## Verification
 
 You can run the verification script to check backup integrity:

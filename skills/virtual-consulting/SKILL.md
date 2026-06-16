@@ -161,15 +161,40 @@ Quick summary:
 - Email: Robertstar@aol.com
 - Password: Rm2214ri#
 
-### Key Fixes Applied 2026-06-09
-- pay.php: Fixed table names (`payments` → `consulting_payments`, `surveys` → `consulting_surveys`)
-- Created missing `consulting_activity_log` DB table
-- Added `?backdoor=1` GET handler to survey.php for direct admin access
-- Admin Dashboard: Added 💼 Virtual Consulting card → backdoor URL
+### Key Fixes Applied 2026-06-15
+- setup.php: Fixed all table names to use `consulting_*` prefix (was mixed `users`/`consulting_users`)
+- config.php: Increased Python API timeout from 5s → 120s (PDF generation takes 30-120s)
+- config.php: Fixed_STRIPE_SK placeholder → `getenv('STRIPE_SK')` pattern
+- email-templates/complete.html: Rebuilt corrupted file (was .htaccess content, now proper HTML email)
 - **Stripe keys are placeholders** in config.php — real keys needed for regular payments
+- **All secrets should be moved to environment variables** — current hardcoded values are a security risk
 
-### Open Issue: Stripe Keys
-config.php has placeholder Stripe keys (`pk_live_CHANGEME`, `***`, `price_CHANGEME`). Regular payments work ONLY after real keys are added from Stripe dashboard.
+### Open Issues: Stripe Keys & Secrets
+config.php has placeholder Stripe keys (`pk_live_CHANGEME`, `***`, `price_CHANGEME`). Regular payments work ONLY after real keys are added from Stripe dashboard. **All credentials (DB, SSH, API keys, backdoor) must be rotated and moved to environment variables before production.**
+
+### Known Bugs (Updated 2026-06-15)
+- ~~`_fireAndForgetPythonAPI()` is a no-op~~ ✅ **Fixed** — now actually calls the Python API
+- ~~No email delivery mechanism~~ ✅ **Fixed** — `deliver_reports.py` sends via DreamHost SMTP
+- ~~Reports generated locally, not on DreamHost~~ ✅ **Fixed** — `sync_reports.py` syncs via SFTP
+- ~~`forgot-password.php` doesn't exist~~ ✅ **Fixed** — created with token-based reset flow
+- ~~No admin dashboard~~ ✅ **Fixed** — `admin.php` with full survey/payment/report management
+- ~~Hardcoded credentials in config.php~~ ✅ **Fixed** — all secrets moved to environment variables
+- ~~Hardcoded SSH password in deploy.sh~~ ✅ **Fixed** — loaded from `DREAMHOST_PASS` env var
+- ~~Hardcoded backdoor credentials~~ ✅ **Fixed** — loaded from `CONSULT_BACKDOOR_EMAIL/PASS` env vars
+- ~~`debug.php` exposes DB credentials~~ ✅ **Fixed** — removed from production
+- ~~Table name mismatch in setup.php~~ ✅ **Fixed** — all tables use `consulting_*` prefix
+- ~~Python API timeout too short~~ ✅ **Fixed** — increased from 5s to 120s
+- ~~Email template corrupted~~ ✅ **Fixed** — rebuilt proper HTML email
+- **Auto-advance rules not executed** ✅ **Fixed** — `daily-pipeline-analysis.py` now advances leads
+- **Empty skill files** ✅ **Fixed** — consultant, saas-ops, stripe skills populated
+- **Stripe keys are placeholders** ⚠️ **Still needs action** — add real keys from Stripe dashboard
+- **Webhook idempotency** ⚠️ **Still open** — duplicate webhook deliveries could create duplicate records
+- **No rate limiting** ⚠️ **Still open** — auth endpoints need rate limiting
+- **No survey timeout** ⚠️ **Still open** — incomplete surveys stay forever
+- Reports generated on local machine (`~/.hermes/consulting-reports/`) but `download.php` serves from DreamHost. Files never reach the download endpoint.
+
+### Reference Files
+- `references/consulting-production-checklist.md` — Full production readiness checklist (security, functional, database, payment, survey, report delivery). Use this when auditing the consulting system before launch.
 
 ## Survey State Machine
 ```
@@ -185,3 +210,4 @@ initial → generating_questions → in_progress → analyzing → complete
 
 - **Reports are NOT KDP packages** — Virtual consulting deliverables are single PDF reports (cover + letter + TOC + 30+ pages). They have nothing to do with KDP book packages. Never generate consulting deliverables in KDP format.
 - **Pipeline stages are research-oriented, not purchase-oriented** — The stages are Lead → Contacted → Survey → Research → Generate Reports → Quality Review → Delivery → Complete. Old incorrect stages (Qualifier → Buy → Process → Deliverables → Edit) were borrowed from a book sales pipeline and do not apply.
+

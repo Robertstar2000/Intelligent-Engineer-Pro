@@ -146,6 +146,7 @@ Implement components in this order for easiest debugging:
   4. Check installation with `python3 -c "import package_name; print(package_name.__version__)"`
   5. Verify all required packages are installed: numpy, sentence-transformers, faiss-cpu, transformers
   6. If pip is missing in venv, ensure pip is installed: `/path/to/venv/bin/python -m ensurepip --upgrade`
+  7. **Hermes Agent environment**: When installing dependencies for MemPalace within the Hermes Agent runtime, use the agent's virtual environment pip: `/home/bob/.hermes/hermes-agent/venv/bin/pip install <package>`. The core MemPalace components (capture, tagging, scoring, consolidation, pruning) function without sentence-transformers and faiss-cpu; embedding-dependent features (retrieval, reinforcement, explainability) require these packages.
 
 #### Scoring Algorithm Tuning
 - The weighted scoring system works well but weights may need tuning based on domain
@@ -256,7 +257,8 @@ When creating or fixing maintenance scripts like `cron_maintenance.py` for cron 
 5. **Verify variable name consistency** - Check for case-sensitive variable names (e.g., `embed._INDEX` vs `embed._index`)
 6. **Add timeouts for long operations** - Wrap potentially hanging operations with timeout mechanisms
 7. **Fix system statistics retrieval** - Instead of relying on `explain.get_system_stats()` (which may not exist), compute system statistics directly by counting files in each directory, checking the embedding index, and counting reinforcement entries.
-8. **Test in isolated environments** - Verify the script works in non-interactive contexts like cron jobs before scheduling
+8. **Check for dependency availability** - Before using embedding-dependent features, check if required dependencies (sentence-transformers, faiss-cpu) are available. Provide informative messages when dependencies are missing rather than failing, allowing core MemPalace functions to operate without embedding capabilities.
+9. **Test in isolated environments** - Verify the script works in non-interactive contexts like cron jobs before scheduling
 
 #### Verification Completed
 - End-to-end testing of capture → scoring → consolidation → retrieval pipeline
@@ -824,5 +826,6 @@ event_id = capture.capture_event({
 ## References
 - `references/direct-module-import-workaround.md` - Guidance for importing MemPalace modules in cron jobs
 - `references/faiss-stale-vectors.md` - Procedures for detecting and recovering from stale FAISS vectors
-- `references/cron_job_direct_imports.md` - Complete guide to direct module imports for reliable MemPalace operations in cron jobs
+ - `references/cron_job_direct_imports.md` - Complete guide to direct module imports for reliable MemPalace operations in cron jobs
+ - `references/dependency-installation.md` - Guide to installing required Python dependencies for MemPalace
 - `scripts/verify_system.py` - Verification script for detecting stale FAISS vectors and checking system health after maintenance operations

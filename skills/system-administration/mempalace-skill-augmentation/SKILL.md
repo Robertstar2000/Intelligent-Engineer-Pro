@@ -84,6 +84,7 @@ When storing domain knowledge in MemPalace:
 ```python
 import sys, os; sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace'))
 import capture, tag, embed
+from datetime import datetime, timezone
 storage = os.path.expanduser('~/.hermes/mempalace')
 capture.init_capture(storage); tag.init_tagging(storage); embed.init_embedding(storage)
 
@@ -97,6 +98,85 @@ event = {
 }
 event_id = capture.capture_event(event)
 ```
+
+### Weekly Skill Registry Sync Pattern
+This session's weekly cron job uses a streamlined version — sync registry only (no embeddings):
+
+```python
+import sys, os, yaml
+sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace'))
+sys.path.insert(0, os.path.expanduser('~/.hermes/hermes-agent'))
+import capture
+from agent.skill_utils import get_all_skills_dirs, iter_skill_index_files, parse_frontmatter
+
+capture.init_capture(os.path.expanduser('~/.hermes/mempalace'))
+
+# 1. Load existing skills from MemPalace
+events = capture.load_recent_events(days=365)
+existing_skills = {}
+for event in events:
+    data = event.get('data', {})
+    if data.get('type') == 'skill_registry':
+        existing_skills[data['skill_name']] = data
+
+# 2. Scan current SKILL.md files
+skills_dirs = get_all_skills_dirs()
+all_current_skills = []
+for skills_dir in skills_dirs:
+    if not skills_dir.exists():
+        continue
+    for skill_file in iter_skill_index_files(skills_dir, 'SKILL.md'):
+        try:
+            content = skill_file.read_text(encoding='utf-8')
+            fm, body = parse_frontmatter(content)
+            name = fm.get('name', '') or skill_file.parent.name
+            desc = fm.get('description', '')
+            try:
+                rel = skill_file.relative_to(skills_dir)
+                category = rel.parts[0] if len(rel.parts) > 1 else 'general'
+            except:
+                category = 'general'
+            all_current_skills.append({'name': name, 'description': desc[:500], 'category': category})
+        except Exception as e:
+            print(f'Error processing {skill_file}: {e}')
+
+# 3. Load disabled list from config
+with open(os.path.expanduser('~/.hermes/config.yaml')) as f:
+    cfg = yaml.safe_load(f)
+disabled = set(cfg.get('skills', {}).get('disabled', []))
+
+# 4. Find new skills (in filesystem but not MemPalace)
+new_skills = [s for s in all_current_skills if s['name'] not in existing_skills]
+
+# 5. Find removed skills (in MemPalace but not filesystem)
+current_names = {s['name'] for s in all_current_skills}
+removed = [name for name in existing_skills if name not in current_names]
+
+# 6. Add new skills
+for skill in new_skills:
+    status = 'disabled' if skill['name'] in disabled else 'enabled'
+    event_data = {
+        'type': 'skill_registry',
+        'skill_name': skill['name'],
+        'skill_category': skill['category'],
+        'skill_description': skill['description'],
+        'status': status,
+    }
+    capture.capture_event(event_data)
+
+# 7. Report summary
+print(f'Total skills: {len(all_current_skills)}')
+print(f'New added: {len(new_skills)}')
+print(f'Removed: {len(removed)}')
+print(f'Enabled: {sum(1 for s in all_current_skills if s[\"name\"] not in disabled)}')
+print(f'Disabled: {sum(1 for s in all_current_skills if s[\"name\"] in disabled)}')
+```
+
+**Note:** Embeddings require `sentence-transformers` + `faiss-cpu` in the Hermes venv. Install with:
+```bash
+/home/bob/.hermes/hermes-agent/venv/bin/pip3 install sentence-transformers faiss-cpu
+```
+Then run the embedding pass separately using `embed.add_embedding(event_id, text)` + `embed._persist()`.
 
 ### 2. Tag and Embed
 ```python
@@ -231,3 +311,4 @@ Key points:
 
 ## See Also
 - `references/skill-registry.md` — Full pattern for storing skills as MemPalace events, searching via FAISS, and managing disabled/enabled status
+- `references/weekly-skill-registry-sync.md` — Cron job pattern for weekly registry synchronization with filesystem

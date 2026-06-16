@@ -1,8 +1,93 @@
 ---
 name: marketing
-version: 1.0.0
-description: "Social media automation, content scheduling, analytics tracking, and campaign management. Transform your AI agent into a marketing powerhouse that handles multi-platform content strategy."
+version: 2.0.0
+description: "Comprehensive MIFECO marketing system — book promotion (sci-fi, cozy women's fiction, business, non-fiction), SaaS marketing, human consulting, and virtual consulting. Multi-channel: email outreach, social media (LinkedIn, X, Reddit, etc.), computer-use automation for posting."
 author: openclaw
+---
+
+## MIFECO Promotion Strategy — Four Modes
+
+### 1. Book Promotion
+**Target Audiences:** Book clubs, libraries, book reviewers, genre-specific communities
+**Genres:** Sci-fi, Cozy women's fiction, Business books, Non-fiction
+**Channels:**
+- **Email Outreach:** Direct to book clubs, libraries, book reviewers, genre bloggers
+- **Social Media:** LinkedIn, X (Twitter), Reddit, Goodreads, BookTok/Bookstagram
+- **Focus per Genre:**
+  - Sci-fi: Hard sci-fi communities, space exploration forums, The Expanse/Revelation Space/Children of Time fans
+  - Cozy women's fiction: Book club newsletters, women's fiction forums, Stephanie Plum/Thursday Murder Club/No.1 Ladies' Detective Agency readers
+  - Business/Non-fiction: LinkedIn professional groups, startup founder communities, tech leadership newsletters
+
+### 2. SaaS Marketing (MIFECO Applications)
+**Target:** Companies needing SaaS tools — project management, AI agents, vibraengineer, PM accelerator
+**Channels:**
+- **Email Outreach:** Target companies (ICP: startups, SMBs, enterprise teams)
+- **Social Media:** LinkedIn, X, Reddit (r/SaaS, r/startups, r/projectmanagement, r/AIagents)
+- **Focus:** Free open-source versions + paid Pro versions from MIFECO.com
+- **Lead Magnet:** Free tool downloads, trials, demos
+
+### 3. Consulting Marketing (Human)
+**Target:** Companies needing tech/AI assessments
+**Channels:**
+- **Email Outreach:** Target companies (ICP: mid-market, enterprise, funded startups)
+- **Social Media:** LinkedIn, X, Reset (tech-focused platforms)
+- **Focus:** Strategy Session ($199), Deep-Dive ($1,499), Full Transformation ($3,999)
+- **Lead Magnet:** Free tech assessment, AI readiness quiz
+
+### 4. Consulting Marketing (Virtual/AI-Driven)
+**Target:** Anyone needing online AI-driven virtual consulting on any subject
+**Channels:**
+- **Email Outreach:** Target companies and individuals
+- **Social Media:** LinkedIn, X, Reset
+- **Focus:** Self-service via web, AI-driven consulting on any subject
+- **Products:** Strategy Session ($199), Deep-Dive ($1,499), Full Transformation ($3,999)
+
+---
+
+## Target Company Definition
+A **Target Company** is one that has a need for the services MIFECO can deliver AND specifically the specific services or application being marketed. Not generic — must match the specific product/service being promoted.
+
+## Social Media Platform Definition ("etc.")
+"etc." = any social media platform that has a significant audience interested in the application or services MIFECO can deliver THAT WE CAN POST TO USING COMPUTER USE. This includes but is not limited to: LinkedIn, X (Twitter), Reddit, Reset, Hacker News, Indie Hackers, Product Hunt, Discord communities, Slack communities, Facebook Groups, Goodreads, BookTok (TikTok), Bookstagram (Instagram), YouTube, Threads, Bluesky, Mastodon.
+
+---
+
+## Promotion Execution Framework
+
+### Email Outreach Pipeline
+1. **ICP Definition** → 2. **Lead Discovery** → 3. **Enrichment** → 4. **Sequence** → 5. **Send** → 6. **Track** → 7. **Optimize**
+
+### Social Media Pipeline (Computer-Use Automated)
+1. **Content Generation** → 2. **Visual Creation** → 3. **Scheduling** → 4. **Posting (Computer Use)** → 5. **Engagement** → 6. **Analytics** → 7. **Iterate**
+
+### Content Strategy per Mode
+
+| Mode | Content Types | Frequency | Key Metrics |
+|------|--------------|-----------|-------------|
+| Book Promotion | Cover reveals, excerpts, author Q&A, reviews, genre discussions | 3-5/week | Pre-orders, reviews, library acquisitions |
+| SaaS Marketing | Demo videos, feature spotlights, case studies, free tool launches | 3-5/week | Signups, trials, upgrades |
+| Human Consulting | Assessment offers, case studies, thought leadership | 2-3/week | Strategy session bookings |
+| Virtual Consulting | AI demos, use cases, self-service flows | 3-5/week | Self-service signups |
+
+---
+
+## Computer-Use Automation for Social Posting
+Use browser automation to post to platforms that support it:
+- **LinkedIn:** Company page + personal profile
+- **X (Twitter):** Threads, single posts, replies
+- **Reddit:** Relevant subreddits (follow rules)
+- **Reset:** Tech-focused posts
+- **Other:** Any platform accessible via browser automation
+
+---
+
+## Integration with Sales Pipeline
+Each promotion mode feeds into its corresponding pipeline:
+- **Book Promotion → Books Marketing Pipeline** (bigtruck444@agentmail.to)
+- **SaaS Marketing → SaaS Pipeline** (carefulvehicle192@agentmail.to)
+- **Human Consulting → Human Consulting Pipeline** (crowdedbutton536@agentmail.to)
+- **Virtual Consulting → Virtual Consulting Pipeline** (backdoor@mifeco.com)
+
 ---
 
 

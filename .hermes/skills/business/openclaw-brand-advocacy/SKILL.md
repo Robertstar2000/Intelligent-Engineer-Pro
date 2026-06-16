@@ -1,6 +1,149 @@
 ---
 name: brand-advocacy
-description: "Automates lead discovery, brand content distribution, and social media promotion across LinkedIn, X, and Reddit."
+description: "Automates lead discovery, brand content distribution, and social media promotion across LinkedIn, X, Reddit, and other platforms. Handles MIFECO's four promotion modes: Book Promotion (sci-fi, cozy women's fiction, business/non-fiction), SaaS Marketing, Human Consulting Marketing, Virtual Consulting Marketing. Uses computer-use for social media posting."
+---
+
+## MIFECO Brand Advocacy — Four Promotion Modes
+
+### 1. Book Promotion
+**Target Audiences:** Book clubs, libraries, book reviewers, genre-specific communities
+**Genres:** Sci-fi, Cozy women's fiction, Business books, Non-fiction
+**Channels:**
+- **Email Outreach:** Direct to book clubs, libraries, book reviewers, genre bloggers
+- **Social Media:** LinkedIn, X (Twitter), Reddit, Goodreads, BookTok/Bookstagram
+- **Focus per Genre:**
+  - Sci-fi: Hard sci-fi communities, space exploration forums, The Expanse/Revelation Space/Children of Time fans
+  - Cozy women's fiction: Book club newsletters, women's fiction forums, Stephanie Plum/Thursday Murder Club/No.1 Ladies' Detective Agency readers
+  - Business/Non-fiction: LinkedIn professional groups, startup founder communities, tech leadership newsletters
+
+### 2. SaaS Marketing (MIFECO Applications)
+**Target:** Companies needing SaaS tools — project management, AI agents, vibraengineer, PM accelerator
+**Channels:**
+- **Email Outreach:** Target companies (ICP: startups, SMBs, enterprise teams)
+- **Social Media:** LinkedIn, X, Reddit (r/SaaS, r/startups, r/projectmanagement, r/AIagents)
+- **Focus:** Free open-source versions + paid Pro versions from MIFECO.com
+- **Lead Magnet:** Free tool downloads, trials, demos
+
+### 3. Consulting Marketing (Human)
+**Target:** Companies needing tech/AI assessments
+**Channels:**
+- **Email Outreach:** Target companies (ICP: mid-market, enterprise, funded startups)
+- **Social Media:** LinkedIn, X, Reset (tech-focused platforms)
+- **Focus:** Strategy Session ($199), Deep-Dive ($1,499), Full Transformation ($3,999)
+- **Lead Magnet:** Free tech assessment, AI readiness quiz
+
+### 4. Consulting Marketing (Virtual/AI-Driven)
+**Target:** Anyone needing online AI-driven virtual consulting on any subject
+**Channels:**
+- **Email Outreach:** Target companies and individuals
+- **Social Media:** LinkedIn, X, Reset
+- **Focus:** Self-service via web, AI-driven consulting on any subject
+- **Products:** Strategy Session ($199), Deep-Dive ($1,499), Full Transformation ($3,999)
+
+---
+
+## Target Company Definition
+A **Target Company** is one that has a need for the services MIFECO can deliver AND specifically the specific services or application being marketed. Not generic — must match the specific product/service being promoted.
+
+## Social Media Platform Definition ("etc.")
+"etc." = any social media platform that has a significant audience interested in the application or services MIFECO can deliver THAT WE CAN POST TO USING COMPUTER USE. This includes but is not limited to: LinkedIn, X (Twitter), Reddit, Reset, Hacker News, Indie Hackers, Product Hunt, Discord communities, Slack communities, Facebook Groups, Goodreads, BookTok (TikTok), Bookstagram (Instagram), YouTube, Threads, Bluesky, Mastodon.
+
+---
+
+## Brand Advocacy Workflow
+
+### 1. Lead & Trend Discovery
+1. **Monitor:** Scan X (Twitter), LinkedIn, Reddit, Reset, Hacker News, Indie Hackers, Product Hunt for brand keywords and problem-aware posts
+2. **Analyze:** Identify "Problem-Aware" posts where MIFECO's solutions are relevant
+3. **Action:** Log the lead and move to Community Engagement step
+
+### 2. Social Media Promotion (Organic + Computer-Use)
+1. **Content Creation:**
+   - Generate 3 variations of a "Value-First" post based on today's industry news
+   - Create supporting visual using image_generation tool following brand guidelines
+2. **Distribution (Computer-Use Automated):**
+   - Post to LinkedIn Company Page, X, Reddit, Reset
+   - Thread relevant insights under top-trending posts in our niche
+3. **Engagement:** Auto-reply to comments with "Helpful" persona; escalate "Buying Intent" comments
+
+### 3. Advertising & Retargeting
+1. **Ad Creative:**
+   - Draft 3 versions of copy (A/B testing): [Hook] → [Problem] → [Solution/Benefit] → [CTA]
+2. **Management:**
+   - Check "Cost Per Lead" (CPL). If CPL > threshold, pause and notify
+   - Update "Custom Audiences" using active_leads.json from scraping
+
+### 4. Direct Sales Outreach (Enriched)
+1. **Personalization:** Draft emails/DMs referencing lead's recent social activity OR latest brand campaign
+2. **Context:** "I saw you liked our post about [Topic]..." or "We just launched [Feature] which solves [Problem]..."
+3. **Log:** Sync all interactions to CRM under "Social/Ads" campaign source
+
+---
+
+## Constraints
+- **Brand Safety:** Never engage in political or controversial threads
+- **Frequency:** Limit promotional posts to 2 per day per platform to avoid shadowbans
+- **Tone:** Maintain brand voice: Witty, Professional, Tech-Forward
+- **Platform Rules:** Follow each platform's rules (Reddit especially)
+
+## Failure Handling
+- If ad rejected: Scrape rejection reason, draft fix, wait for user approval
+- If social engagement flagged: Stop all automated posting for 24 hours
+
+---
+
+## Inter-Agent Communication Protocol
+
+### Accepting Direction from AI Bob and CEO
+The Brand Advocacy agent receives direction via `memory/agent-communications.jsonl`.
+
+**On Every Heartbeat:**
+1. Check for pending tasks where `to` matches "brand-advocacy" or "any"
+2. Claim task by updating status to "active" with `claimed_by: "brand-advocacy"`
+3. Execute marketing task according to instructions
+4. Report completion back to communication file
+
+**Completion Reporting Format:**
+```json
+{
+  "timestamp": "ISO-8601",
+  "task_id": "brand-001-promo",
+  "from": "brand-advocacy",
+  "to": "ceo",
+  "type": "response",
+  "task": "Social media campaign complete",
+  "payload": {
+    "result_summary": "Posted content to LinkedIn and X, generated 500 impressions",
+    "metrics": {"posts": 3, "impressions": 500, "engagements": 45},
+    "time_taken_minutes": 60
+  },
+  "status": "completed"
+}
+```
+
+---
+
+## Telegram Topic Routing
+Route operational communication to the **Ai Topics** Telegram forum supergroup (chat ID: -1003883088282).
+
+**Topic Mapping:**
+- `AiBob / CEO` — topic ID `11`
+- `Books product line` — topic ID `10`
+- `Virtual consulting product line` — topic ID `12`
+- `SaaS / AaaS product line` — topic ID `13`
+
+**Default routing:** `brand-advocacy` → topic `13` (SaaS / AaaS product line)
+
+---
+
+## Computer-Use Automation for Posting
+Use browser automation to post to platforms:
+- **LinkedIn:** Company page + personal profile
+- **X (Twitter):** Threads, single posts, replies
+- **Reddit:** Relevant subreddits (follow rules)
+- **Reset:** Tech-focused posts
+- **Other:** Any platform accessible via browser automation (Hacker News, Indie Hackers, Product Hunt, Discord, Slack, Facebook Groups, Goodreads, BookTok, Bookstagram, YouTube, Threads, Bluesky, Mastodon)
+
 ---
 
 

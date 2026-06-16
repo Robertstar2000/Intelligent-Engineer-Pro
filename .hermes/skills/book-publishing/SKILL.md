@@ -46,6 +46,8 @@ Each book's publishing package zip contains:
 
 ## KDP Cover Specs (Quick Reference)
 > Full specs in `book-deliverable-kdp` skill. Summary:
+>
+> **KDP archive maintenance** — see `references/kdp-packaging-patterns-june2026.md` for the canonical naming convention and deduplication procedure.
 
 | Cover Type | Format | Key Spec |
 |---|---|---|

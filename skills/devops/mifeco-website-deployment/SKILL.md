@@ -517,6 +517,54 @@ When syncing pipeline changes to DreamHost (new stages, products, leads):
 
 **CRITICAL:** rsync is additive — old SVGs and JSON files persist on DreamHost unless explicitly deleted. Always run cleanup after removing files locally.
 
+### Dashboard Sync Script (Cron Job)
+
+The production dashboard sync runs via cron using `/home/bob/.hermes/pipeline-engine/scripts/dashboard-sync.sh`:
+
+```bash
+# Full sync (regenerate + deploy)
+bash /home/bob/.hermes/pipeline-engine/scripts/dashboard-sync.sh
+
+# Dry run only
+bash /home/bob/.hermes/pipeline-engine/scripts/dashboard-sync.sh --dry-run
+
+# Regenerate locally without upload
+bash /home/bob/.hermes/pipeline-engine/scripts/dashboard-sync.sh --keep-local
+
+# Sync + trigger webhook refresh
+bash /home/bob/.hermes/pipeline-engine/scripts/dashboard-sync.sh --webhook
+```
+
+**What the script does:**
+- Verifies 5 pipeline JSON data files exist in `/home/bob/.hermes/pipeline-engine/data/`
+- Verifies 5 dashboard files exist in `/home/bob/.hermes/pipeline-engine/dashboard/`
+- Rsyncs dashboard/ directory to `dh_mwpxuu@IAD1-SHARED-B8-42.DREAMHOST.COM:/home/dh_mwpxuu/mifeco.com/admin/`
+- Optional: triggers webhook at `https://mifeco.com/admin/webhook.php` with `{"secret":"Rm2214ri####","action":"refresh"}`
+
+**Dependencies:** The script uses `pexpect` for password-based rsync when `sshpass` is unavailable. If `ModuleNotFoundError: No module named 'pexpect'` occurs:
+```bash
+/home/bob/.hermes/hermes-agent/venv/bin/pip3 install pexpect
+```
+
+**Typical files synced (sizes from 2026-06-13 run):**
+| File | Size |
+|------|------|
+| pipeline-saas.json | 2,597 bytes |
+| pipeline-books.json | 11,192 bytes |
+| pipeline-consulting.json | 7,333 bytes |
+| leads-registry.json | 1,192 bytes |
+| unified-pipeline.json | 9,404 bytes |
+| dashboard/index.php | 10,619 bytes |
+| dashboard/pipeline-dashboard.html | 38,644 bytes |
+| dashboard/content-command-center.html | 7,646 bytes |
+| dashboard/webhook.php | 4,633 bytes |
+| dashboard/.htaccess | 1,152 bytes |
+
+**Webhook response on success:**
+```json
+{"status":"ok","action":"refresh","dashboards_regenerated":1,"timestamp":"2026-06-13T05:32:12-07:00"}
+```
+
 See the `mifeco-pipeline-management` skill for the full pipeline rebuild workflow.
 
 For the full consulting pipeline architecture, survey flow, database schema, common issues, and credentials, see:

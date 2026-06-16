@@ -13,13 +13,86 @@ results = embed.search_embeddings("novel writing workflow specification chapters
 ```
 This retrieves previous decisions, domain-specific context, and lessons learned from the vector memory store.
 
-# Novel Writing Workflow for Hermes Agent
+## Novel Writing Workflow for Hermes Agent
 
 > Updated via skill patch test
 A systematic approach for writing long-form fiction (novels, book series) using the Hermes agent, specifically designed for projects with detailed specifications and consistent formatting requirements.
 See `references/observed-file-structures.md` for observed file structure patterns from actual book projects.
 
-## When to Use
+## Character Naming Rules & Character Map (MANDATORY)
+
+**Every book project must maintain a Character Map** — a canonical reference document that tracks all characters across the book/series. This prevents the naming inconsistencies that have plagued prior projects (e.g., "Tom/Thomas/Tommy" for the same character, "Bill" with 3 different surnames across books, "Jane Wilson" as 4 different people with different pronouns).
+
+### Character Map Requirements
+
+**Per Book (stored in book directory):**
+- Canonical name for every character
+- All aliases/nicknames used
+- Role in story
+- First appearance (chapter)
+- Key relationships
+- Voice/persona notes (speech patterns, personality traits)
+- Books appearing in (for series characters)
+
+**Per Series (stored at series level):**
+- Cross-book Character Map showing every recurring character
+- Canonical name locked across ALL books
+- Any deliberate changes explained (e.g., "name change after marriage in Book 3")
+- Pronoun consistency (she/her vs they/them must be intentional and stable)
+
+### Character Naming Rules
+
+1. **One canonical name per character** — Pick ONE name and use it consistently. No "Tom/Thomas/Tommy" switching.
+2. **Surnames are stable** — A character's surname does not change mid-book or across books unless explicitly explained in-story.
+3. **No duplicate names for different characters** — "Jane Wilson" cannot be 4 different people across 4 books.
+4. **Pronouns are intentional and consistent** — If a character uses they/them, this must be consistent within the book and across the series (or explained).
+5. **Title/rank consistency** — "Col. James Kovacs" / "James" / "Director Kovacs" / "Director Reeves" — pick ONE reference style per scene context.
+
+**Before writing any chapter:**
+- Read the Character Map
+- Verify character names/pronouns match the map
+- Update the map if new characters are introduced
+
+**After completing a book:**
+- Audit the manuscript against the Character Map
+- Flag any deviations as P0 defects
+
+---
+
+## Plot Flow Rules & Plot Map (MANDATORY)
+
+**Every book project must maintain a Plot Map** — a canonical reference document that tracks the plot structure, cause→effect chains, stakes progression, and resolution status across the book/series. This prevents the plot flow failures that have plagued prior projects (e.g., sagging middles, deus ex machina endings, dropped plot threads, "and then this happened" episodic structure instead of causal chains).
+
+### Plot Map Requirements
+
+**Per Book (stored in book directory as PLOT_MAP.md):**
+- Chapter-range table showing core conflict, stakes, key twist/revelation, cause→effect link to next section, resolution status for each major structural segment (Ch1-5, Ch6-10, Ch11-15, Ch16-20, Ch21-25, Ch26-30, Ch31-35, Ch36-40)
+
+**Per Series (stored at series level as SERIES_PLOT_MAP.md):**
+- Cross-book Plot Map showing each book's core conflict, stakes arc, key twists, how it sets up the next book, resolution status
+
+### Plot Flow Rules
+
+1. **Plot flows consistently** — Each scene causes the next, not "and then this happened." Cause and effect must be visible from chapter to chapter.
+2. **Stakes escalate** — Complications multiply, tension curves upward. The middle does not sag; Act II has rising complications, not filler.
+3. **No idiot plot** — Characters don't act stupidly just to advance the plot.
+4. **No deus ex machina** — Resolutions earned through character agency, not coincidence.
+5. **Subplots interweave** with main plot, not run parallel without intersection.
+6. **Ending is both surprising and inevitable** — The only way it could have gone.
+
+**Before writing any chapter:**
+- Read the Plot Map
+- Verify the chapter's conflict, stakes, and twist advance the cause→effect chain
+- Update the Plot Map if the story takes a new direction
+
+**After completing a book:**
+- Audit the manuscript against the Plot Map
+- Trace 3 main plot threads from setup through climax to resolution
+- Flag any broken cause→effect chains, sagging middle, or unearned resolutions as P0 defects
+
+---
+
+## 🔍 MemPalace Query (MANDATORY FIRST STEP)
 - Writing novels or book series with chapter-by-chapter specifications
 - Projects requiring consistent formatting (specific headers, dialogue snippets, etc.)
 - Long-form creative writing where maintaining voice and continuity is crucial
@@ -130,13 +203,16 @@ When using this workflow, maintain a `KDP_AI_DISCLOSURE.md` file to track:
 
 ## Checking Book Project Status
 
-When checking the status of a book project, if the `book_source` directory appears empty, check the `output` directory for compiled manuscripts (e.g., EPUB, PDF) to confirm the book has been published and is in the promotion phase.
+When checking the status of a book project, if the chapter source directory appears empty, check the `output` directory for compiled manuscripts (e.g., EPUB, PDF) to confirm the book has been published and is in the promotion phase. However, note that the presence of output files doesn't guarantee publication readiness - always check for review documents (e.g., book-review.md) that may indicate structural issues needing resolution before publication. See references/tomorrow-remembered-project-notes.md for an example project structure assessment.
 
-Example structure:
+**Note on Directory Structure:** While the example shows `book_source/`, actual projects may use different directory names (e.g., `chapters/`, `book-sources/`, `src/`) and different file naming conventions (e.g., `Chapter_01_Title.md`, `ch01.md`, `01-introduction.md`). The key is consistency within the project and having a clear location for chapter source files.
+
+Example structure variations:
 ```
 /home/bob/books/[Book_Title]/
-├── book_source/          # Should contain chapter markdown files
+├── chapters/             # May contain chapter files (naming varies: ch01.md, Chapter_01.md, etc.)
+├── book_source/          # Alternative directory name
 ├── output/               # Contains compiled manuscripts (EPUB, PDF, etc.)
 └── ...                   # Other resources (covers, marketing materials)
 
-If `book_source` is empty but `output` contains a manuscript, the book is likely published.
+If the chapter source directory is empty but `output` contains a manuscript, the book is likely published but **not necessarily promotion-ready**. Always verify by checking for review documents detailing required fixes.

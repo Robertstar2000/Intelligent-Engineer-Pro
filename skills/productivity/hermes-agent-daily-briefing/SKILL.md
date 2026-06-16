@@ -57,6 +57,11 @@ This skill provides a systematic approach for generating a daily briefing for th
 - `ls`: Directory listing for book projects.
 - `grep`: Log file inspection.
 
+### Template
+- Use the reference template: `references/daily-briefing-template.md` to structure your briefing.
+- Fill in each section with the results from the corresponding checks.
+- Keep the language concise and suitable for Telegram delivery.
+
 ### Quality Standards
 - The briefing should be concise and formatted as bullet points for easy reading on Telegram.
 - Focus on actionable items and avoid unnecessary detail.

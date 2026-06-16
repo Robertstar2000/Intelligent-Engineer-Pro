@@ -273,9 +273,96 @@ Save to `{book_dir}/research/05_style_spec.md`.
 
 **Skip for non-fiction** unless the genre regularly uses recurring personas/case studies.
 
-Write a Python script to randomly select names from the top 50 most common US
-names. This is **MANDATORY** — never invent names or use internationally-diverse
-name lists.
+**MANDATORY: Character Naming Rules & Character Map**
+
+Before generating any names, you MUST understand and enforce the Character Naming Rules that have been established to prevent the naming inconsistencies that have plagued prior projects:
+
+**Character Naming Rules (NON-NEGOTIABLE):**
+1. **One canonical name per character** — Pick ONE name and use it consistently. No "Tom/Thomas/Tommy" switching.
+2. **Surnames are stable** — A character's surname does not change mid-book or across books unless explicitly explained in-story.
+3. **No duplicate names for different characters** — "Jane Wilson" cannot be 4 different people across 4 books.
+4. **Pronouns are intentional and consistent** — If a character uses they/them, this must be consistent within the book and across the series (or explained).
+5. **Title/rank consistency** — "Col. James Kovacs" / "James" / "Director Kovacs" / "Director Reeves" — pick ONE reference style per scene context.
+
+**MANDATORY: Character Map Creation**
+Every book project must maintain a **Character Map** — a canonical reference document that tracks all characters:
+- **Per Book (stored in book directory as CHARACTER_MAP.md):** Canonical name, aliases/nicknames, role, first appearance (chapter), key relationships, voice/persona notes, books appearing in
+- **Per Series (stored at series level as SERIES_CHARACTER_MAP.md):** Cross-book canonical reference for every recurring character, with deliberate changes explained
+
+**Before writing any chapter:**
+- Read the Character Map
+- Verify character names/pronouns match the map
+- Update the map if new characters are introduced
+
+**After completing a book:**
+- Audit the manuscript against the Character Map
+- Flag any deviations as P0 defects
+
+---
+
+**MANDATORY: Plot Flow Rules & Plot Map**
+
+Before generating any plot structure, you MUST understand and enforce the Plot Flow Rules that have been established to prevent the plot failures that have plagued prior projects:
+
+**Plot Flow Rules (NON-NEGOTIABLE):**
+1. **Plot flows consistently** — Each scene causes the next, not "and then this happened." Cause and effect must be visible from chapter to chapter.
+2. **Stakes escalate** — Complications multiply, tension curves upward. The middle does not sag; Act II has rising complications, not filler.
+3. **No idiot plot** — Characters don't act stupidly just to advance the plot.
+4. **No deus ex machina** — Resolutions earned through character agency, not coincidence.
+5. **Subplots interweave** with main plot, not run parallel without intersection.
+6. **Ending is both surprising and inevitable** — The only way it could have gone.
+
+**MANDATORY: Plot Map Creation**
+Every book project must maintain a **Plot Map** — a canonical reference document that tracks plot structure:
+- **Per Book (stored in book directory as PLOT_MAP.md):** Chapter-range table showing core conflict, stakes, key twist/revelation, cause→effect link to next section, resolution status for each major structural segment (Ch1-5, Ch6-10, Ch11-15, Ch16-20, Ch21-25, Ch26-30, Ch31-35, Ch36-40)
+- **Per Series (stored at series level as SERIES_PLOT_MAP.md):** Cross-book canonical reference showing each book's core conflict, stakes arc, key twists, how it sets up the next book, resolution status
+
+**Before writing any chapter:**
+- Read the Plot Map
+- Verify the chapter's conflict, stakes, and twist advance the cause→effect chain
+- Update the Plot Map if the story takes a new direction
+
+**After completing a book:**
+- Audit the manuscript against the Plot Map
+- Trace 3 main plot threads from setup through climax to resolution
+- Flag any broken cause→effect chains, sagging middle, or unearned resolutions as P0 defects
+
+---
+
+**MANDATORY: Non-Fiction Framework Map (for Business/Self-Help/Non-Fiction Books)**
+
+For non-fiction books, the Plot Map is replaced by a **Framework Map** that tracks the book's argument architecture:
+
+**Framework Map Creation**
+Every non-fiction book project must maintain a **Framework Map**:
+- **Per Book (stored in book directory as FRAMEWORK_MAP.md):** Part-level table showing core thesis/claim, framework element, key case study, actionable takeaway ("The One Thing"), reader exercise/tool, cross-chapter link for each major part (Assess/Choose/Implement/Optimize or equivalent 4-part structure)
+- **Per Series (stored at series level as SERIES_FRAMEWORK_MAP.md):** Cross-book canonical reference showing each book's core thesis, framework contribution, key frameworks introduced, how it builds on previous, reader journey position
+
+**Non-Fiction Quality Rules (NON-NEGOTIABLE):**
+1. **Thesis clarity** — Core argument stated in Ch 1, reinforced every chapter
+2. **Framework utility** — Each chapter introduces/applies a reusable framework (not just advice)
+3. **Case study density** — ≥1 concrete case study per chapter (real, specific, with numbers)
+4. **Personal storytelling** — Author's own failures/successes woven throughout (vulnerability builds trust)
+5. **Provocative chapter headers** — Every title makes a CLAIM reader wants to verify
+6. **Implementation apparatus** — Every chapter ends with "The One Thing" + exercise/checklist/template
+7. **No filler** — Every paragraph advances argument or illustrates framework
+8. **Cross-chapter coherence** — Frameworks build cumulatively
+9. **Reader journey clarity** — Positions reader at competency level (novice→practitioner→expert)
+10. **Companion resources** — Downloadable tools/templates referenced and exist
+
+**Before writing any chapter:**
+- Read the Framework Map
+- Verify the chapter's thesis, framework, case study, and takeaway advance the argument
+- Update the Framework Map if the structure evolves
+
+**After completing a book:**
+- Audit the manuscript against the Framework Map
+- Trace the core thesis through all 4 parts
+- Flag any missing framework elements, descriptive headers, missing case studies, or broken framework chains as P0 defects
+
+---
+
+Write a Python script to randomly select names from the top 50 most common US names. This is **MANDATORY** — never invent names or use internationally-diverse name lists.
 
 ```python
 import random
@@ -518,7 +605,11 @@ Every compiled manuscript must include:
 5. **About the Author** — back matter bio
 6. **About the Series** — optional, listing other books in the series (for series books)
 
-### Verification Checklist
+### Verification Checklist — Including All 11 Editorial Review Rules
+
+Before handing off to the publishing pipeline, verify every item. The 11 editorial review rules (items 1-6 structural, 7-11 quality) determine the book's A-F rating.
+
+**Structural Checks (1-6):**
 - [ ] Phase 0 research complete: 01-07 files in `{book_dir}/research/`
 - [ ] Core story concept/thesis defined in Phase 0.4
 - [ ] Character roster includes 6–8 distinct individuals (fiction) with role, background, arc, and voice notes
@@ -530,8 +621,21 @@ Every compiled manuscript must include:
 - [ ] Manuscript has undergone flow, grammar, and formatting edits
 - [ ] Total word count 40,000-56,000 for a ~175-225 page book at 6×9in
 - [ ] Fabricated-claim integrity pass completed (non-fiction)
-- [ ] Front/back matter present (title, copyright, TOC, about author)
 - [ ] Final output is a valid Markdown `.md` file
+- [ ] **1. Chapter Images**: Each chapter has `![](chapter_images/chNN.png)` AFTER header, BEFORE content. Files exist. No cover images in manuscript.
+- [ ] **2. Copyright & Acknowledgments**: Copyright © Bob J Mills, all rights reserved, ISBN placeholder, fiction disclaimer, edition info. Acknowledgments present. Front matter BEFORE Chapter 1.
+- [ ] **3. Table of Contents**: All chapter titles listed, synced with headers. No gaps, wrong titles, or missing chapters. Handles worded/sequential numbering.
+- [ ] **4. Back Matter — Full Book List**: "Also by Bob J Mills" with all 6 series in reading order. Reader magnet mention, author website, cross-promotion.
+- [ ] **5. No Cover Images**: `grep "cover" MANUSCRIPT.md` returns 0 matches for cover-type images.
+- [ ] **6. Page Count Target**: 6×9" PDF estimated at 160-190 pages (~44K-52K words at 275 w/p). Below 160p = P0 expand. Above 190p = P1 trim.
+
+**Quality Checks (7-11):**
+- [ ] **7. Character Consistency**: Names stable across chapters and books. Personas coherent. Cross-book name/relationship consistency.
+- [ ] **8. Series Flow**: Previous events acknowledged, consequences carry forward. Ending hook pulls toward next book. Tone continuity.
+- [ ] **9. Engagement & Readability**: Chapter-ending hooks (cliffhanger/revelation/question). Pacing has tension curve. Reader cares about outcome.
+- [ ] **10. Plot Coherence**: Every setup has payoff. Cause-and-effect visible. No deus ex machina. Subplots resolved.
+- [ ] **11. Genre Formatting**: Consistent chapter headers, uniform scene breaks, genre-appropriate paragraph style, proper dialogue formatting.
+
 - [ ] Manuscript handed off to book publishing pipeline
 
 ## Pipeline Integration
