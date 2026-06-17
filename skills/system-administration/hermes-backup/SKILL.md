@@ -8,8 +8,14 @@ description: Create a timestamped compressed backup of Hermes configuration, dat
 Before proceeding, query MemPalace for existing context:
 ```python
 import sys, os; sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace'))
-import embed; embed.init_embedding(os.path.expanduser('~/.hermes/mempalace'))
-results = embed.search_embeddings("Hermes backup configuration data memories", k=5)
+try:
+    import embed
+    embed.init_embedding(os.path.expanduser('~/.hermes/mempalace'))
+    results = embed.search_embeddings("Hermes backup configuration data memories", k=5)
+except ImportError:
+    # MemPalace dependencies not installed; skip query but continue with backup
+    results = []
+    print("Warning: MemPalace dependencies not installed. Skipping contextual memory query.")
 ```
 This retrieves previous decisions, domain-specific context, and lessons learned from the vector memory store.
 

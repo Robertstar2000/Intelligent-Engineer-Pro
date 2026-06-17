@@ -744,6 +744,8 @@ embed.rebuild_index()
 ```
 This re-scans all non-archived files in `raw/`, re-embeds their content, and writes a fresh index + ID map. The `rebuild_index()` function must exist in `embed.py` — verify with `grep "def rebuild_index" embed.py` before running.
 
+21. **FAISS index size mismatch**: If the FAISS index vector count is significantly lower than the number of meaningful memory entries in the raw store (e.g., < 10% of raw .json and .jsonl files containing actual memories), this indicates the index may not be properly populated. Always verify index size after installation, dependency changes, or maintenance operations. A small index (like single-digit vectors when thousands of memory files exist) typically indicates missing dependencies (faiss-cpu, sentence-transformers) or a failed embedding integration. Check that required packages are installed in the correct environment (e.g., Hermes Agent venv: `/home/bob/.hermes/hermes-agent/venv/bin/pip install faiss-cpu sentence-transformers`) and run a comprehensive rebuild using `scripts/cleanup_extractions.py --rebuild-only` if needed.
+
 ### 9. Example Workflow
 
 See `demo_integration.py` for a complete end-to-end example showing:

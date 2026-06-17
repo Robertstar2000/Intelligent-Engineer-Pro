@@ -159,6 +159,7 @@ Before attempting data fetching:
 
 ## Example Usage
 This skill is designed to be invoked programmatically or as part of a cron job for automated briefing generation. The approach handles both fully automated scenarios (when configured) and semi-automated scenarios (with guidance fallbacks).
+An example output from a session is available in `references/example-session.md`.
 
 ## Related Skills
 - daily-session-insights: For extracting insights from Hermes agent sessions

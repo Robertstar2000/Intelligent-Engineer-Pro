@@ -60,6 +60,45 @@
 | sales | 🔴 OFFLINE cycle 1 — no new tasks |
 | saas-ops | 🔴 OFFLINE — task assigned June 8, CEO compensates |
 
+### 2026-06-16 — Tuesday Books Focus — Kanban board repopulated from jsonl
+
+**Status:** All agents remain OFFLINE (brand-advocate cycle 3+, consultant cycle 2, sales cycle 1, engineer cycle 1, security, saas-ops, publisher cycle 2). Researcher Cycle 2 — 2 tasks overdue since Jun 10, no claim. No new ghosting consolidations.
+
+**Executed:**
+- **Kanban board recovery:** Board was empty (0 tasks) despite 6 pending entries in agent-communications.jsonl. Diagnosed as board wipe/crash gap. Re-created 6 Kanban tasks from jsonl pending entries:
+  - `t_af2c73c9` — engineer: Document security headers + SQLite fix deployment commands for Bob (HIGH)
+  - `t_414cec26` — system: Cleanup duplicate dirs/zips (LOW)
+  - `t_31cfe99b` — researcher: AI PM tool landscape competitor scan (NORMAL)
+  - `t_f0582ba3` — consultant: Consulting pipeline activation, 15 leads + follow-up drafts (HIGH)
+  - `t_87703235` — brand-advocate: Social media campaign for 20-book catalog (NORMAL)
+  - `t_ca6af6e5` — researcher: KDP retailer optimization research (NORMAL)
+- **Stale jsonl closure:** 6 stale pending entries marked completed (5 were already CEO-executed on June 13; 1 was superseded by newer task)
+- **Book count verified:** 20/20 books KDP-ready, zero regressions from June 15 cleanup
+
+**No new ghosting consolidations** — All 6 new Kanban tasks assigned to `default` profile. Will consolidate if agents don't claim by June 23.
+
+**Key findings:**
+- Books pipeline FULLY COMPLETE — no writing or packaging tasks remain
+- gcloud CLI blocker: 40 days and counting (security headers + SQLite fix coded but undeployed since May 7)
+- No email infrastructure: consulting pipeline completely stalled despite 15 qualified leads
+- All cron jobs healthy (23 active, all last runs successful)
+- Kanban CLI syntax: title is positional first arg, `--priority` is integer (1-3), NOT a string
+
+### 2026-06-16 — Tuesday Books Focus — No new consolidations, all agents OFFLINE
+
+**Status:** All agents remain OFFLINE (brand-advocate cycle 3+, consultant cycle 2, sales cycle 1, engineer cycle 1, security, saas-ops, publisher cycle 2). Researcher Cycle 2 — 2 tasks overdue since Jun 10, no claim. No new ghosting consolidations.
+
+**Executed:** CEO briefing only. SaaS health check via web_extract inline (all 4 apps operational). Books pipeline confirmed 20/20 KDP-ready. Consulting pipeline: 15 leads, 0 contacted. Stale task scan: 3 pending >7 days expired (engineer, saas-ops, system from Jun 8). 4 new tasks assigned (consultant, brand-advocate, researcher, system).
+
+**No new ghosting consolidations** — 3 tasks assigned to OFFLINE agents (consultant, brand-advocate, researcher) but these are new scope assignments, not re-rolls. Will consolidate if unclaimed by June 23.
+
+**Key findings:**
+- Books pipeline FULLY COMPLETE — no writing tasks remain. Tuesday focus shifts to content marketing.
+- gcloud CLI blocker: 39 days and counting. Security headers + SQLite fix coded but undeployed.
+- No email infrastructure: consulting pipeline completely stalled despite 15 qualified leads.
+- All cron jobs healthy (18+ active, all last runs successful).
+- execute_code still blocked in cron mode. Used write_file() → terminal(python3 script.py) two-step pattern for JSONL update.
+
 ### 2026-06-15 — Monday SaaS Focus — Book count corrected to 20; duplicate/workspace cleanup completed
 
 **Status:** All agents remain OFFLINE. Researcher confirmed Cycle 2 (13 lifetime tasks, 0 ever claimed — stop assigning unless critical). No new ghosting consolidations.
