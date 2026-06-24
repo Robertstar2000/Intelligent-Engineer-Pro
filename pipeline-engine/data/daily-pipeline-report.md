@@ -1,171 +1,133 @@
-# 📊 Daily Pipeline Report — June 16, 2026 (Tuesday)
+======================================================================
+MIFECO DAILY PIPELINE ORCHESTRATOR REPORT
+Generated: 2026-06-24 08:00:00 UTC
+======================================================================
 
-**Generated:** 2026-06-16T08:00:00Z  
-**Orchestrator:** Hermes Pipeline Cron (8:00 AM UTC, Mon–Fri)
+### STEP 1-2: PIPELINE OVERVIEW ###
 
----
+Pipeline         Leads  Total Value
+-----------------------------------
+Books                3 $     61.93
+SaaS                 5 $   9000.00 (est.)
+Consulting           8 $   1592.00
+-----------------------------------
+TOTAL               16
 
-## Executive Summary
+### PER-PIPELINE DETAIL ###
 
-| Metric | Value |
-|--------|-------|
-| **Total Leads** | 16 (3 Books + 5 SaaS + 8 Consulting) |
-| **Blockers** | 🔴 8 (all Consulting) |
-| **Auto-Advance** | 🔄 4 (SaaS Stage 1 → 2) |
-| **Nurture Issues** | ✅ 0 – All sequences aligned |
-| **Registry Integrity** | ✅ PASS – All counts match |
-| **Email Queue** | 📧 8 emails queued today |
+📚 BOOKS PIPELINE
+ID       Name                      Stage            Days    Value
+--------------------------------------------------------------
+B-001    Dr. Sarah Chen            Contacted          40 $   9.99
+B-002    Rev. Angela Torres        Lead Inbox         47 $  19.98
+B-003    Marcus Webb               Lead Inbox         47 $  31.96
 
----
+☁️  SAAS PIPELINE
+ID       Name                      Company                Stage             Days
+-----------------------------------------------------------------------------
+S-001    Sarah Chen                TechFlow Labs          Contacted            ?
+S-002    James Rodriguez           CloudStack Solutions   Contacted            6
+S-003    Priya Sharma              DataSync Systems       Contacted            6
+S-004    Michael Park              NexGen Automation      Contacted            6
+S-005    Elena Vasquez             SwiftScale Analytics   Contacted            6
 
-## 📚 Books Pipeline (3 leads)
+💼 CONSULTING PIPELINE
+ID       Company                      Contact              Stage                   Days    Value Status      
+--------------------------------------------------------------------------------------------------------
+C-001    Northwind Health Partners    Phillip Berry        contacted                 48 $ 199.00 Likely Real 
+C-002    Apex Education Group         —                    lead                      48 $ 199.00 Unverified  
+C-003    Meridian Financial Services  Gregory B. Shepherd  lead                      48 $ 199.00 Confirmed   
+C-004    Pacific Ridge Medical Center Dr. Alan Y. Lo       lead                      48 $ 199.00 Suspicious  
+C-006    Harbor Community College     Dr. Luis Dorado      lead                      48 $ 199.00 Likely Real 
+C-007    Crestwood Municipal Services Kris Simpson         lead                      48 $ 199.00 Confirmed   
+C-009    Prairie State Manufacturing  —                    lead                      48 $ 199.00 Needs Verification
+C-010    Blue Ridge Environmental NGO Kathy Andrews        lead                      48 $ 199.00 Confirmed   
 
-**Stages:** Lead Inbox → Contacted → Discovery → Quote Sent → Negotiation → Order Placed → Fulfillment → Follow-up  
-**Blocker thresholds:** Stage 3 > 7 days, Stage 5 > 7 days  
-**Products:** No Blue Sky (5 vols), Lunar Foundation (4 vols), Age of Lightships (4 vols), Standalone, Business books
+### STEP 3: BLOCKER ANALYSIS ###
 
-| ID | Contact | Org | Stage | Days in Stage | Status |
-|----|---------|-----|-------|--------------|--------|
-| B-001 | Dr. Sarah Chen | Northfield Academy | 2 – Contacted | 32d | 🟢 Awaiting response |
-| B-002 | Rev. Angela Torres | Hope Fellowship | 1 – Lead Inbox | 39d | 🟢 Needs outreach |
-| B-003 | Marcus Webb | The Book Cellar | 1 – Lead Inbox | 39d | 🟢 ⚠️ Domain verify needed |
+Found 8 blocker(s):
 
-**Notes:**
-- **B-001:** Contacted 2026-05-14 via outreach dashboard. Email sent. Awaiting response. Previous ON HOLD from missed Apr 28 video call — re-engaged via email.
-- **B-002:** Referral from BookExpo 2026. Fresh start 2026-05-07. No emails sent yet. Youth ministry / summer reading program interest.
-- **B-003:** Domain `thebookcellar.com` shows "FOR SALE" landing page. Verify Marcus Webb's affiliation before proceeding. Flags: domain-verify-needed, consignment.
+  🔴 C-001 Northwind Health Partners: Stage 'contacted' 48 days (>7d threshold)
+  🔴 C-002 Apex Education Group: Stage 'lead' 48 days (>7d threshold)
+  🔴 C-003 Meridian Financial Services: Stage 'lead' 48 days (>7d threshold)
+  🔴 C-004 Pacific Ridge Medical Center: Stage 'lead' 48 days (>7d threshold)
+  🔴 C-006 Harbor Community College: Stage 'lead' 48 days (>7d threshold)
+  🔴 C-007 Crestwood Municipal Services: Stage 'lead' 48 days (>7d threshold)
+  🔴 C-009 Prairie State Manufacturing: Stage 'lead' 48 days (>7d threshold)
+  🔴 C-010 Blue Ridge Environmental NGO: Stage 'lead' 48 days (>7d threshold)
 
-**Blockers:** None (no leads in Stage 3 Discovery or Stage 5 Negotiation)
+### STEP 4: NURTURE SEQUENCE HEALTH ###
 
----
+Pipeline book titles: 17
+Nurture sequence titles: 17
+✅ All book titles aligned between pipeline and nurture sequence.
+✅ All SaaS products covered in nurture sequence.
+✅ All consulting products covered in nurture sequence.
 
-## ☁️ SaaS Pipeline (5 leads)
+### STEP 5: EMAIL QUEUE — TODAY'S SENDS ###
 
-**Stages:** Identified → Contacted → Qualified → Demo Scheduled → Demo Completed → Negotiation → Closed Won → Closed Lost  
-**Auto-advance rule:** Stage 1 ≥ 7 days → Stage 2 (not yet implemented in orchestrator)  
-**Products:** Project Hypatia Pro ($99/mo), PM Accelerator ($69/mo), VibraEngineer ($29/mo)
+Total queued: 12 (8 ready, 2 ON HOLD)
 
-| ID | Contact | Company | Stage | Lead Age | Status |
-|----|---------|---------|-------|----------|--------|
-| S-001 | Sarah Chen | TechFlow Labs | 2 – Contacted | 39d | 🟢 Contacted 2026-05-14 |
-| S-002 | James Rodriguez | CloudStack Solutions | 1 – Identified | 39d | 🔄 Auto-advance candidate |
-| S-003 | Priya Sharma | DataSync Systems | 1 – Identified | 39d | 🔄 Auto-advance candidate |
-| S-004 | Michael Park | NexGen Automation | 1 – Identified | 39d | 🔄 Auto-advance candidate |
-| S-005 | Elena Vasquez | SwiftScale Analytics | 1 – Identified | 39d | 🔄 Auto-advance candidate |
+  [Books] B-001 Dr. Sarah Chen → Send Day 4 follow-up (contacted 40d ago) [ready]
+  [Books] B-002 Rev. Angela Torres → Send Day 1 Welcome email [READY]
+  [Books] B-003 Marcus Webb → Send Day 1 Welcome email [READY]
+  [SaaS] S-002 James Rodriguez → Send product nurture email (contacted 6d ago) [ready]
+  [SaaS] S-003 Priya Sharma → Send product nurture email (contacted 6d ago) [ready]
+  [SaaS] S-004 Michael Park → Send product nurture email (contacted 6d ago) [ready]
+  [SaaS] S-005 Elena Vasquez → Send product nurture email (contacted 6d ago) [ready]
+  [Consulting] C-003 Gregory B. Shepherd → Send Day 1 Welcome email [ready]
+  [Consulting] C-004 Dr. Alan Y. Lo → Send Day 1 Welcome email [🔴 NO EMAIL — needs enrichment]
+  [Consulting] C-006 Dr. Luis Dorado → Send Day 1 Welcome email [ready]
+  [Consulting] C-007 Kris Simpson → Send Day 1 Welcome email [ready]
+  [Consulting] C-010 Kathy Andrews → Send Day 1 Welcome email [🔴 NO EMAIL — needs enrichment]
 
-**Notes:**
-- **S-001:** Contacted 2026-05-14 via outreach dashboard. Awaiting response.
-- **S-002–S-005:** All at Stage 1 (Identified) for 39 days. Auto-advance threshold (≥7 days) exceeded. **Manual advance required** — auto-advance rules in `pipeline-saas.json` are not executed by the orchestrator.
+### STEP 7: REGISTRY INTEGRITY CHECK ###
 
-**Blockers:** None (SaaS uses auto-advance, not blocker logic)
+Pipeline          Actual   Registered   Match
+---------------------------------------------
+Books                  3            3       ✅
+SaaS                   5            5       ✅
+Consulting             8            8       ✅
+---------------------------------------------
+TOTAL                 16           16       ✅
 
----
+Lead ID cross-reference:
+  Books: registry has 5, actual has 3
+    ⚠️  Missing from registry: {'B-001', 'B-002', 'B-003'}
+    ⚠️  In registry but not in pipeline: {'lead-008', 'lead-001', 'lead-004', 'lead-012', 'lead-011'}
+  SaaS: registry has 4, actual has 5
+    ⚠️  Missing from registry: {'S-001', 'S-005', 'S-002', 'S-004', 'S-003'}
+    ⚠️  In registry but not in pipeline: {'lead-006', 'lead-003', 'lead-013', 'lead-009'}
+  Consulting: registry has 4, actual has 8
+    ⚠️  Missing from registry: {'C-002', 'C-010', 'C-001', 'C-009', 'C-003', 'C-004', 'C-006', 'C-007'}
+    ⚠️  In registry but not in pipeline: {'lead-005', 'lead-002', 'lead-007', 'lead-010'}
 
-## 💼 Consulting Pipeline (8 leads)
+======================================================================
+RECOMMENDED ACTIONS (prioritized)
+======================================================================
 
-**Stages:** Lead → Contacted → Qualified → Strategy Session Scheduled → Strategy Session Completed → Proposal Sent → Negotiation → Closed Won → Closed Lost  
-**Blocker threshold:** Any stage > 7 days  
-**Products:** $199 Virtual Strategy Session, Custom AI Readiness Assessment
+1. 🟡 SaaS leads S-002 through S-005 have been in Stage 2 (Contacted) since 
+   2026-06-17 (~7 days). Consider advancing to Stage 3 (Qualified) or sending 
+   targeted product nurture emails.
 
-| ID | Contact | Company | Stage | Lead Age | Email | Verification | Status |
-|----|---------|---------|-------|----------|-------|-------------|--------|
-| C-001 | Phillip Berry | Northwind Health Partners | 2 – Contacted | 40d | pberry@northwindhealth.com | Likely Real | 🔴 BLOCKER |
-| C-002 | — | Apex Education Group | 1 – Lead | 40d | N/A | Unverified | 🔴 BLOCKER |
-| C-003 | Gregory B. Shepherd | Meridian Financial Services | 1 – Lead | 40d | gsheperd@merid.com | Confirmed | 🔴 BLOCKER |
-| C-004 | Dr. Alan Y. Lo | Pacific Ridge Medical Center | 1 – Lead | 40d | N/A | Suspicious | 🔴 BLOCKER |
-| C-006 | Dr. Luis Dorado | Harbor Community College | 1 – Lead | 40d | ARHELP@LAHC.EDU | Likely Real | 🔴 BLOCKER |
-| C-007 | Kris Simpson | Crestwood Municipal Services | 1 – Lead | 40d | ksimpson@cityofcrestwood.org | Confirmed | 🔴 BLOCKER |
-| C-009 | — | Prairie State Manufacturing | 1 – Lead | 40d | N/A | Needs Verification | 🔴 BLOCKER |
-| C-010 | Kathy Andrews | Blue Ridge Environmental NGO | 1 – Lead | 40d | N/A | Confirmed | 🔴 BLOCKER |
+2. 🟡 Consulting leads C-002, C-003, C-004, C-006, C-007, C-009, C-010 have 
+   been in Stage 1 (Lead) since 2026-05-07 (~48 days). These need contact 
+   enrichment and outreach. C-002 (Apex Education) is ambiguous — verify entity.
 
-**Notes:**
-- **C-001:** Contacted 2026-05-14 via outreach dashboard. 40 days in "Contacted" stage. Needs follow-up.
-- **C-002:** Ambiguous entity (multiple "Apex Education Group" worldwide). No contact info. Needs enrichment.
-- **C-003:** Verified real company. Has email. Ready for outreach.
-- **C-004:** "Pacific Ridge Medical Center" not a registered entity. Closest match: Pacific Ridge Medical Associates (Laguna Hills, CA). Suspicious.
-- **C-006:** Likely Los Angeles Harbor College. Has email. Ready for outreach.
-- **C-007:** City of Crestwood, MO municipal government. Verified. Has email. Ready for outreach.
-- **C-009:** Verified small manufacturer but no website/email/contact name. Needs enrichment.
-- **C-0010:** BREDL nonprofit verified. No email (web form only). Needs enrichment.
+3. 🟡 Books B-001 (Dr. Sarah Chen) is in Stage 2 (Contacted) since 2026-05-14 
+   (~41 days). ON HOLD note from Apr 28. Needs re-engagement email.
 
-**Blockers:** 🔴 All 8 leads are blockers (all > 7 days in current stage). This is a systemic issue — the pipeline was reset to 2026-05-07 fresh-start dates, and no outreach has been executed since.
+4. 🟡 Books B-003 (Marcus Webb) has domain verification flag — thebookcellar.com 
+   shows "FOR SALE". Verify before proceeding with consignment discussion.
 
----
+5. 🔴 REGISTRY MISMATCH: Registry claims 8 consulting leads but only 8 exist 
+   in pipeline — this is a count match but IDs don't align. Registry lists 
+   lead-002, lead-005, lead-007, lead-010 but actual IDs are C-001 through C-010 
+   (minus C-005, C-008). Registry needs ID array refresh.
 
-## 🔍 Step 4: Nurture Sequence Verification
+6. 🔴 REGISTRY MISMATCH: Registry claims 3 books leads but lists 5 IDs 
+   (lead-001, lead-004, lead-008, lead-011, lead-012). Actual pipeline has 
+   B-001, B-002, B-003. Registry uses unified-pipeline IDs, not pipeline IDs.
 
-| Pipeline | Check | Status |
-|----------|-------|--------|
-| **Books** | No Blue Sky titles match (Built from Dust, The Oxygen Gamble, Rivers Under Mars, The Red Charter, The First Martian Nation) | ✅ PASS |
-| **SaaS** | All 3 products referenced (Project Hypatia Pro, PM Accelerator, VibraEngineer) | ✅ PASS |
-| **Consulting** | $199 Strategy Session references present | ✅ PASS |
 
-**Result:** ✅ No nurture discrepancies. Email queue is cleared for sending.
-
----
-
-## 📧 Step 5: Today's Email Queue
-
-**Status:** ✅ CLEARED (no nurture issues)
-
-| # | Pipeline | Lead | Contact | Action |
-|---|----------|------|---------|--------|
-| 1 | Books | B-001 | Dr. Sarah Chen | Day 32 follow-up (contacted 2026-05-14) |
-| 2 | SaaS | S-002 | James Rodriguez | Initial outreach – PM Accelerator interest |
-| 3 | SaaS | S-003 | Priya Sharma | Initial outreach – VibraEngineer interest |
-| 4 | SaaS | S-004 | Michael Park | Initial outreach – Project Hypatia Pro interest |
-| 5 | SaaS | S-005 | Elena Vasquez | Initial outreach – PM Accelerator interest |
-| 6 | Consulting | C-003 | Gregory B. Shepherd | Initial outreach – has email, verified |
-| 7 | Consulting | C-006 | Dr. Luis Dorado | Initial outreach – has email, likely real |
-| 8 | Consulting | C-007 | Kris Simpson | Initial outreach – has email, confirmed |
-
-**Note:** All emails require individual human approval via the Send button. No automated sending.
-
----
-
-## 📅 7-Day Projection (June 16–22)
-
-| Date | Projected Activity |
-|------|-------------------|
-| Tue 6/16 | Send today's 8 queued emails (pending approval) |
-| Wed 6/17 | Follow-up on any non-responses from B-001 (Books) |
-| Thu 6/18 | SaaS leads S-002–S-005: Day 3 nurture emails (if auto-advanced to Stage 2) |
-| Fri 6/19 | Consulting: Follow-up on C-001 (45 days in Contacted stage) |
-| Mon 6/22 | Weekly pipeline review — assess blocker resolution progress |
-
-**Key dates:**
-- B-001 will be at **37 days** in Contacted stage by Fri 6/19 — escalate if no response
-- SaaS auto-advance candidates will be at **44 days** at Stage 1 — critical to advance or contact
-- All consulting blockers will be at **45+ days** — systemic action needed
-
----
-
-## 🔧 Step 7: Registry Integrity
-
-| Pipeline | Actual Leads | Registry Count | Match |
-|----------|-------------|----------------|-------|
-| Books | 3 | 3 | ✅ |
-| SaaS | 5 | 5 | ✅ |
-| Consulting | 8 | 8 | ✅ |
-| **Total** | **16** | **16** | ✅ |
-
-**Registry last updated:** 2026-06-14T12:01:00Z  
-**Result:** ✅ PASS — All counts match. No reconciliation needed.
-
----
-
-## ⚠️ Action Items
-
-1. **🔴 URGENT — Consulting Blockers (8/8):** All consulting leads have been in their current stage for 40+ days. The fresh-start reset on 2026-05-07 means no real outreach has occurred. Prioritize contacting C-003, C-006, C-007 (have emails, verified).
-
-2. **🔄 SaaS Auto-Advance (4 leads):** S-002, S-003, S-004, S-005 have been at Stage 1 for 39 days. The auto-advance rule (≥7 days) is defined in JSON but not executed by the orchestrator. **Manual advance required** via outreach dashboard or implement auto-advance in the orchestrator.
-
-3. **📧 Books B-001 Follow-up:** Dr. Sarah Chen was contacted 32 days ago. If no response by day 37 (Fri 6/19), consider alternate contact method or close.
-
-4. **⚠️ B-003 Domain Verification:** The Book Cellar domain is for sale. Verify Marcus Webb's current affiliation before sending any outreach.
-
-5. **📋 Consulting Enrichment Needed:** C-002, C-009, C-010 lack contact emails. Prioritize enrichment before outreach.
-
----
-
-*Report generated by Hermes Pipeline Orchestrator v1.0 — Next run: Wednesday, June 17, 2026 at 8:00 AM UTC*
+Report saved to data/daily-pipeline-report.md

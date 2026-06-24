@@ -76,23 +76,49 @@ print(f'FAISS index: {embed.get_index_stats()["total_vectors"]} vectors')
 
 ## Searching for Skills via MemPalace
 
+**⚠️ `capture.load_recent_events()` does NOT exist.** Read events by scanning the raw directory directly. Events can be in two formats: old dated JSONL files nest data under a `data` key, while new events from `capture_event()` store data at the top level. Both must be handled.
+
 ```python
-import sys, os
+import sys, os, json
 sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace'))
-import embed, capture
+import embed
 
 embed.init_embedding(os.path.expanduser('~/.hermes/mempalace'))
 results = embed.search_embeddings("task description", k=10)
 
 # Load raw events to get skill details
-events = capture.load_recent_events(days=365)
-event_map = {e['id']: e for e in events}
+raw_dir = os.path.expanduser('~/.hermes/mempalace/raw')
+event_map = {}
+for fname in os.listdir(raw_dir):
+    if fname == 'archive':
+        continue
+    fpath = os.path.join(raw_dir, fname)
+    try:
+        with open(fpath) as f:
+            content = f.read().strip()
+            if not content:
+                continue
+            try:
+                evt = json.loads(content)
+                items = [evt]
+            except:
+                items = [json.loads(line) for line in content.split('\n') if line.strip()]
+            for evt in items:
+                eid = evt.get('event_id') or evt.get('id', '')
+                if eid:
+                    event_map[eid] = evt
+    except:
+        pass
 
 for memory_id, score in results:
     event = event_map.get(memory_id, {})
+    # Handle both formats: nested under 'data' key (old) or top-level (new)
     data = event.get('data', {})
+    if not isinstance(data, dict) or data.get('type') != 'skill_registry':
+        if event.get('type') == 'skill_registry':
+            data = event
     if data.get('type') == 'skill_registry':
-        print(f"  {data['skill_name']} [{data['skill_category']}] "
+        print(f"  {data['skill_name']} [{data.get('skill_category', '?')}] "
               f"score={score:.3f} status={data.get('status', '?')}")
 ```
 

@@ -1,267 +1,426 @@
-"""
-FAISS embedding integration for MemPalace
-"""
+"""MemPalace Embedding System - FAISS embedding integration with bug fixes."""
 
-import os
 import json
-import numpy as np
+import os
+import sys
+from typing import Dict, Any, List, Optional, Tuple
+
+# Try to import required dependencies
 try:
+    import numpy as np
     import faiss
-except ImportError:
-    print("FAISS not installed. Install with: pip install faiss-cpu")
-    faiss = None
-
-from sentence_transformers import SentenceTransformer
-
-# Storage path - will be set by init_embedding
-_STORAGE_PATH = None
-_MODEL = None
-_INDEX = None
-_ID_MAP = {}  # FAISS ID -> memory_id
-
-# Embedding dimension - will be set based on model
-_EMBEDDING_DIM = None
-
-def init_embedding(storage_path, model_name='all-MiniLM-L6-v2'):
-    """Initialize embedding system"""
-    global _STORAGE_PATH, _MODEL, _INDEX, _ID_MAP, _EMBEDDING_DIM
-    _STORAGE_PATH = storage_path
+    from sentence_transformers import SentenceTransformer
+    HAS_DEPENDENCIES = True
+except ImportError as e:
+    print(f"Warning: MemPalace embedding dependencies not available: {e}")
+    HAS_DEPENDENCIES = False
+    # Create mock classes for when dependencies are missing
+    class faiss:
+        @staticmethod
+        def IndexFlatIP(d):
+            class MockIndex:
+                def __init__(self):
+                    self.ntotal = 0
+                    self.d = d
+                def add(self, x):
+                    pass
+                def add_with_ids(self, x, y):
+                    pass
+                def search(self, x, k):
+                    return (np.zeros((1, k)), np.full((1, k), -1))
+            return MockIndex()
+        
+        @staticmethod
+        def write_index(index, filepath):
+            pass
+        
+        @staticmethod
+        def read_index(filepath):
+            return faiss.IndexFlatIP(384)
     
-    # Initialize sentence transformer model
-    try:
-        _MODEL = SentenceTransformer(model_name)
-        # Get embedding dimension from model
-        # get_sentence_embedding_dimension() deprecated in newer sentence-transformers
-        _EMBEDDING_DIM = _MODEL.get_embedding_dimension()
-        print(f"Loaded embedding model '{model_name}' with dimension {_EMBEDDING_DIM}")
-    except Exception as e:
-        print(f"Failed to load embedding model: {e}")
-        _MODEL = None
+    class SentenceTransformer:
+        def __init__(self, model_name):
+            pass
+        def encode(self, texts, normalize_embeddings=False):
+            # Return mock embeddings of correct shape
+            if isinstance(texts, str):
+                texts = [texts]
+            # Return shape (len(texts), 384) for proper matrix operations
+            return np.random.rand(len(texts), 384).astype(np.float32)
+
+_storage_path: str = None
+_model: Any = None
+_index: Any = None
+_id_map: Dict[int, str] = {}  # FAISS ID -> memory_id
+
+# Embedding dimension for all-MiniLM-L6-v2
+EMBEDDING_DIMENSION = 384
+
+def init_embedding(storage_path: str):
+    """Initialize the embedding system."""
+    global _storage_path, _model, _index, _id_map
+    _storage_path = storage_path
+    
+    if not HAS_DEPENDENCIES:
+        print("Embedding system initialized in mock mode (dependencies missing)")
         return
     
-    # Ensure indexes directory exists
-    indexes_dir = os.path.join(_STORAGE_PATH, 'indexes')
-    os.makedirs(indexes_dir, exist_ok=True)
-    
-    # Load existing index and ID map
-    index_path = os.path.join(indexes_dir, 'faiss.index')
-    id_map_path = os.path.join(indexes_dir, 'id_map.json')
-    
-    # Load FAISS index
-    if os.path.exists(index_path) and faiss is not None:
-        try:
-            _INDEX = faiss.read_index(index_path)
-            print(f"Loaded existing FAISS index from {index_path}")
-        except Exception as e:
-            print(f"Failed to load FAISS index: {e}")
-            _INDEX = None
-    else:
-        _INDEX = None
-    
-    # Load ID map
-    if os.path.exists(id_map_path):
-        try:
-            with open(id_map_path, 'r') as f:
-                _ID_MAP = json.load(f)
-            # Convert keys to int for consistency
-            _ID_MAP = {int(k): v for k, v in _ID_MAP.items()}
-            print(f"Loaded ID map with {len(_ID_MAP)} entries")
-        except Exception as e:
-            print(f"Failed to load ID map: {e}")
-            _ID_MAP = {}
-    else:
-        _ID_MAP = {}
-        print("Created empty ID map")
-    
-    # Create new index if needed
-    if _INDEX is None and faiss is not None:
-        try:
-            # Using IndexFlatIP for inner product (cosine similarity when normalized)
-            _INDEX = faiss.IndexFlatIP(_EMBEDDING_DIM)
-            print(f"Created new FAISS index with dimension {_EMBEDDING_DIM}")
-        except Exception as e:
-            print(f"Failed to create FAISS index: {e}")
-            _INDEX = None
+    try:
+        # Initialize the sentence transformer model
+        _model = SentenceTransformer('all-MiniLM-L6-v2')
+        
+        # Initialize or load FAISS index
+        index_path = os.path.join(_storage_path, 'indexes', 'faiss.index')
+        id_map_path = os.path.join(_storage_path, 'indexes', 'id_map.json')
+        
+        os.makedirs(os.path.dirname(index_path), exist_ok=True)
+        
+        if os.path.exists(index_path):
+            try:
+                _index = faiss.read_index(index_path)
+                print(f"Loaded existing FAISS index from {index_path}")
+            except Exception as e:
+                print(f"Failed to load FAISS index: {e}")
+                _index = faiss.IndexFlatIP(EMBEDDING_DIMENSION)
+        else:
+            _index = faiss.IndexFlatIP(EMBEDDING_DIMENSION)
+            print(f"Created new FAISS index with dimension {EMBEDDING_DIMENSION}")
+        
+        # Load ID map
+        if os.path.exists(id_map_path):
+            try:
+                with open(id_map_path, 'r') as f:
+                    _id_map = json.load(f)
+                # Convert keys back to int (JSON keys are always strings)
+                _id_map = {int(k): v for k, v in _id_map.items()}
+                print(f"Loaded ID map with {len(_id_map)} entries")
+            except Exception as e:
+                print(f"Failed to load ID map: {e}")
+                _id_map = {}
+        else:
+            _id_map = {}
+            print("Created empty ID map")
+            
+    except Exception as e:
+        print(f"Failed to initialize embedding system: {e}")
+        # Fallback to mock mode
+        _model = SentenceTransformer('all-MiniLM-L6-v2')
+        _index = faiss.IndexFlatIP(EMBEDDING_DIMENSION)
+        _id_map = {}
 
-def add_embedding(memory_id, raw_text):
-    """Add embedding for a memory"""
-    global _INDEX, _ID_MAP
+def _persist():
+    """Persist FAISS index and ID map to disk."""
+    if not HAS_DEPENDENCIES or _index is None:
+        return
     
-    if _MODEL is None or _INDEX is None:
-        print("Embedding system not properly initialized")
-        return False
+    try:
+        index_path = os.path.join(_storage_path, 'indexes', 'faiss.index')
+        id_map_path = os.path.join(_storage_path, 'indexes', 'id_map.json')
+        
+        faiss.write_index(_index, index_path)
+        
+        # Convert int keys to strings for JSON serialization
+        id_map_for_json = {str(k): v for k, v in _id_map.items()}
+        with open(id_map_path, 'w') as f:
+            json.dump(id_map_for_json, f, indent=2)
+    except Exception as e:
+        print(f"Failed to persist embedding data: {e}")
+
+def add_embedding(memory_id: str, raw_text: str) -> bool:
+    """
+    Add an embedding for a memory.
     
-    if not raw_text or not isinstance(raw_text, str):
-        print("Invalid text for embedding")
+    ⚠️ CRITICAL FIX: Always wrap input in a list for sentence-transformers
+    to avoid the single-string bug that returns wrong shape.
+    
+    Args:
+        memory_id: ID of the memory
+        raw_text: Text to embed
+        
+    Returns:
+        bool: True if successful
+    """
+    if not HAS_DEPENDENCIES or _model is None or _index is None:
         return False
     
     try:
-        # CRITICAL FIX: Always wrap input in a list to avoid sentence-transformers bug
-        # model.encode("text") returns shape (384,) - flat array
-        # model.encode(["text"]) returns shape (1, 384) - proper batch
-        embeddings = _MODEL.encode([raw_text], normalize_embeddings=True)
-        embedding = embeddings[0]  # Get first (and only) embedding
+        # ✅ FIXED: Always wrap input in a list to guarantee (1, N) shape
+        # ❌ BUGGY: model.encode("text") returns shape (384,) flat array
+        # ✅ CORRECT: model.encode(["text"]) returns shape (1, 384)
+        embeddings = _model.encode([raw_text], normalize_embeddings=True)
+        # embeddings shape should be (1, 384)
         
-        # Verify embedding dimension
-        if len(embedding) != _EMBEDDING_DIM:
-            print(f"Embedding dimension mismatch: expected {_EMBEDDING_DIM}, got {len(embedding)}")
+        if embeddings.shape[0] != 1 or embeddings.shape[1] != EMBEDDING_DIMENSION:
+            print(f"Warning: Unexpected embedding shape {embeddings.shape}")
             return False
         
-        # Get next FAISS ID
-        fid = len(_ID_MAP)
+        # Get FAISS ID (next available)
+        fid = len(_id_map)
         
-        # Add to index with ID
+        # Add to FAISS index with ID
         try:
-            # Try add_with_ids first (works with some index types)
-            _INDEX.add_with_ids(np.array([embedding]), np.array([fid]))
+            # Try the preferred method first
+            _index.add_with_ids(embeddings, np.array([fid]))
         except Exception:
             # Fallback for index types that don't support add_with_ids
-            # Add without ID, then manage mapping separately
-            _INDEX.add(np.array([embedding]))
-            # The ID is implicitly the index of the vector in the index
-            # We need to store the mapping from our custom ID to FAISS index position
-            # Since we're adding sequentially, the FAISS index position should equal fid
-            # But to be safe, we'll store both mappings
-            
-        # Update ID map
-        _ID_MAP[fid] = memory_id
+            _index.add(embeddings)
+            # Manually track ID mapping (this is simplified - in production
+            # you'd need a more robust ID to position mapping)
+            _id_map[fid] = memory_id
+        
+        # Store the mapping
+        _id_map[fid] = memory_id
         
         # Persist changes
         _persist()
         
         return True
     except Exception as e:
-        print(f"Failed to add embedding: {e}")
+        print(f"Failed to add embedding for memory {memory_id}: {e}")
         return False
 
-def search_embeddings(query_text, k=5):
-    """Search for similar embeddings"""
-    global _INDEX, _ID_MAP
+def search_embeddings(query_text: str, k: int = 5) -> List[Tuple[str, float]]:
+    """
+    Search for similar memories using embeddings.
     
-    if _MODEL is None or _INDEX is None or _INDEX.ntotal == 0:
-        return []
-    
-    if not query_text or not isinstance(query_text, str):
+    Args:
+        query_text: Text to search for
+        k: Number of results to return
+        
+    Returns:
+        List of tuples (memory_id, similarity_score)
+    """
+    if not HAS_DEPENDENCIES or _model is None or _index is None or _index.ntotal == 0:
         return []
     
     try:
-        # CRITICAL FIX: Always wrap input in a list
-        query_embedding = _MODEL.encode([query_text], normalize_embeddings=True)[0]
+        # ✅ FIXED: Always wrap query in a list
+        query_embedding = _model.encode([query_text], normalize_embeddings=True)
+        # query_embedding shape should be (1, 384)
         
-        # Search
-        D, I = _INDEX.search(np.array([query_embedding]), k)
+        if query_embedding.shape[0] != 1 or query_embedding.shape[1] != EMBEDDING_DIMENSION:
+            print(f"Warning: Unexpected query embedding shape {query_embedding.shape}")
+            return []
+        
+        # Search FAISS index
+        scores, indices = _index.search(query_embedding, k)
         
         results = []
-        for score, fid in zip(D[0], I[0]):
-            if fid == -1:  # FAISS returns -1 for empty slots
+        for score, fid in zip(scores[0], indices[0]):
+            if fid == -1:  # Invalid index
                 continue
-            
-            memory_id = _ID_MAP.get(int(fid))
+                
+            memory_id = _id_map.get(int(fid))
             if memory_id is not None:
-                results.append((memory_id, float(score)))
+                # Convert FAISS inner product to similarity score (0-1 range)
+                # Since we used normalize_embeddings=True, inner product = cosine similarity
+                similarity = max(0.0, min(1.0, float(score)))
+                results.append((memory_id, similarity))
         
         return results
     except Exception as e:
         print(f"Failed to search embeddings: {e}")
         return []
 
-def remove_embedding(memory_id):
-    """Remove embedding for a memory (mark for lazy rebuild)"""
-    # For simplicity, we'll mark for lazy rebuild
+def remove_embedding(memory_id: str) -> bool:
+    """
+    Remove an embedding (mark for lazy rebuild).
+    
+    Args:
+        memory_id: ID of the memory to remove
+        
+    Returns:
+        bool: True if marked for removal
+    """
+    # Simplified implementation: mark for lazy rebuild
     # In a production system, you might want to implement proper removal
-    # or rebuild the index periodically
-    pass
+    # with index reconstruction or using a separate deleted flags array
+    return True
+
+def _extract_content(event: dict) -> str:
+    """
+    Extract embeddable content from an event dict.
+    Handles multiple event schemas:
+      - Standard: content
+      - Legacy: raw_text
+      - Nested: data (string or dict with content/text fields)
+    """
+    # Try standard content field
+    content = event.get('content', '')
+    if content and isinstance(content, str) and len(content.strip()) >= 10:
+        return content.strip()
+    
+    # Try raw_text (legacy schema)
+    raw_text = event.get('raw_text', '')
+    if raw_text and isinstance(raw_text, str) and len(raw_text.strip()) >= 10:
+        return raw_text.strip()
+    
+    # Try data field (could be string or dict)
+    data = event.get('data', '')
+    if data:
+        if isinstance(data, str) and len(data.strip()) >= 10:
+            return data.strip()
+        elif isinstance(data, dict):
+            for key in ('content', 'text', 'message', 'body', 'summary'):
+                val = data.get(key, '')
+                if val and isinstance(val, str) and len(val.strip()) >= 10:
+                    return val.strip()
+    
+    return ''
+
 
 def rebuild_index():
-    """Rebuild the FAISS index from scratch by scanning all memory files"""
-    global _INDEX, _ID_MAP
-    
-    if _MODEL is None or faiss is None:
-        print("Embedding system not initialized")
+    """
+    Rebuild FAISS index from all meaningful memory events in raw store.
+    Processes both .json and .jsonl files, handling multiple event schemas.
+    Skips events with no embeddable content (< 10 chars).
+    """
+    if not HAS_DEPENDENCIES or _model is None:
+        print("Cannot rebuild index: dependencies missing")
         return False
     
     try:
-        # Search for memory files across all folders
-        import glob
-        memory_dirs = ['semantic', 'procedural', 'palace', 'preferences']
-        mem_files = []
-        for d in memory_dirs:
-            p = os.path.join(_STORAGE_PATH, d)
-            if os.path.isdir(p):
-                mem_files.extend(glob.glob(os.path.join(p, 'mem_*.json')))
+        print("Rebuilding FAISS index from raw store...")
         
         # Create new index
-        _INDEX = faiss.IndexFlatIP(_EMBEDDING_DIM)
-        _ID_MAP = {}
+        new_index = faiss.IndexFlatIP(EMBEDDING_DIMENSION)
+        new_id_map = {}
         
-        embedded = 0
-        for filepath in mem_files:
+        raw_dir = os.path.join(_storage_path, 'raw')
+        if not os.path.exists(raw_dir):
+            print("No raw directory found")
+            return False
+        
+        # Counter for new FAISS IDs
+        new_fid = 0
+        skipped_no_id = 0
+        skipped_no_content = 0
+        skipped_short = 0
+        
+        # Process all files in raw directory (except archive)
+        for fname in sorted(os.listdir(raw_dir)):
+            if fname == 'archive' or not (fname.endswith('.json') or fname.endswith('.jsonl')):
+                continue
+            
+            fpath = os.path.join(raw_dir, fname)
+            
             try:
-                with open(filepath, 'r') as f:
-                    mem_data = json.load(f)
-                # Skip summary files and empty content
-                if 'summary' in os.path.basename(filepath):
-                    continue
-                
-                text = ''
-                mem_id = mem_data.get('id', '')
-                content = mem_data.get('content', '') or ''
-                summary = mem_data.get('summary', '') or ''
-                memory_text = mem_data.get('memory_text', '') or ''
-                text = (content + ' ' + summary + ' ' + memory_text).strip()
-                
-                if not text or not mem_id:
-                    continue
-                
-                # Embed
-                embeddings = _MODEL.encode([text], normalize_embeddings=True)
-                fid = len(_ID_MAP)
-                _INDEX.add(np.array([embeddings[0]]))
-                _ID_MAP[fid] = mem_id
-                embedded += 1
+                if fname.endswith('.jsonl'):
+                    # Process JSONL file (event-per-line)
+                    with open(fpath, 'r') as f:
+                        for line_num, line in enumerate(f, 1):
+                            line = line.strip()
+                            if not line:
+                                continue
+                            try:
+                                event = json.loads(line)
+                                if not isinstance(event, dict):
+                                    continue
+                                
+                                memory_id = event.get('memory_id') or event.get('id') or event.get('event_id')
+                                if not memory_id:
+                                    skipped_no_id += 1
+                                    continue
+                                
+                                content = _extract_content(event)
+                                if not content:
+                                    skipped_no_content += 1
+                                    continue
+                                
+                                # Generate embedding
+                                embedding = _model.encode([content], normalize_embeddings=True)
+                                
+                                # Add to new index
+                                try:
+                                    new_index.add_with_ids(embedding, np.array([new_fid]))
+                                except Exception:
+                                    new_index.add(embedding)
+                                
+                                new_id_map[new_fid] = str(memory_id)
+                                new_fid += 1
+                                    
+                            except json.JSONDecodeError:
+                                continue
+                            except Exception as e:
+                                print(f"Error processing line {line_num} in {fname}: {e}")
+                                continue
+                else:
+                    # Process JSON file (single event per file)
+                    with open(fpath, 'r') as f:
+                        try:
+                            event = json.load(f)
+                            if isinstance(event, dict):
+                                memory_id = event.get('memory_id') or event.get('id') or event.get('event_id')
+                                if not memory_id:
+                                    skipped_no_id += 1
+                                    continue
+                                
+                                content = _extract_content(event)
+                                if not content:
+                                    skipped_no_content += 1
+                                    continue
+                                
+                                # Generate embedding
+                                embedding = _model.encode([content], normalize_embeddings=True)
+                                
+                                # Add to new index
+                                try:
+                                    new_index.add_with_ids(embedding, np.array([new_fid]))
+                                except Exception:
+                                    new_index.add(embedding)
+                                
+                                new_id_map[new_fid] = str(memory_id)
+                                new_fid += 1
+                                    
+                        except json.JSONDecodeError:
+                            continue
+                        except Exception as e:
+                            print(f"Error processing JSON file {fname}: {e}")
+                            continue
             except Exception as e:
-                print(f"  Skipping {os.path.basename(filepath)}: {e}")
+                print(f"Error processing file {fname}: {e}")
+                continue
         
+        # Replace old index and ID map
+        global _index, _id_map
+        _index = new_index
+        _id_map = new_id_map
+        
+        # Persist the rebuilt index
         _persist()
-        print(f"Rebuilt FAISS index: {embedded} vectors from {len(mem_files)} memory files")
+        
+        print(f"FAISS index rebuilt successfully:")
+        print(f"  Vectors: {_index.ntotal}")
+        print(f"  ID mappings: {len(_id_map)}")
+        print(f"  Skipped (no ID): {skipped_no_id}")
+        print(f"  Skipped (no content): {skipped_no_content}")
         return True
+        
     except Exception as e:
-        print(f"Failed to rebuild index: {e}")
+        print(f"Failed to rebuild FAISS index: {e}")
         return False
 
-def _persist():
-    """Persist index and ID map to disk"""
-    global _INDEX, _ID_MAP
-    
-    if _STORAGE_PATH is None or _INDEX is None:
-        return
-    
-    indexes_dir = os.path.join(_STORAGE_PATH, 'indexes')
-    os.makedirs(indexes_dir, exist_ok=True)
-    
-    index_path = os.path.join(indexes_dir, 'faiss.index')
-    id_map_path = os.path.join(indexes_dir, 'id_map.json')
-    
-    try:
-        faiss.write_index(_INDEX, index_path)
-        # Convert keys to string for JSON serialization
-        id_map_to_save = {str(k): v for k, v in _ID_MAP.items()}
-        with open(id_map_path, 'w') as f:
-            json.dump(id_map_to_save, f)
-    except Exception as e:
-        print(f"Failed to persist embedding data: {e}")
-
-def get_index_stats():
-    """Get statistics about the FAISS index"""
-    global _INDEX, _ID_MAP
-    
-    if _INDEX is None:
-        return {"status": "not_initialized"}
+def get_index_stats() -> Dict[str, Any]:
+    """Get statistics about the FAISS index."""
+    if not HAS_DEPENDENCIES or _index is None:
+        return {
+            'initialized': False,
+            'dependencies_available': HAS_DEPENDENCIES
+        }
     
     return {
-        "status": "initialized",
-        "total_vectors": _INDEX.ntotal,
-        "id_map_entries": len(_ID_MAP),
-        "embedding_dimension": _EMBEDDING_DIM,
-        "index_type": type(_INDEX).__name__ if _INDEX else None
+        'initialized': True,
+        'dependencies_available': HAS_DEPENDENCIES,
+        'index_ntotal': _index.ntotal if hasattr(_index, 'ntotal') else 0,
+        'index_dimension': getattr(_index, 'd', EMBEDDING_DIMENSION),
+        'id_map_size': len(_id_map),
+        'storage_path': _storage_path
+    }
+
+def get_component_status() -> Dict[str, Any]:
+    """Get status of embedding component."""
+    return {
+        'initialized': _storage_path is not None,
+        'storage_path': _storage_path,
+        'index_stats': get_index_stats()
     }

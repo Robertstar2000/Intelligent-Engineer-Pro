@@ -51,6 +51,14 @@ A comprehensive approach for creating a modern, information-dense web dashboard 
 - **File Monitoring**: Automatically updates metrics from manuscript files
 - **Scheduled Updates**: Runs every minute to keep data current
 
+## DOX Integration
+
+When working in a project that uses the [DOX (Self-documenting AGENTS.md)](https://github.com/agent0ai/dox) framework:
+
+- **Read Before Editing:** Walk the DOX tree from root to the target path. Read every AGENTS.md along the route before making any changes.
+- **Update After Editing:** If the change affects purpose, scope, ownership, structure, workflows, or operating rules, update the closest owning AGENTS.md and refresh the Child DOX Index.
+- **Reference:** [agent0ai/dox](https://github.com/agent0ai/dox) — copy `AGENTS.md` from the repo root into your project to initialize.
+
 ## Implementation Steps
 
 ### Step 1: Setup Project Structure

@@ -1,169 +1,254 @@
-"""
-Scoring system for MemPalace - memory scoring algorithm
-"""
+"""MemPalace Scoring System - Memory scoring algorithm."""
 
+import json
 import os
 import math
 from datetime import datetime, timezone
-import tag
+from typing import Dict, Any, List, Optional, Tuple
 
-# Storage path - will be set by init_scoring
-_STORAGE_PATH = None
+_storage_path: str = None
 
-# Scoring weights (can be tuned)
-WEIGHTS = {
-    'recency': 0.3,
-    'context': 0.2,
-    'palace': 0.2,
-    'length': 0.1,
-    'importance': 0.2
+# Scoring weights - can be tuned based on domain
+DEFAULT_WEIGHTS = {
+    'recency': 0.3,      # How recent the memory is
+    'relevance': 0.25,   # How relevant to current context
+    'importance': 0.2,   # Explicit importance markers
+    'emotional': 0.15,   # Emotional salience
+    'usage': 0.1         # Historical usage/reinforcement
 }
 
 # Recency decay half-life (in hours)
-RECENCY_HALF_LIFE = 24.0
+RECENCY_HALF_LIFE_HOURS = 24.0
 
-def init_scoring(storage_path):
-    """Initialize scoring system"""
-    global _STORAGE_PATH
-    _STORAGE_PATH = storage_path
+def init_scoring(storage_path: str):
+    """Initialize the scoring system."""
+    global _storage_path
+    _storage_path = storage_path
+    print(f"Scoring system initialized at {_storage_path}")
 
-def score_event(event):
-    """Score a memory event based on multiple factors"""
-    if not _STORAGE_PATH:
-        raise RuntimeError("Scoring system not initialized. Call init_scoring first.")
+def calculate_recency_score(timestamp_str: str) -> float:
+    """
+    Calculate recency score based on time decay.
     
-    # Extract event data
-    event_data = event.get('data', {}) if isinstance(event, dict) else {}
-    timestamp_str = event.get('timestamp', '')
-    
-    # 1. Recency score (exponential decay with half-life)
-    recency_score = 0.0
-    if timestamp_str:
-        try:
-            # Handle both timezone-aware and naive timestamps
-            if timestamp_str.endswith('Z'):
-                timestamp_str = timestamp_str[:-1] + '+00:00'
-            timestamp = datetime.fromisoformat(timestamp_str)
-            # Ensure timezone-aware (assume UTC if naive)
-            if timestamp.tzinfo is None:
-                timestamp = timestamp.replace(tzinfo=timezone.utc)
-            else:
-                timestamp = timestamp.astimezone(timezone.utc)
-            
-            now = datetime.now(timezone.utc)
-            hours_diff = (now - timestamp).total_seconds() / 3600.0
-            # Exponential decay: score = exp(-lambda * hours)
-            lambda_decay = math.log(2) / RECENCY_HALF_LIFE
-            recency_score = math.exp(-lambda_decay * hours_diff)
-            # Ensure score is in [0, 1]
-            recency_score = max(0.0, min(1.0, recency_score))
-        except Exception as e:
-            print(f"Error parsing timestamp for recency: {e}")
-            recency_score = 0.5  # Default middle score on error
-    
-    # 2. Context tag score (proportion of relevant context tags)
-    context_score = 0.0
-    try:
-        # Extract text for tagging
-        text_content = ""
-        if isinstance(event_data, dict):
-            for field in ['content', 'text', 'message', 'description', 'title']:
-                if field in event_data and isinstance(event_data[field], str):
-                    text_content = event_data[field]
-                    break
-        if not text_content:
-            text_content = str(event_data)
+    Args:
+        timestamp_str: ISO format timestamp string
         
-        context_tags = tag.extract_context_tags(text_content)
-        # Score based on number of context tags found (up to a reasonable max)
-        max_expected_tags = 5  # Adjust based on taxonomy
-        context_score = min(1.0, len(context_tags) / max_expected_tags)
-    except Exception as e:
-        print(f"Error computing context score: {e}")
-        context_score = 0.0
-    
-    # 3. Palace tag score (proportion of relevant palace tags)
-    palace_score = 0.0
+    Returns:
+        float: Recency score between 0 and 1
+    """
     try:
-        # Reuse context tags or extract again
-        if 'context_tags' not in locals():
-            text_content = ""
-            if isinstance(event_data, dict):
-                for field in ['content', 'text', 'message', 'description', 'title']:
-                    if field in event_data and isinstance(event_data[field], str):
-                        text_content = event_data[field]
-                        break
-            if not text_content:
-                text_content = str(event_data)
-            context_tags = tag.extract_context_tags(text_content)
+        # Parse timestamp - handle both timezone-aware and naive
+        if timestamp_str.endswith('Z'):
+            timestamp_str = timestamp_str[:-1] + '+00:00'
+        event_time = datetime.fromisoformat(timestamp_str)
+        # Ensure timezone aware (assume UTC if naive)
+        if event_time.tzinfo is None:
+            event_time = event_time.replace(tzinfo=timezone.utc)
         
-        palace_tags = tag.extract_palace_tags(context_tags)
-        # Score based on number of palace tags found (up to a reasonable max)
-        max_expected_palace = 3  # Adjust based on mapping
-        palace_score = min(1.0, len(palace_tags) / max_expected_palace)
-    except Exception as e:
-        print(f"Error computing palace score: {e}")
-        palace_score = 0.0
+        now = datetime.now(timezone.utc)
+        hours_diff = (now - event_time).total_seconds() / 3600.0
+        
+        # Exponential decay with half-life
+        decay_factor = math.exp(-math.log(2) * hours_diff / RECENCY_HALF_LIFE_HOURS)
+        return max(0.0, min(1.0, decay_factor))
+    except Exception:
+        # If parsing fails, return low score
+        return 0.1
+
+def calculate_relevance_score(content: str, context_tags: List[str] = None) -> float:
+    """
+    Calculate relevance score based on content and tags.
     
-    # 4. Length score (normalize by expected length)
-    length_score = 0.0
+    Args:
+        content: Memory content
+        context_tags: Optional context tags
+        
+    Returns:
+        float: Relevance score between 0 and 1
+    """
+    score = 0.5  # Base relevance
+    
+    # Length factor - very short or very long content gets lower relevance
+    length = len(content)
+    if length < 10:
+        score *= 0.5  # Too short
+    elif length > 1000:
+        score *= 0.8  # Quite long but still relevant
+    
+    # Tag diversity factor - more diverse tags indicate broader relevance
+    if context_tags:
+        unique_tags = len(set(context_tags))
+        if unique_tags > 5:
+            score *= 1.2
+        elif unique_tags < 2:
+            score *= 0.8
+        # Cap at 1.0
+        score = min(1.0, score)
+    
+    return max(0.0, min(1.0, score))
+
+def calculate_importance_score(event: Dict[Any, Any]) -> float:
+    """
+    Calculate importance score based on event markers.
+    
+    Args:
+        event: Event dictionary
+        
+    Returns:
+        float: Importance score between 0 and 1
+    """
+    score = 0.5  # Base importance
+    
+    # Check for explicit importance markers
+    importance_fields = ['importance', 'priority', 'significance']
+    for field in importance_fields:
+        if field in event:
+            try:
+                val = float(event[field])
+                # Normalize assuming 0-1 or 0-10 scale
+                if val > 1.0:  # Assume 0-10 scale
+                    val = val / 10.0
+                score = max(score, min(1.0, val))
+            except (ValueError, TypeError):
+                pass
+    
+    # Check for high-value event types
+    high_value_types = ['user_interaction', 'editorial_decision', 'breakthrough', 'insight']
+    event_type = event.get('type', '')
+    if any(hvt in event_type.lower() for hvt in high_value_types):
+        score = min(1.0, score + 0.2)
+    
+    return max(0.0, min(1.0, score))
+
+def calculate_emotional_score(content: str) -> float:
+    """
+    Calculate emotional salience score.
+    
+    Args:
+        content: Memory content
+        
+    Returns:
+        float: Emotional score between 0 and 1
+    """
+    content_lower = content.lower()
+    
+    # Positive emotional indicators
+    positive_words = ['love', 'like', 'enjoy', 'happy', 'joy', 'excited', 'proud', 
+                     'satisfied', 'pleased', 'glad', 'delighted', 'thrilled']
+    negative_words = ['hate', 'dislike', 'angry', 'sad', 'frustrated', 'annoyed',
+                     'disappointed', 'upset', 'worried', 'anxious', 'afraid', 'scared']
+    
+    pos_count = sum(1 for word in positive_words if word in content_lower)
+    neg_count = sum(1 for word in negative_words if word in content_lower)
+    
+    # Normalize by content length (rough approximation)
+    word_count = len(content.split())
+    if word_count > 0:
+        emotion_density = (pos_count + neg_count) / word_count * 100  # Per 100 words
+        # Convert to 0-1 scale with diminishing returns
+        emotional_score = min(1.0, emotion_density / 10.0)  # Cap at 10 emotions per 100 words
+    else:
+        emotional_score = 0.0
+    
+    # Slight boost for any emotional content
+    if emotional_score > 0:
+        emotional_score = max(emotional_score, 0.3)
+    
+    return emotional_score
+
+def calculate_usage_score(event_id: str) -> float:
+    """
+    Calculate usage score based on historical retrieval/reinforcement.
+    
+    Args:
+        event_id: ID of the event
+        
+    Returns:
+        float: Usage score between 0 and 1
+    """
+    if _storage_path is None:
+        return 0.0
+    
+    # Check reinforcement file
+    reinforcement_file = os.path.join(_storage_path, 'reinforcement.jsonl')
+    if not os.path.exists(reinforcement_file):
+        return 0.0
+    
     try:
-        if isinstance(event_data, dict):
-            # Try to get text content again
-            text_content = ""
-            for field in ['content', 'text', 'message', 'description', 'title']:
-                if field in event_data and isinstance(event_data[field], str):
-                    text_content = event_data[field]
-                    break
-            if not text_content:
-                text_content = str(event_data)
+        reinforcement_count = 0
+        with open(reinforcement_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    if entry.get('event_id') == event_id:
+                        reinforcement_count += 1
+                except json.JSONDecodeError:
+                    continue
+        
+        # Logarithmic scaling - first few reinforcements matter most
+        if reinforcement_count == 0:
+            return 0.0
+        elif reinforcement_count == 1:
+            return 0.3
         else:
-            text_content = str(event_data)
+            # Diminishing returns after 5 reinforcements
+            return min(1.0, 0.3 + 0.7 * (1 - math.exp(-reinforcement_count / 5.0)))
+    except Exception:
+        return 0.0
+
+def score_memory(event: Dict[Any, Any], weights: Dict[str, float] = None) -> Tuple[float, Dict[str, float]]:
+    """
+    Calculate composite memory score using weighted factors.
+    
+    Args:
+        event: Event dictionary to score
+        weights: Optional custom weights (defaults to DEFAULT_WEIGHTS)
         
-        # Normalize length: assume 500 chars is good, 1000+ is max
-        text_len = len(text_content)
-        if text_len >= 1000:
-            length_score = 1.0
-        elif text_len <= 0:
-            length_score = 0.0
-        else:
-            length_score = text_len / 1000.0  # Linear up to 1000 chars
-    except Exception as e:
-        print(f"Error computing length score: {e}")
-        length_score = 0.0
+    Returns:
+        Tuple of (composite_score, individual_scores)
+    """
+    if weights is None:
+        weights = DEFAULT_WEIGHTS
     
-    # 5. Importance score (from explicit importance field or default)
-    importance_score = 0.5  # Default middle importance
-    try:
-        if isinstance(event_data, dict) and 'importance' in event_data:
-            imp = event_data['importance']
-            if isinstance(imp, (int, float)):
-                # Clamp to [0, 1]
-                importance_score = max(0.0, min(1.0, float(imp)))
-    except Exception as e:
-        print(f"Error computing importance score: {e}")
-        importance_score = 0.5
+    # Extract components
+    content = event.get('content', '')
+    timestamp_str = event.get('timestamp', event.get('captured_at', ''))
+    context_tags = event.get('context_tags', [])
     
-    # Calculate weighted sum
-    total_score = (
-        WEIGHTS['recency'] * recency_score +
-        WEIGHTS['context'] * context_score +
-        WEIGHTS['palace'] * palace_score +
-        WEIGHTS['length'] * length_score +
-        WEIGHTS['importance'] * importance_score
+    # Calculate individual scores
+    recency_score = calculate_recency_score(timestamp_str)
+    relevance_score = calculate_relevance_score(content, context_tags)
+    importance_score = calculate_importance_score(event)
+    emotional_score = calculate_emotional_score(content)
+    usage_score = calculate_usage_score(event.get('event_id', ''))
+    
+    individual_scores = {
+        'recency': recency_score,
+        'relevance': relevance_score,
+        'importance': importance_score,
+        'emotional': emotional_score,
+        'usage': usage_score
+    }
+    
+    # Calculate weighted composite score
+    composite_score = (
+        weights['recency'] * recency_score +
+        weights['relevance'] * relevance_score +
+        weights['importance'] * importance_score +
+        weights['emotional'] * emotional_score +
+        weights['usage'] * usage_score
     )
     
-    # Ensure final score is in [0, 1]
-    total_score = max(0.0, min(1.0, total_score))
-    
-    return total_score
+    return max(0.0, min(1.0, composite_score)), individual_scores
 
-def score_events(events):
-    """Score a list of events"""
-    scored_events = []
-    for event in events:
-        score = score_event(event)
-        scored_event = event.copy() if isinstance(event, dict) else {'raw_data': event}
-        scored_event['mempalace_score'] = score
-        scored_events.append(scored_event)
-    return scored_events
+def get_component_status() -> Dict[str, Any]:
+    """Get status of scoring component."""
+    return {
+        'initialized': _storage_path is not None,
+        'storage_path': _storage_path,
+        'weights': DEFAULT_WEIGHTS,
+        'recency_half_life_hours': RECENCY_HALF_LIFE_HOURS
+    }

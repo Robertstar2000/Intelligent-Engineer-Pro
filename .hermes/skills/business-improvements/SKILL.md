@@ -495,15 +495,16 @@ When asked to analyze the MIFECO business, audit mifeco.com, or propose improvem
 - Prioritize fixes by revenue impact × implementation ease
 - Build revenue projection model (monthly, 6-month, 12-month)
 
-### Common MIFECO Issues (Spring 2026)
+### Common MIFECO Issues (June 2026)
 
-1. **Email not configured** — `EMAIL_*` commented out in `.env`. Pipeline can't send/receive. #1 blocker.
-2. **Books pipeline stalled** — 9 of 12 books not uploaded to KDP despite having complete files
-3. **No CRM** — leads-registry.json has no web UI or email sync
-4. **SaaS no payment path** — waitlist exists but no Stripe integration
-5. **Consulting leads not captured** — intake forms don't connect to pipeline
-6. **No content marketing** — no blog, no SEO content, no organic traffic
-7. **AgentMail inboxes dead** — built on disposable email, zero deliverability
+1. **Email not configured** — `EMAIL_*` commented out in `.env`. Pipeline can't send/receive. #1 blocker. 15 consulting leads stuck at "identified" stage.
+2. **KDP pipeline regression** — `hermes_publish` scripts re-create `~/books/KDP_Packages/` central archive with kebab-case zips every morning (~06:00). CEO cleans daily. Publisher agent assigned to fix at source. **P0 until fixed.**
+3. **Books pipeline complete** — All 20 books KDP-ready with canonical PascalCase zips. No writing tasks needed. Redirect to production/publishing.
+4. **No CRM** — leads-registry.json has no web UI or email sync
+5. **SaaS no payment path** — waitlist exists but no Stripe integration
+6. **Consulting leads not captured** — intake forms don't connect to pipeline
+7. **No content marketing** — no blog, no SEO content, no organic traffic
+8. **AgentMail inboxes dead** — built on disposable email, zero deliverability
 
 ### Improvement Proposal Format
 
@@ -590,6 +591,10 @@ grep -c "## Last Tracking Update" ~/.hermes/.openclaw/workspace/SOUL.md
 hermes cron list | grep skill-usage-auto-tracker
 # 9h. Logrotate cron is active
 hermes cron list | grep logrotate-maintenance
+# 9i. KDP pipeline regression check — KDP_Packages/ should NOT exist
+ls ~/books/KDP_Packages/ 2>/dev/null && echo "❌ REGRESSION: KDP_Packages/ re-created" || echo "✅ No KDP_Packages/ regression"
+# 9j. Canonical zip count — should be exactly 20
+find ~/books/ -name '*_KDP_PACKAGE.zip' -not -path '*/KDP_Packages/*' 2>/dev/null | wc -l
 ```
 
 ## Implementation Notes (from actual deployment)

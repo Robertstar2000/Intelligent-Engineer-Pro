@@ -1,111 +1,75 @@
-"""
-MemPalace Long-Term Memory Enhancement Layer for Hermes Agent
-"""
+"""MemPalace Long-Term Memory Enhancement Layer for Hermes Agent."""
+
+__version__ = "1.2.0"
+__author__ = "Hermes Agent"
 
 import os
-import json
-from datetime import datetime
-import capture
-import tag
-import score
-import consolidate
-import retrieve
-import reinforce
-import prune
-import explain
-import embed
+import sys
 
-# Storage path
-_STORAGE_PATH = os.path.join(os.path.expanduser("~"), ".hermes", "mempalace")
+# Ensure the mempalace directory is in the path for direct module imports
+_mempalace_dir = os.path.dirname(os.path.abspath(__file__))
+if _mempalace_dir not in sys.path:
+    sys.path.insert(0, _mempalace_dir)
 
-def init_mempalace(storage_path=None):
-    """Initialize MemPalace system"""
-    global _STORAGE_PATH
-    if storage_path:
-        _STORAGE_PATH = storage_path
-    
-    # Ensure directory structure exists
-    for subdir in ['raw', 'semantic', 'episodic', 'procedural', 'preferences', 'indexes', 'palace']:
-        os.makedirs(os.path.join(_STORAGE_PATH, subdir), exist_ok=True)
-    
-    # Initialize components
-    capture.init_capture(_STORAGE_PATH)
-    tag.init_tagging(_STORAGE_PATH)
-    score.init_scoring(_STORAGE_PATH)
-    consolidate.init_consolidation(_STORAGE_PATH)
-    retrieve.init_retrieval(_STORAGE_PATH)
-    reinforce.init_reinforcement(_STORAGE_PATH)
-    prune.init_pruning(_STORAGE_PATH)
-    explain.init_explainability(_STORAGE_PATH)
-    embed.init_embedding(_STORAGE_PATH)
-    
-    print(f"MemPalace initialized at {_STORAGE_PATH}")
+# Import and expose key functions for easy access
+try:
+    # Use direct imports (not relative) for reliability across all contexts
+    import capture
+    import tag
+    import score
+    import consolidate as consolidate_mod
+    import retrieve
+    import reinforce
+    import prune
+    import explain
+    import embed
 
-def consolidate_memories(events=None):
-    """Consolidate high-scoring memories to appropriate stores"""
-    return consolidate.consolidate_memories(events)
+    init_capture = capture.init_capture
+    capture_event = capture.capture_event
+    init_tagging = tag.init_tagging
+    extract_context_tags = tag.extract_context_tags
+    save_context_tags = tag.save_context_tags
+    init_scoring = score.init_scoring
+    score_memory = score.score_memory
+    init_consolidation = consolidate_mod.init_consolidation
+    consolidate_memories = consolidate_mod.consolidate_memories
+    init_retrieval = retrieve.init_retrieval
+    retrieve_memories = retrieve.retrieve_memories
+    init_reinforcement = reinforce.init_reinforcement
+    reinforce_memory = reinforce.reinforce_memory
+    init_pruning = prune.init_pruning
+    prune_memories = prune.prune_memories
+    init_explainability = explain.init_explainability
+    get_system_stats = explain.get_component_status
+    init_embedding = embed.init_embedding
+    add_embedding = embed.add_embedding
+    search_embeddings = embed.search_embeddings
+    rebuild_index = embed.rebuild_index
 
-def prune_memories(dry_run=False):
-    """Prune low-value, old memories"""
-    return prune.prune_memories(dry_run)
+    _initialized = False
 
-def get_system_stats():
-    """Get system statistics"""
-    if not _STORAGE_PATH:
-        return {}
-    
-    stats = {
-        "directories": {},
-        "embedding": {"initialized": False, "total_vectors": 0},
-        "reinforcement": {"total_memories_reinforced": 0}
-    }
-    
-    # Count files in each directory
-    for subdir in ["raw", "semantic", "episodic", "procedural", "preferences", "indexes", "palace"]:
-        dir_path = os.path.join(_STORAGE_PATH, subdir)
-        if os.path.exists(dir_path):
-            try:
-                files = [f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))]
-                stats["directories"][subdir] = len(files)
-            except Exception:
-                stats["directories"][subdir] = 0
-        else:
-            stats["directories"][subdir] = 0
-    
-    # Embedding stats
-    try:
-        import embed
-        if embed._INDEX is not None:
-            stats["embedding"]["initialized"] = True
-            stats["embedding"]["total_vectors"] = embed._INDEX.ntotal
-    except Exception:
-        pass
-    
-    # Reinforcement stats
-    try:
-        reinforcement_path = os.path.join(_STORAGE_PATH, "reinforcement.jsonl")
-        if os.path.exists(reinforcement_path):
-            with open(reinforcement_path, "r") as f:
-                lines = [line.strip() for line in f if line.strip()]
-                stats["reinforcement"]["total_memories_reinforced"] = len(lines)
-    except Exception:
-        pass
-    
-    return stats
+    def init_mempalace(storage_path=None):
+        """Initialize all MemPalace components."""
+        global _initialized
+        if _initialized:
+            return
 
+        if storage_path is None:
+            storage_path = os.path.expanduser('~/.hermes/mempalace')
 
-def capture_memory(event_data):
-    """Capture a memory event"""
-    return capture.capture_event(event_data)
+        init_capture(storage_path)
+        init_tagging(storage_path)
+        init_scoring(storage_path)
+        init_consolidation(storage_path)
+        init_retrieval(storage_path)
+        init_reinforcement(storage_path)
+        init_pruning(storage_path)
+        init_explainability(storage_path)
+        init_embedding(storage_path)
 
-def retrieve_memory(query, layers=None, k=10):
-    """Retrieve memories using layered approach"""
-    return retrieve.retrieve_memories(query, layers, k)
+        _initialized = True
 
-def get_storage_path():
-    """Get the current storage path"""
-    return _STORAGE_PATH
-
-# Auto-initialize if imported directly
-if __name__ != "__main__":
-    init_mempalace()
+except ImportError as e:
+    _initialized = False
+    init_mempalace = None
+    print(f"MemPalace initialization warning: {e}")

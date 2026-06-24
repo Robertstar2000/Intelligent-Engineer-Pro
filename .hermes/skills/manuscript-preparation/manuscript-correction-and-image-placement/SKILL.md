@@ -60,7 +60,25 @@ When multiple manuscript variants exist (HTML and/or Markdown), **do not reconci
 - If the Markdown has `# Chapter X:` entries only inside a TOC block (followed by page numbers, not body text) and the real content uses `##`/`###` subsections, stop patching the Markdown split algorithm — use a known-good HTML artifact instead, or add proper `# Chapter X:` headers to the Markdown body.
 - Compare candidates by (1) counting how many chapter headers are followed by real body text, (2) checking for embedded images, (3) verifying the TOC reflects actual content order.
 
-### 1. Assessment & Diagnosis
+## Step 0.5: Identify the Correct Manuscript File
+
+**CRITICAL:** Before making any edits, identify which file `collect_chapters()` actually reads.
+
+The function checks `book_dir/manuscript/MANUSCRIPT.md` FIRST, then falls back to `book_dir/*MANUSCRIPT.md`. Many book directories have **both** files, and they often differ in content, heading format, and image references.
+
+**How to identify the correct file:**
+```python
+from utils import collect_chapters
+chapters = collect_chapters(book)
+# Check chapter 1 content — does it match the file you're editing?
+print(chapters[0][2][:200])
+```
+
+**Rule:** Always edit `book_dir/manuscript/MANUSCRIPT.md` (the file in the `manuscript/` subdirectory). Editing the root-level file has NO effect on the build.
+
+**Check for duplicate headings** before inserting images. Previous editing sessions may have left both `## Chapter N: Title` and `## Chapter N — Title` in the same file. Remove duplicates first, or images will be inserted after the wrong heading.
+
+## Step 1. Assessment & Diagnosis
 ```python
 # Read and parse the manuscript HTML
 with open(manuscript_path, 'r') as f:

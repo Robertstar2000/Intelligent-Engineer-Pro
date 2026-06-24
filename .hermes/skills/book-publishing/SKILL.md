@@ -12,7 +12,6 @@ import sys, os; sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace'))
 import embed; embed.init_embedding(os.path.expanduser('~/.hermes/mempalace'))
 results = embed.search_embeddings("book publishing [your specific topic]", k=5)
 ```
-This retrieves previous publishing decisions, book-specific context, and lessons learned from the vector memory store.
 
 ## Amazon ASIN Lookup
 To find ASINs for published books, search Amazon for author "Bob J Mills":
@@ -69,7 +68,7 @@ A cron job runs every Monday at 9 AM to search Amazon for new books under "Bob J
 - Job ID: `b111a8678866`
 - Script: `~/.hermes/scripts/amazon-book-monitor.py`
 - Schedule: `0 9 * * 1` (once a week on Monday)
-- Toolset: terminal, browser, file
+- Toolsets: terminal, browser, file
 - When new ASINs are found, delivers a report via the cron output
 
 To run manually: `python3 ~/.hermes/scripts/amazon-book-monitor.py`
@@ -219,6 +218,51 @@ When scheduling as a cron job:
 - **Model**: Use a model with strong reasoning for editorial judgment (not a small model)
 - **Delivery**: Always report results to origin channel
 
+## Social Media Publishing — Book Launches & Promotion
+
+After a book is published on KDP (ASIN assigned), use the `social-direct-publisher` skill to promote it on social media.
+
+### When to Publish Social Posts
+- **Book launch day** — Announce the new book with cover image, Amazon link, and compelling hook
+- **Post-launch sequence** — Follow-up posts at 3 days, 7 days, and 14 days after launch
+- **Series promotion** — When a new book in a series is published, promote the full series
+- **Milestone events** — Reviews, rankings, awards, or reader milestones
+
+### Social Post Content per Platform
+
+**LinkedIn** (professional/author brand):
+- Author voice: "I'm excited to announce [Book Title] is now live on Amazon."
+- Include: 2-3 sentence hook, key themes, Amazon link, relevant hashtags (#SciFi #AI #Author)
+- Max 3000 characters; link goes at end of post
+
+**Facebook Page** (reader community):
+- Conversational tone: "The wait is over! [Book Title] is finally here."
+- Include: Cover image, Amazon link, short blurb, question to engage readers
+- Link preview generates automatically
+
+**Instagram** (visual/book cover):
+- Caption: Short, evocative teaser + "Link in bio" for Amazon
+- Include: Cover image (1080×1080 or 1080×1350), relevant hashtags in first comment
+- Max 2200 characters; links not clickable in captions
+
+### Social Post Approval Flow
+1. Generate post content for each platform
+2. Run through `social-direct-publisher` policy checker
+3. Store as draft (default: `approve_then_publish`)
+4. Bob reviews and approves
+5. Publish via official APIs (LinkedIn Posts API, Meta Graph API)
+
+### Campaign Tagging
+Tag all book promotion social posts with campaign name: `book-launch-[book-key]` (e.g., `book-launch-nbs-1`)
+This enables tracking and audit via the social publisher's audit log.
+
+### Integration with Pipeline
+When the publisher task assigns an ASIN to a book in `pipeline-books.json`, also:
+1. Generate launch social posts for all 3 platforms
+2. Store drafts in the social publisher system
+3. Report draft URLs in the publisher task summary
+4. Bob approves → publish → log to audit trail
+
 ## KDP Metadata Generation
 
 When preparing a book for KDP upload, generate these 5 metadata files per book:
@@ -239,8 +283,11 @@ When preparing a book for KDP upload, generate these 5 metadata files per book:
 ### File Placement
 Place all metadata files directly in the book's directory (e.g., `/home/bob/books/No_Blue_Sky_Series/Book_I_Built_from_Dust/`). Also copy into the KDP publishing package zip alongside the EPUB and cover.
 
-### Cover Generation
-All book covers MUST be generated using an image generation LLM (Gemini Flash Image, Black Forest Labs Flux, etc.) — NOT Python/matplotlib/generate_cover.py scripts.
+### Image Generation — MANDATORY: Image Generation LLM Only
+- ALL book covers AND chapter illustrations MUST be generated using an image generation LLM (Gemini Flash Image via OpenRouter, or Flux) — **NOT** Python/matplotlib/generate_cover.py
+- **Style for sci-fi chapter images**: Black/white/grey pencil sketch, realistic Moon/planets, modern equipment, cross-hatching, dramatic lighting
+- **Batch generation for series-wide replacement**: Use delegate_task with 10-chapter batches in parallel. Each batch takes ~5-7 minutes. Use 5s delays between API calls, 3 retries per image.
+- **Save to both directories**: Always save to both `output/` and `chapter_images/` simultaneously
 
 **Business book cover style** (reference: "AI That Works for Small Business"):
 - Dark navy/black background, white bold sans-serif title stacked in 3-4 lines
@@ -276,6 +323,180 @@ All book covers MUST be generated using an image generation LLM (Gemini Flash Im
 - Copy `Author_Photo.jpg` from `/home/bob/books/Business_Series/AI_That_Works/Author_Photo.jpg` to the root of every book directory: `<book_dir>/Author_Photo.jpg`
 - Apply to ALL book directories (business and fiction) without exception
 
+### PDF Rebuild from Markdown — Weasyprint Pipeline
+
+For the complete PDF rebuild workflow, image handling, and pitfalls, see:
+`references/pdf-rebuild-weasyprint.md`, `references/print-pdf-image-sizing.md`, and `references/epub-build-from-scratch.md`.
+
+Key points:
+- Fiction: 6x9", Business: 8.5x11"
+- **Gutter margins:** <200 pages = 0.5" gutter, 200-299 = 0.5", 300+ = 0.625" (see `references/weasyprint-gutter-margins.md`)
+- **Images must be ≤460px wide** (4.79in at 96dpi) to fit 5in content area with 0.5" margins
+- **Use `max-width: 480px` in CSS** — `max-width: 100%` doesn't work in WeasyPrint (relative to image intrinsic size)
+- **Set `p { margin: 0 }`** — default 0.5in paragraph margin adds to page margins causing overflow
+- **Set `.chapter-image { margin: 0; padding: 0 }`** — same issue
+- Convert all images to B&W (grayscale) before embedding
+- Strip YAML frontmatter before markdown conversion
+- Remove all ISBN references from manuscripts
+- Insert missing chapter image references when `chapter_images/` has files but manuscript has 0 refs
+- Detect chapter header format before inserting images (`## Chapter N`, `# Chapter N`, etc.)
+
+### PDF Gutter Margin Rules (KDP Requirement)
+
+KDP requires minimum gutter (inside margin) based on page count. The gutter is the margin on the binding side. **Recommended: 0.5" all around** for simplicity and safety on all books.
+
+| Page Count | Gutter (inside) | Outside | Top | Bottom |
+|---|---|---|---|---|
+| < 200 pages | **0.5"** | 0.25" | 0.25" | 0.25" |
+| 200–299 pages | 0.5" | 0.25" | 0.25" | 0.25" |
+| 300+ pages | 0.625" | 0.25" | 0.25" | 0.25" |
+
+> ⚠️ **KDP rejection:** "Insufficient gutter" — books with 158+ pages require at least 0.5" gutter AND at least 0.25" for outside/top/bottom. Books under 200 pages also need 0.5" gutter (NOT 0.375").
+
+> ⚠️ **WeasyPrint pitfall:** `p { margin: 0.5in }` adds to page margins, causing 1.0" effective offset. Use `p { margin: 0 }` and `.chapter-image { margin: 0; padding: 0; }`. See `references/print-pdf-image-sizing.md` for image sizing and the `max-width: 100%` pitfall.
+
+**Estimated pages formula:** `chapters × 10` for fiction/mystery, `chapters × 8` for business. This drives the gutter selection, NOT the actual rendered page count.
+
+**Implementation:** Use `@page :left` and `@page :right` in CSS to set mirrored margins. The gutter goes on the inside (left for odd pages, right for even pages). The `hermes_publish/step_pdf.py` pipeline handles this automatically via `_get_gutter_css()`.
+
+**⚠️ WeasyPrint Pitfall:** `@page :left` and `@page :right` margin overrides are unreliable in WeasyPrint — the default `@page` margin may be applied to all pages regardless. To guarantee the gutter requirement is met, set the default `@page` margin to use the gutter value on BOTH left and right sides as a safety net. See `references/weasyprint-gutter-margins.md` for details and real-world verification.
+
+**⚠️ WeasyPrint Pitfall — Page Number Duplication:** If `@page` default has `@bottom-right { content: counter(page) }` AND `@page :right` also has `@bottom-right { content: counter(page) }`, even pages will get TWO page numbers — one from the default rule and one from the `:left` rule's `@bottom-left`. Fix: only put `@bottom-right` on `@page :right` (not on default `@page`), and only put `@bottom-left` on `@page :left`. See `references/weasyprint-gutter-margins.md`.
+
+**⚠️ WeasyPrint Pitfall — `target-counter()`:** WeasyPrint does NOT support `target-counter()`. CSS like `.toc-page-num::after { content: target-counter(attr(href), page) }` renders nothing. Use hardcoded page numbers from a 2-pass build instead (see TOC Build section below).
+
+**Verification:** After generating the PDF, verify margins with PyMuPDF:
+```python
+import fitz
+doc = fitz.open('output/book.pdf')
+for i, page in enumerate(doc):
+    blocks = page.get_text('dict')['blocks']
+    for b in blocks:
+        if 'lines' in b:
+            x0 = b['bbox'][0]
+            print(f'Page {i+1}: text x0={x0:.1f}pt ({x0/72:.2f}in)')
+            break
+```
+Odd pages should show x0 ≥ 36pt (0.5") for 200+ page books. Even pages should show right margin ≥ 36pt (verified by checking `page.rect.width - x1` of the rightmost text block).
+
+**Common rejection reason:** "Insufficient gutter" — the inside margin is too narrow for the page count. Fix by increasing gutter in the CSS, NOT by changing page size or compressing content.
+
+### TOC Page Number Build (2-Pass)
+
+The TOC requires accurate page numbers matching actual chapter start pages. Because `target-counter()` doesn't work in WeasyPrint, a 2-pass build is required:
+
+**Pass 1 — Render with estimated page numbers:**
+1. Estimate chapter start pages from word counts (~275 words/page, ~6 pages front matter)
+2. Build TOC with these estimates as hardcoded text (not `target-counter()`)
+3. Render to PDF
+
+**Pass — Extract actual page numbers from rendered PDF:**
+Use PyMuPDF (`fitz`) to find each chapter heading:
+```python
+import fitz
+doc = fitz.open('pass1.pdf')
+toc_pages = {}
+for cn, ct, _ in chapters:
+    search_text = f"Chapter {cn}:"
+    found_page = None
+    for page_idx in range(4, len(doc)):  # Start after front matter
+        text = doc[page_idx].get_text()
+        if search_text in text:
+            lines = text.split('\n')
+            for li, line in enumerate(lines):
+                if search_text in line:
+                    # Check if next non-empty line is body text (not a page number)
+                    next_text = ''
+                    for nli in range(li + 1, min(li + 3, len(lines))):
+                        stripped = lines[nli].strip()
+                        if stripped:
+                            next_text = stripped
+                            break
+                    # Body text: long (>15 chars), starts with letter
+                    # TOC page number: short, starts with digit
+                    if next_text and len(next_text) > 15 and not next_text[0].isdigit():
+                        found_page = page_idx + 1  # 1-indexed
+                        break
+            if found_page:
+                break
+    if found_page:
+        toc_pages[cn] = found_page
+```
+
+**Critical:** The next-line check is essential. On TOC pages, the line after a chapter entry is a short page number (starts with digit). On content pages, the next line is body text (long, starts with letter). Simply searching for the heading text without this check will match the TOC reference first, returning the wrong page number (e.g., Chapter 30 → page 5 instead of page 168).
+
+**Do NOT use `range(6, ...)` or higher start indices** — this skips Chapter 1 which starts on page 5-6. Use `range(4, ...)` with the next-line check instead.
+
+**Pass 2 — Rebuild with correct page numbers:**
+1. Rebuild HTML with extracted page numbers hardcoded in TOC entries
+2. Render final PDF
+3. Delete pass 1 file
+
+The `hermes_publish/step_pdf.py` pipeline implements this automatically via `_build_pdf_html()`, `_estimate_toc_pages()`, and `_extract_toc_pages()`.
+
+### Image Handling — Double-Bug Fix & Sizing
+
+> **CRITICAL:** See `references/pdf-image-handling.md` for the full image handling fix.
+> **Print image sizing:** See `references/print-pdf-image-sizing.md` for WeasyPrint-specific image/table resizing and the CSS completeness trap.
+
+**Rules:**
+1. **Manuscript files MUST NOT contain `![image]` references** — the pipeline inserts images manually. Strip all markdown image syntax from manuscript content before passing to `md_to_html_simple()`.
+2. **Strip pattern:** `content = re.sub(r'!\[[^\]]*\]\([^)]+\)\s*\n?', '', content)`
+3. **PDF image CSS:** `width: auto; max-width: 100%; height: auto; max-height: 400px;` — never `width: 100%` (overflows margins)
+4. **Verify:** After rebuild, check `pdfimages -list` shows exactly 1 image per chapter
+
+### Build Pipeline Invocation — CLI Pitfall
+
+**Do NOT use `python hermes_publish.py`** to run individual build steps — the file at `/mnt/usb_4tb/books/hermes_publish.py` conflicts with the `hermes_publish/` package directory, causing `ModuleNotFoundError: No module named 'hermes_publish.config'`.
+
+**Correct approach** — use `python -c` with direct imports:
+
+```bash
+cd /mnt/usb_4tb/books/hermes_publish && python -c "
+import sys; sys.path.insert(0, '.')
+from config import BOOK_REGISTRY
+from step_pdf import run as pdf_run
+from step_epub import run as epub_run
+book = BOOK_REGISTRY['book-key']
+pdf_run('book-key', book)   # builds PDF + HTML
+epub_run('book-key', book)  # builds EPUB (separate call)
+"
+```
+
+**⚠️ `step_pdf.py` only builds PDF + HTML.** EPUB requires a separate call to `step_epub.run()`. Always rebuild both after manuscript changes.
+
+### Manuscript File Location — CRITICAL
+
+**`collect_chapters()` reads from `manuscript/MANUSCRIPT.md` (the `manuscript/` subdirectory), NOT the root-level `*MANUSCRIPT.md`.**
+
+The `collect_chapters()` function in `hermes_publish/utils.py` checks for manuscript files in this order:
+1. `book_dir/manuscript/*MANUSCRIPT.md` ← **this is what it reads**
+2. `book_dir/*MANUSCRIPT.md` ← fallback only if `manuscript/` doesn't exist
+
+**Pitfall:** Many book directories have BOTH a root-level `*MANUSCRIPT.md` AND a `manuscript/MANUSCRIPT.md`. These are often different files with different content, heading formats, and image references. Editing the root-level file has NO effect on the build output.
+
+**Always verify which file `collect_chapters` reads:**
+```python
+from utils import collect_chapters
+chapters = collect_chapters(book)
+# Check chapter content — if your edits don't appear, you're editing the wrong file
+```
+
+**Image insertion rule:** When adding chapter images to manuscripts, insert them in the `manuscript/MANUSCRIPT.md` file (the one in the `manuscript/` subdirectory). Images inserted in the root-level file are ignored by the build pipeline.
+
+**Duplicate heading pitfall:** Previous editing sessions may have left duplicate headings (e.g., both `## Chapter N: Title` and `## Chapter N — Title`). Always check for and remove duplicates before inserting images, or images may end up after the wrong heading.
+
+### Chapter Renumbering
+
+When renumbering chapters (e.g., offsetting by a fixed amount), **never use a simple descending/ascending str.replace loop** — it causes cascading replacements where already-renumbered text gets matched again. Use either:
+
+1. **Two-pass with unique placeholders** (safe, simple): first replace all numbers with `__CH{N}__` placeholders, then replace placeholders with final numbers.
+2. **Regex with callback** (single pass): `re.sub(r'## Chapter (\d+) —(.*)', lambda m: f"## Chapter {int(m.group(1))-offset} —{2}", content)`
+
+Apply the same renumbering to BOTH chapter headers and TOC entries. Verify after: sequential 1-N, no gaps, no duplicates.
+
+See `references/chapter-renumbering.md` for code examples and the cascading bug explanation.
+
 ### Manuscript Source Extraction
 If manuscript source files (chapter HTML/MD) are not in the book directory but the EPUB exists, extract them:
 ```bash
@@ -286,7 +507,23 @@ cp OEBPS/ch*.xhtml /path/to/book/manuscript_src/
 ```
 Skip files with "title", "copyright", "cover", "toc", "nav", "about", "series", "front", "dedic" in the name.
 
-## Chapter Illustrations by Genre
+### Content Expansion & Page Count Standards (2026-07-17)
+
+**All books must be 160-275 pages.** Hard rule. Page size NEVER changes (6×9" fiction, 8.5×11" business). Fix page count by rewriting content, not formatting.
+
+**OVER 275:** Tighten prose, cut redundant scenes, combine chapters, reduce scene breaks. Use compact build script as last resort.
+
+**UNDER 160:** Expand using PLOT_MAP.md. Add chapters, deepen scenes, add appendices. Business books: add case studies, exercises, checklists.
+
+**Word targets:** 6×9" fiction: 40k-82k words. 8.5×11" business: 56k-110k words.
+
+**Build scripts:** Standard `/tmp/build_book_pdf.py`. Compact (last resort) `/tmp/build_book_compact.py`.
+
+**Backup check MANDATORY:** Check `MANUSCRIPT.md.expanded`, `MANUSCRIPT_CONDENSED.md`, `_archived/`, `publishing_output/` before redoing work.
+
+**Subagent limit:** delegate_task times out at 1200s. Max 2-3 chapters per subagent.
+
+### Chapter Illustrations by Genre
 
 Every illustrated book should include one illustration per chapter, embedded in the manuscript as an image. The illustration type depends on genre:
 
@@ -310,6 +547,7 @@ Black and white pencil sketch illustration for a science fiction novel. [Scene d
 
 **Image generation API notes:**
 - Use `google/gemini-2.5-flash-image` via OpenRouter for best pencil sketch results
+- **API response format (updated 2026-06):** The response structure is `choices[0].message.images[0].image_url.url` — a nested dict, NOT a flat string. The `image_url` field is `{"url": "data:image/png;base64,..."}` not just `"data:image/png;base64,..."`. Handle both formats in code.
 - Minimum 5-6 second delay between API requests to avoid 429 rate limits
 - If Gemini fails, fall back to `black-forest-labs/flux.2-max`
 - API key: `OPENROUTER_API_KEY` from `~/.hermes/.env`
@@ -356,10 +594,46 @@ Chapter 2: The Crisis Framework.........................15
 Chapter 3: Risk Assessment..............................31
 ```
 
-### Subagent batch size for chapter writing:
+**Subagent batch size for chapter writing:**
 - Maximum 2-3 chapters per delegate_task (10-chapter batches consistently time out at 600s)
 - Each subagent should read at most 2-3 existing chapters for context, not the full manuscript
 - Provide chapter outlines directly in the subagent context rather than having them discover structure from existing files
+- **⚠️ Tool selection for expansion scripts:** Use `terminal()` directly for Python scripts that call subprocess or run external tools. Do NOT use `execute_code` for such scripts — it is blocked for subprocess calls. Write the script to a temp file via `write_file`, then run it via `terminal(command="python3 /tmp/script.py")`.
+
+### EPUB Build — KDP Compliance Checklist
+
+> **Full checklist:** See `references/kdp-epub-compliance.md` for the authoritative KDP EPUB spec, validation procedure, and common rejection reasons.
+> **Build from scratch:** See `references/epub-build-from-scratch.md` for the full manual EPUB build pipeline (OPF, nav.xhtml, chapter XHTML, packaging).
+
+> **Build pitfalls:** See `references/epub-build-pitfalls.md` for structural issues discovered in production (duplicate images, OPF duplicate IDs, incomplete spine, TOC page splitting, image reference paths, nav.xhtml title extraction).
+
+**Critical rules (non-negotiable for KDP upload):**
+
+1. **Bare `&` in text** → must be `&amp;` in XHTML. The only valid XML entities are `&amp;` `&lt;` `&gt;` `&quot;` `&apos;` and numeric refs.
+2. **HTML named entities** (`&copy;` `&nbsp;` `&mdash;` `&ndash;`) → use numeric refs (`&#169;` `&#160;` `&#8212;` `&#8211;`)
+3. **Self-closing tags** → `<br/>` `<img .../>` `<hr/>` (never `<br>` `<img>` `<hr>`)
+4. **nav.xhtml landmarks** → must include `<nav epub:type="landmarks">` with `<a epub:type="bodymatter" href="ch01.xhtml">Start Reading</a>`
+5. **toc.ncx** → must exist, be declared in OPF manifest, and spine must have `toc="ncx"`
+6. **OPF manifest** → every file in the ZIP must be listed; every manifest entry must resolve
+
+**Quick validation before upload:**
+```bash
+cd /tmp && mkdir -p epub-check && cd epub-check && unzip -o /path/to/book.epub
+# Check bare ampersands
+grep -rn '&[^a-zA-Z#]' OEBPS/*.xhtml | grep -v '&amp;' | grep -v '&lt;' | grep -v '&gt;' | grep -v '&quot;' | grep -v '&#'
+# Check invalid named entities
+grep -rn '&\(copy\|nbsp\|mdash\|ndash\|hellip\|trade\|reg\);' OEBPS/*.xhtml
+# Check XML validity
+python3 -c "import xml.etree.ElementTree as ET, glob
+for f in sorted(glob.glob('OEBPS/*.xhtml')):
+    try: ET.parse(f); print(f'OK  {f}')
+    except ET.ParseError as e: print(f'BAD {f}: {e}')"
+# Check landmarks
+grep 'bodymatter' OEBPS/nav.xhtml
+# Check NCX
+test -f OEBPS/toc.ncx && echo "toc.ncx: OK" || echo "toc.ncx: MISSING"
+grep 'toc="ncx"' OEBPS/content.opf
+```
 
 ### EPUB Build — RGBA Image Pitfall
 - EPUB builders (and KDP) require RGB images, NOT RGBA. LLM-generated PNGs are often RGBA.
@@ -384,3 +658,22 @@ Chapter 3: Risk Assessment..............................31
 - Always verify after injection: `grep -c 'class="toc"' manuscript.html` should be 1
 - If duplicate, remove the old TOC block manually before re-injecting
 - The old TOC often has empty page cells from the placeholder; the new one should have hardcoded numbers
+
+## EPUB Repair — When Source EPUB Exists but Is Broken
+
+See `nbs-book-rebuild` skill's `references/` directory for detailed repair patterns discovered during the Lunar Foundation fix session:
+- `references/epub-repair-patterns.md` — full repair script and patterns
+- `references/epub-div-fix.md` — div tag orphan/unclosed fix algorithm
+- `references/kdp-epub-compliance.md` — KDP compliance checklist
+
+### Quick EPUB Repair Checklist
+1. Extract EPUB to temp dir
+2. Fix chapter XML (div orphans, named entities)
+3. Add front matter to spine in OPF
+4. Rebuild nav.xhtml (clean titles, front matter, landmarks)
+5. Rebuild toc.ncx (clean titles, front matter, **with playOrder attributes**)
+6. Clean front.xhtml (remove nested XML declarations)
+7. Repackage with mimetype first + uncompressed
+8. Verify XML validity of all XHTML files
+
+> **NCX playOrder is mandatory for KDP.** See `references/ncx-playorder-requirements.md` for the fix pattern and real-world incident details.

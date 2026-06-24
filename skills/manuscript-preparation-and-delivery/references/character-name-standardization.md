@@ -1,6 +1,6 @@
 # Character Name Standardization Across a Series
 
-When an existing multi-volume series uses AI-typical character names (Elena, Diego, Mei-Lin, Rajiv, Jean-Luc, Aisha, Ana, Kenji) and needs to retrofit all first names to top-50 US names, use this systematic approach.
+When an existing multi-volume series uses AI-typical character names (Elena, Elena Vasquez, Chen, Diego, Mei-Lin, Rajiv, Jean-Luc, Aisha, Ana, Kenji) and needs to retrofit all first names to top-50 US names, use this systematic approach.
 
 ## Technique Overview
 

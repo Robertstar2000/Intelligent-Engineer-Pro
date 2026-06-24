@@ -74,7 +74,7 @@ See `references/observed-file-structures.md` for observed file structure pattern
 ### Plot Flow Rules
 
 1. **Plot flows consistently** — Each scene causes the next, not "and then this happened." Cause and effect must be visible from chapter to chapter.
-2. **Stakes escalate** — Complications multiply, tension curves upward. The middle does not sag; Act II has rising complications, not filler.
+2. **Stakes escalate** — Complications multiply, tension curves upward. The middle does not sag; Act II has rising complications, not filler. Ensure proportional pacing across book sections - avoid front-loading exposition at the expense of emotional payoff in later sections. If one section feels disproportionately long or short compared to others, adjust during editing.
 3. **No idiot plot** — Characters don't act stupidly just to advance the plot.
 4. **No deus ex machina** — Resolutions earned through character agency, not coincidence.
 5. **Subplots interweave** with main plot, not run parallel without intersection.
@@ -179,6 +179,7 @@ For large-scale rewrites (50+ chapters) or projects with high structural complex
 - **Continuity errors**: Use session_search to review previous chapters
 - **Partial-rewrite temptation**: Do not blindly merge a handful of rewritten chapters into an otherwise older draft unless the whole novel will be brought to the same voice; hybrid manuscripts usually feel tonally uneven and less publish-ready.
 - **Long rewrite reliability**: For full-book editorial rewrites, use a resumable chapter-by-chapter pipeline that saves state after each completed chapter, writes a rolling compiled manuscript, and logs progress. This makes 50+ chapter rewrites recoverable across API failures, timeouts, and resumptions.
+- **Skipping the mandatory MemPalace query**: Always run the MemPalace embedding search at the start to load relevant context; skipping leads to loss of project-specific continuity.
 
 ### 8. Cover Art Text Overlay (Post-Generation)
 When generating covers via AI (Flux, Pollinations), the images are often returned as "clean" plates without readable text. To ensure retailer readiness, use `PIL` (Pillow) to overlay bold, high-contrast titles.

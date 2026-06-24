@@ -48,8 +48,30 @@ for part in parts:
         break  # Important: break after finding first image
 ```
 
-### 2x2 inch chapter images
-At 300dpi, a 2x2 inch image = 600x600 pixels. Always center-crop to square:
+### WeasyPrint PDF Generation — Image Path Requirements
+
+WeasyPrint **cannot** handle `data:` URIs (base64) for images — it silently produces a ~4KB empty PDF. It also **cannot** resolve relative paths without a `base_url`.
+
+**Solution:** Replace all `src="..."` in the HTML with absolute `file://` paths pointing to the images directory, and pass `base_url=images_dir` to the `HTML()` constructor. See `references/book-rebuild-pipeline.md` for the full code.
+
+### HTML Duplicate Image Pattern
+
+Existing HTML output files may contain **two** `<img>` tags per chapter:
+- `<div class="chapter-image"><img src="ch01.png" ...>` (keep)
+- `<p><img src="chapter_images/ch01.png" ...>` (duplicate — remove)
+
+Always run deduplication before rebuilding PDF/EPUB. See `references/book-rebuild-pipeline.md` for the regex.
+
+### EPUB TOC Page
+
+The HTML has `<div class="toc-page">` with a print TOC (chapter titles + page numbers). In the EPUB, this must be extracted into a standalone `toc.xhtml` spine item (between front matter and chapters) so readers can navigate to it. The `nav.xhtml` must also include a link to `toc.xhtml` and use actual chapter titles (from `<h3>` headings), not generic labels. See `references/book-rebuild-pipeline.md` for the extraction pattern.
+
+### EPUB Chapter Image Paths
+
+Chapter XHTML files reference images as `src="ch01.png"` (bare filename from the HTML) but EPUB requires `src="images/ch01.png"` (relative to OEBPS/). Always fix paths before writing chapter XHTML:
+```python
+sec_content = re.sub(r'src="ch(\d+\.png)"', r'src="images/ch\1"', sec_content)
+```
 ```python
 img.thumbnail((600, 600), Image.LANCZOS)
 if img.size[0] != img.size[1]:
@@ -70,6 +92,8 @@ Every sci-fi chapter gets one black & white pencil sketch depicting a scene from
 ```
 Black and white pencil sketch illustration for a science fiction novel. [Scene]. Style: detailed pencil sketch, cross-hatching, no color, book illustration, dramatic lighting, cinematic composition. This must be completely original.
 ```
+
+> **Mars/space colonization series** (e.g., No Blue Sky) need additional prompt specificity — see `references/mars-space-image-prompts.md` for the full requirements (real Mars terrain, modern SpaceX-style astronauts, modern equipment).
 
 **API rate limit rules:**
 - Minimum 5-6 second delay between requests
@@ -161,6 +185,42 @@ prompt = f"{cover} scene from chapter '{title}': [scene]. Style: B&W pencil sket
 2. Time budget: ~6 seconds per chapter at 6s rate limit. For 500+ chapters, budget 50-60 minutes
 3. Handle books with non-standard formatting (No Blue Sky, Cindy Lou, Tomorrow Remembered) in separate fix scripts BEFORE the batch
 4. Start with properly-formatted books first, then handle edge-cases
+5. **Always force regeneration** — do NOT skip existing images when the user requests a redo. Delete existing files before generating new ones.
+6. For Mars/space colonization series, use the prompt specifics in `references/mars-space-image-prompts.md`
+7. After image generation, **convert to B&W grayscale** — Gemini generates warm-tinted RGB despite B&W prompts. Use `img.convert('L').convert('RGB')` on every image. See `references/bw-image-conversion.md`
+8. After image generation, **rebuild the books** (PDF + EPUB) using the pipeline in `references/book-rebuild-pipeline.md`
+9. **Before rebuilding**, run `fix_html_duplicates()` on each HTML file to remove duplicate `<img>` tags (see `references/book-rebuild-pipeline.md`)
+10. **Extract TOC page** into standalone `toc.xhtml` for EPUBs — don't leave it embedded in `front.xhtml`
+
+### Science Fiction — Mars / Space Colonization Specifics
+
+When generating chapter images for Mars colonization or space exploration series (e.g., No Blue Sky), the prompts MUST include these specificity requirements:
+
+**Mars must look like real Mars:**
+- Reddish-brown iron oxide regolith (not grey/moon-like)
+- Impact craters of varying sizes
+- Thin pale pink/orange sky (not blue, not black like the Moon)
+- Distant rust-colored horizon
+- Rocky basaltic terrain, fine iron oxide dust
+- Valles Marineris-style canyon features where appropriate
+
+**Astronauts must look modern (SpaceX-style), NOT retro:**
+- Sleek, form-fitting suit design (not bulky Apollo-era puffy suits)
+- Angular 3D-printed helmets with wide visors (not round bubble helmets)
+- Minimal bulk, modern commercial spaceflight aesthetic
+- NO PLSS backpack boxes visible, integrated life support
+
+**Equipment must be modern/near-future:**
+- Clean solar array panels (not 1970s-era chunky designs)
+- Contemporary habitat modules with clean lines
+- Advanced rovers with modern wheel/body design
+- Current-era life support and ISRU equipment
+- NO retro-futuristic, steampunk, or mid-century aesthetics
+
+**Prompt template for Mars colonization chapters:**
+```
+Black and white pencil sketch illustration for a science fiction novel. [Scene]. Mars must look like the real planet Mars: reddish-brown dusty regolith, impact craters, thin pale pink sky, distant rust-colored horizon. Any astronauts must wear modern SpaceX-style suits: sleek form-fitting design, angular 3D-printed helmets with wide visors, minimal bulk. Any equipment must be modern/near-future: sleek solar arrays, contemporary habitat modules. Style: detailed pencil sketch, cross-hatching, no color, book illustration, dramatic lighting, cinematic composition. This must be completely original.
+```
 
 ### Image Insertion Into MANUSCRIPT.md
 
@@ -169,8 +229,11 @@ After generating images, insert references at the start of each chapter:
 img_ref = f"chapter_images/ch{ch_num:02d}.png"
 old = f"# Chapter {ch_num}: {title}"
 content = content.replace(old, f"{old}\\n\\n![]({img_ref})", 1)
-```
+### References
 
-See `references/batch-chapter-image-generation.md` for the full reusable script template.
+- `references/mars-space-image-prompts.md` — Mars/space colonization prompt specifics (real Mars terrain, modern SpaceX-style astronauts, modern equipment, No Blue Sky folder structure)
+- `references/batch-chapter-image-generation.md` — full reusable batch script template with B&W conversion, EPUB OPF structure, WeasyPrint image paths, and duplicate HTML image pitfalls
+- `references/book-rebuild-pipeline.md` — HTML → PDF/EPUB rebuild pipeline with WeasyPrint, EPUB packaging, and KDP_Package sync
+- `references/bw-image-conversion.md` — Gemini generates RGB despite B&W prompts; convert with PIL `.convert('L').convert('RGB')`
 
 [rest of existing content...]

@@ -62,8 +62,50 @@ related_skills: [sales-pipeline-infrastructure, stripe-payment-collection, virtu
 - **CAC:** Customer acquisition cost
 - **Conversion rate:** Trial → Paid
 - **Activation rate:** Signup → First value moment
+## Social Media — SaaS Product Marketing
+
+Use the `social-direct-publisher` skill to promote MIFECO SaaS products on social media.
+
+### When to Publish
+- **Product launch** — New SaaS product goes live on Cloud Run
+- **Feature release** — Major feature update or improvement
+- **Social proof** — User testimonials, case studies, usage milestones
+- **Educational content** — AI/project management tips that position MIFECO as an expert
+- **Promotional campaigns** — Free trial offers, discount codes, webinar announcements
+
+### Content per Platform
+
+**LinkedIn** (B2B/professional audience):
+- Product announcements: "[Product] is now live — [key benefit] for [target audience]"
+- Thought leadership: AI in engineering, project management best practices
+- Feature highlights: "New in [Product]: [feature] helps you [benefit]"
+- CTA: Link to product landing page
+- Campaign tag: `saas-promo` or `saas-[product-key]`
+
+**Facebook Page** (small business owners, makers):
+- Conversational: "Tired of [problem]? [Product] can help."
+- Demo videos, screenshots, user testimonials
+- Campaign tag: `saas-promo`
+
+**Instagram** (visual/brand):
+- Product screenshots, UI demos, infographics
+- Caption: Brief value prop + "Link in bio"
+- Campaign tag: `saas-promo`
+
+### Approval Flow
+All SaaS social posts MUST go through `social-direct-publisher`:
+1. Generate → 2. Policy check → 3. Draft → 4. Bob approves → 5. API publish → 6. Audit log
+
+### Integration with SaaS Pipeline
+When a SaaS product reaches "Deploy" stage in the pipeline:
+1. Auto-generate launch social posts for all 3 platforms
+2. Store as drafts in social publisher
+3. Report in deployment summary
+4. Bob approves → publish on launch day
 
 ## Common Issues
+
 - **Content generator references Ghost CMS** — Must be adapted to WordPress REST API
 - **Auto-advance rules not implemented** — Leads stuck at stage 1
 - **No CRM** — leads-registry.json has no web UI
+- **Social posts require approval** — Never publish SaaS social media directly from LLM output. Always route through `social-direct-publisher`.

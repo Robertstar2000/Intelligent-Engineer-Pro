@@ -134,6 +134,14 @@ After implementation, verify:
 - Monitor archive growth to ensure important memories aren't being pruned incorrectly
 - Adjust scoring weights based on observed performance
 
+## DOX Integration
+
+When implementing in a project that uses the [DOX (Self-documenting AGENTS.md)](https://github.com/agent0ai/dox) framework:
+
+- **Read Before Editing:** Walk the DOX tree from root to the target path. Read every AGENTS.md along the route before making any changes.
+- **Update After Editing:** If the implementation affects purpose, scope, ownership, structure, workflows, or operating rules, update the closest owning AGENTS.md and refresh the Child DOX Index.
+- **Reference:** [agent0ai/dox](https://github.com/agent0ai/dox) — copy `AGENTS.md` from the repo root into your project to initialize.
+
 ## Pitfalls to Avoid
 
 1. **Over-consolidation**: Don't promote low-score memories - they create noise

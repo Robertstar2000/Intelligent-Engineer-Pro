@@ -69,6 +69,36 @@ All email templates are in `/consult/public/email-templates/`:
 - Never make guarantees about ROI
 - Always include confidentiality notice
 
+## Social Media — Consulting Thought Leadership
+
+Use the `social-direct-publisher` skill to position MIFECO as a thought leader in AI/business transformation.
+
+### When to Publish
+- **After delivering a report** — Share anonymized insights (with permission): "A common pattern I see in AI readiness assessments..."
+- **Industry trends** — Comment on AI/business news with MIFECO's perspective
+- **Client wins** — Anonymized success stories: "Helped a manufacturing company reduce downtime 40% with AI predictive maintenance"
+- **Educational content** — "3 signs your business is ready for AI" / "The biggest mistake companies make with AI adoption"
+
+### Content per Platform
+
+**LinkedIn** (primary — B2B thought leadership):
+- Professional insights, AI transformation tips, case study snippets
+- 3000 char max; link to mifeco.com/consult/ at end
+- Campaign tag: `consulting-thought-leadership`
+
+**Facebook Page** (small business owners):
+- Conversational: "Here's what I learned from assessing 50+ businesses for AI readiness..."
+- Campaign tag: `consulting-promo`
+
+**Instagram** (brand awareness):
+- Quote graphics, infographics, short tips
+- "Link in bio" for consulting page
+- Campaign tag: `consulting-promo`
+
+### Approval Flow
+All consulting social posts MUST go through `social-direct-publisher`:
+1. Generate → 2. Policy check → 3. Draft → 4. Bob approves → 5. API publish → 6. Audit log
+
 ## Upsell Scripts
 
 ### Tier 1 → Tier 2
@@ -76,3 +106,6 @@ All email templates are in `/consult/public/email-templates/`:
 
 ### Tier 2 → Tier 3
 "Your Strategic Plan lays out a clear roadmap. The next step is implementation support — the Deep-Dive package includes weekly check-ins, an implementation guide, and two strategy sessions to keep you on track. Many clients find this makes the difference between a plan that sits on a shelf and one that gets executed."
+
+### Social Proof Upsell
+Include social media engagement metrics in upsell conversations: "Our LinkedIn posts about AI transformation have reached [X] business owners — the demand for implementation support is growing. The Deep-Dive package positions you ahead of the curve."

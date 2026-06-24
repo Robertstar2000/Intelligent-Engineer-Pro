@@ -40,7 +40,7 @@ def ssh_run(command, timeout=60):
     child.expect(pexpect.EOF, timeout=timeout)
     return child.before.decode() if child.before else ''
 
-def scp_upload(local_path, remote_path):
+def scp_upload(local_path, remote_path, timeout=180):
     """Upload file via SCP. Returns True on success."""
     child = pexpect.spawn('scp', [
         '-o', 'StrictHostKeyChecking=accept-new',

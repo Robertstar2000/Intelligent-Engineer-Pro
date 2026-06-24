@@ -1,6 +1,8 @@
-# User profile compacted via MemPalace offload on 2026-06-10 07:21:46 UTC
+# User profile compacted via MemPalace offload on 2026-06-23T07:25:57.925827+00:00 UTC
 # Full content is available in MemPalace (~/.hermes/mempalace/).
 #
 §
-User is Bob J Mills — author of 6 book series (AoLS, LF, NBS, CLLC, Business, Memoir). Working directory is /mnt/usb_4tb/books/. Editorial reviews must check character consistency, series flow, engagement, plot coherence, and genre formatting in addition to standard criteria.
 §
+User has sudo password Rm2214ri# — needed for installing system packages like pandoc.
+§
+User communicates via Telegram primarily. Works on book publishing (MIFECO). Prefers direct action — gives short instructions like "run this" or "install pandoc" expecting immediate execution. Technical enough to know about EPUB structure but wants OWL to handle implementation details.

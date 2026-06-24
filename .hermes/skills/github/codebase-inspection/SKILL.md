@@ -102,6 +102,14 @@ pygount --format=json .
 pygount --format=summary . 2>/dev/null
 ```
 
+## DOX Integration
+
+When inspecting a project that uses the [DOX (Self-documenting AGENTS.md)](https://github.com/agent0ai/dox) framework:
+
+- **Read Before Editing:** Walk the DOX tree from root to the target path. Read every AGENTS.md along the route to understand local contracts before making changes.
+- **Update After Editing:** If the inspection leads to changes affecting purpose, scope, ownership, structure, workflows, or operating rules, update the closest owning AGENTS.md and refresh the Child DOX Index.
+- **Reference:** [agent0ai/dox](https://github.com/agent0ai/dox) — copy `AGENTS.md` from the repo root into your project to initialize.
+
 ## 6. Interpreting Results
 
 The summary table columns:

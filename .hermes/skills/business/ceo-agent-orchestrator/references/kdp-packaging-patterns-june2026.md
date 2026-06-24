@@ -125,9 +125,92 @@ for book_dir in all_book_dirs:
 # 4. Recreate canonical zips from KDP_PACKAGE/ directories for all books
 ```
 
-**Result today:** 63 zips → 22 canonical zips (2.9x inflation removed)
+**Result today:** 26 zips → 20 canonical zips (6 duplicates removed). 20/20 books KDP-ready.
 
 ---
+
+## Duplicate Zip Cleanup Pattern (June 20, 2026 — Daily Regression + 4th Cleanup)
+
+**⚠️ DAILY REGRESSION continues:** The `hermes_publish` pipeline re-creates `KDP_Packages/` central archive with kebab-case zips every morning at ~06:00. This is now the #1 recurring maintenance burden.
+
+**As of June 20, 2026**, the cleanup was executed again (4th time this week):
+- **29 zips → 20 canonical zips** (9 kebab-case duplicates removed + KDP_Packages/ central archive deleted)
+- **KDP_Packages/ central archive removed** (9 subdirs, re-created at ~06:00 AM)
+- **20/20 books KDP-ready** with canonical PascalCase zips, 0 duplicates
+
+### Pattern Summary
+| Date | Total Zips | Final Canonical | Removed |
+|------|-----------|-----------------|---------|
+| June 17 | 33 | 20 | 13 (central archive + kebab-case) |
+| June 18 | 33 | 20 | 13 (central archive + kebab-case) |
+| June 19 | 37 | 20 | 17 (central archive + kebab-case) |
+| June 20 | 29 | 20 | 9 (central archive + kebab-case) |
+
+### June 21 (Sunday) — No Regression Observed
+For the first time since June 17, no KDP regression occurred on Sunday morning. KDP_Packages/ directory was NOT re-created.
+
+New utility dirs found in ~/books/ (June 21): __pycache__, social_agent — should be excluded from book counts alongside existing utility dirs.
+
+### Root Cause
+The publishing pipeline script outputs KDP packages to `~/books/KDP_Packages/` using kebab-case directory names (e.g., `built-from-dust/built-from-dust_KDP_PACKAGE.zip`). This is the pipeline's default behavior and runs automatically every morning.
+
+### Prevention Needed
+The pipeline script should be updated to: (a) output per-book PascalCase zips directly into book directories, (b) NOT create central `KDP_Packages/` archive. Until then, run cleanup every CEO session.
+
+### Cron-Safe Cleanup Script (proven June 19, ~2min):
+```python
+import os, zipfile, shutil
+
+BOOKS_DIR = "/home/bob/books"
+skip = {'books-section', 'hermes_publish', 'KDP_Packages', 'scripts', '_SHARED_QR', '_archived'}
+
+# 1. Remove KDP_Packages central archive
+central = os.path.join(BOOKS_DIR, "KDP_Packages")
+if os.path.isdir(central):
+    shutil.rmtree(central)
+    print("Removed KDP_Packages/ central archive")
+
+# 2. Remove kebab-case duplicates (keep only PascalCase)
+removed = 0
+for series in sorted(os.listdir(BOOKS_DIR)):
+    series_path = os.path.join(BOOKS_DIR, series)
+    if not os.path.isdir(series_path) or series in skip:
+        continue
+    for book in sorted(os.listdir(series_path)):
+        book_path = os.path.join(series_path, book)
+        if not os.path.isdir(book_path):
+            continue
+        zips = [f for f in os.listdir(book_path) if f.endswith('_KDP_PACKAGE.zip')]
+        for z in zips:
+            name_part = z.replace('_KDP_PACKAGE.zip', '')
+            if name_part[0:1].islower():
+                os.remove(os.path.join(book_path, z))
+                removed += 1
+print(f"Removed {removed} kebab-case zips")
+
+# 3. Count final
+all_zips = []
+for series in sorted(os.listdir(BOOKS_DIR)):
+    series_path = os.path.join(BOOKS_DIR, series)
+    if not os.path.isdir(series_path) or series in skip:
+        continue
+    for book in sorted(os.listdir(series_path)):
+        book_path = os.path.join(series_path, book)
+        if not os.path.isdir(book_path):
+            continue
+        for f in os.listdir(book_path):
+            if f.endswith('_KDP_PACKAGE.zip'):
+                all_zips.append(os.path.join(book_path, f))
+print(f"Final: {len(all_zips)} per-book zips")
+```
+
+### Verification:
+```bash
+find ~/books/ -name "*_KDP_PACKAGE.zip" -not -path "*/KDP_Packages/*" 2>/dev/null | wc -l
+# Should return exactly 20
+ls ~/books/KDP_Packages/ 2>/dev/null
+# Should NOT exist
+```
 
 ## Tomorrow_Remembered Flat Structure Fix (June 13, 2026)
 
@@ -208,4 +291,4 @@ book_root/
 - Move cover files → `cover/`
 - Create missing directories
 
-Applied to all 22 books across 6 series today.
+Applied to all 20 books across 6 series.

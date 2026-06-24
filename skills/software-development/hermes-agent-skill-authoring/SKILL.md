@@ -135,6 +135,18 @@ Pick the closest existing category. Don't invent new top-level categories casual
 5. **Git add + commit** on the active branch.
 6. **Note:** the CURRENT session's skill loader is cached — `skill_view` / `skills_list` will not see the new skill until a new session. This is expected, not a bug.
 
+## DOX Integration
+
+When authoring skills in a project that uses the [DOX (Self-documenting AGENTS.md)](https://github.com/agent0ai/dox) framework:
+
+- **Read Before Editing:** Walk the DOX tree from root to the target path. Read every AGENTS.md along the route before making any changes.
+- **Update After Editing:** If the skill affects purpose, scope, ownership, structure, workflows, or operating rules, update the closest owning AGENTS.md and refresh the Child DOX Index.
+- **Reference:** [agent0ai/dox](https://github.com/agent0ai/dox) — copy `AGENTS.md` from the repo root into your project to initialize.
+
+## Batch Updating Multiple Skills
+
+When adding a consistent section across many skills (e.g., a DOX Integration section, a MemPalace preamble, or a new workflow step), see `references/batch-integration-pattern.md` for the full playbook.
+
 ## Cross-Referencing Other Skills
 
 `metadata.hermes.related_skills` unions both trees (`skills/` in-repo and `~/.hermes/skills/`) at load time. You CAN reference a user-local skill from an in-repo skill, but it won't resolve for other users who clone the repo fresh. Prefer referencing only in-repo skills from in-repo skills. If a frequently-referenced skill lives only in `~/.hermes/skills/`, consider promoting it to the repo.
@@ -142,7 +154,8 @@ Pick the closest existing category. Don't invent new top-level categories casual
 ## Editing Existing In-Repo Skills
 
 - **Small fix (typo, added pitfall, tightened trigger):** `skill_manage(action='patch', name=..., old_string=..., new_string=...)` works fine on in-repo skills.
-- **Major rewrite:** `write_file` the whole SKILL.md. `skill_manage(action='edit')` also works but requires supplying the full new content.
+- **Disabled skills workaround:** If `skill_view(name='...')` fails with "disabled", read the file directly via `read_file(path='~/.hermes/skills/<category>/<name>/SKILL.md')` to get the full content, then use the `patch` tool on the absolute path.
+- **Patch tool modes:** `mode='replace'` uses `old_string`/`new_string` params. `mode='patch'` uses the `patch` param with V4A format. Do NOT mix these up. See `references/batch-integration-pattern.md` for examples.
 - **Adding supporting files:** `write_file` to `skills/<category>/<name>/references/<file>.md`, `templates/<file>`, or `scripts/<file>`. `skill_manage(action='write_file')` also works and enforces the references/templates/scripts/assets subdir allowlist.
 - **Always commit** the edit — in-repo skills are source, not runtime state.
 
@@ -162,9 +175,9 @@ Pick the closest existing category. Don't invent new top-level categories casual
 
 7. **Linking to skills that don't exist in-repo.** `related_skills: [some-user-local-skill]` works for you but breaks for other clones. Prefer only in-repo links.
 
-8. **Never use `write_file` or `patch` on MEMORY.md or USER.md.** These files are managed exclusively by the `memory` tool. External edits cause "drift" errors that block the memory tool until the file is removed and entries re-added via `memory(action=add)`. If you need to add a memory, use the `memory` tool directly.
+8. **Never use `write_file` or `patch` on MEMORY.md or USER.md.** These files are managed exclusively by the `memory` tool. External edits cause "drift" errors that block the memory tool. If MEMORY.md drift occurs (e.g., after the `patch` tool writes nearby and the memory tool detects inconsistency), resolve it by rewriting MEMORY.md as a clean section-delimited list of entries, then re-add entries via `memory(action=add)`. If you need to add a memory, use the `memory` tool directly.
 
-9. **Never use `hermes config set` with JSON strings for YAML list values.** The command mangles JSON-in-YAML (splits on commas, produces 1500+ string fragments). For list values like `skills.disabled`, edit config.yaml directly using Python's `yaml` module:
+9. **Never use `hermes config set` with JSON strings.** The command mangles JSON-in-YAML (splits on commas, produces 1500+ string fragments). For list values like `skills.disabled`, edit config.yaml directly using Python's `yaml` module:
    ```python
    import yaml
    with open(os.path.expanduser('~/.hermes/config.yaml')) as f:

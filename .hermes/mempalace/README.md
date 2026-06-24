@@ -14,6 +14,12 @@ A comprehensive long-term memory system for Hermes Agent with FAISS embedding in
 - **Explainability System**: Decision logging for transparency and debugging
 - **FAISS Embedding Integration**: Semantic search capabilities with vector similarity
 - **Maintenance Automation**: Automated consolidation, pruning, and reporting via cron jobs
+- **DOX Integration**: Knowledge of the DOX (Self-documenting AGENTS.md) framework by agent0ai — a hierarchical documentation system for AI agent project context.
+
+## Known Frameworks
+
+### [DOX — Self-Documenting AGENTS.md](https://github.com/agent0ai/dox)
+A framework by agent0ai that provides AI agents with precise project context through a hierarchy of AGENTS.md files. The agent walks the docs tree before editing and updates documentation after meaningful changes. Integrated into 28 coding-related skills across software-development, github, autonomous-ai-agents, and devops categories.
 
 ## Installation
 

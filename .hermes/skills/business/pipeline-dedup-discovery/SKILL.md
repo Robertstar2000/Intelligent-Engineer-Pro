@@ -121,6 +121,8 @@ STEP 0: DEDUP DISCOVERY CHECK
   5. Verify registry lead count matches total across all pipeline files
 ```
 
+> **Note:** The dedup check (Step 0) only catches duplicates against the unified-pipeline.json index. It does NOT verify that existing pipeline leads are registered — that's Step 7's job. Keep these concerns separate.
+
 ### Full Orchestrator Steps (for reference)
 
 The daily orchestrator (cron at 8am Monday–Friday, workdir=`/home/bob/.hermes/pipeline-engine/`) performs these steps in order:
@@ -182,13 +184,15 @@ Field name normalization across pipelines:
 | **Registry uses aggregate format** | `leads-registry.json` only stores pipeline-level IDs | Fix already applied: `dedup-check.py` auto-detects and builds dedup index from `unified-pipeline.json` |
 | **Per-pipeline `leads` arrays are POC SAMPLES, not exhaustive** | Registry shows books: 5 IDs, consulting: 4, saas: 4 — but actual lead counts are 3, 10, 5. These arrays appear to be proof-of-concept examples, not comprehensive lists. | NEVER use `len(registry['pipelines'][p]['leads'])` for count verification. Use `registry['pipelines'][p]['total_leads']` and `registry['total_leads_all']` as the authoritative counts. |
 | **Unified pipeline has DIFFERENT data, not just fewer leads** | `unified-pipeline.json` stores enrichment/persona data with names, orgs, and emails that often DON'T MATCH the actual pipeline JSON records. Example: actual books B-001 is "Dr. Sarah Chen, Northfield Academy, schen@northfieldacademy.edu" but unified lead-001 is "Sarah Chen, Galactic Reads Bookstore, sarah@galacticreads.com". Because `dedup-check.py` builds its dedup index from unified-pipeline.json (when registry uses aggregate format), the name/org/email triples never match — so it returns `{"is_duplicate": false}` for EVERY actual pipeline lead. | Do NOT rely on `dedup-check.py` for verifying existing leads are in the registry — it will always return false for actual pipeline leads due to the unified data mismatch. For that, cross-reference pipeline IDs directly against the registry's `pipelines[].leads[]` arrays. The dedup check is only reliable for catching true duplicates of truly NEW leads that haven't been through the pipeline system before. After running dedup-check against any lead, verify by testing against a known-registered lead first to confirm the index reflects your actual data. |
-| **Enrichment engine `--report` misreads pipeline structure** | `enrichment-engine.py --report` calls `data.get(\"leads\", ...)` on each pipeline JSON file, but the actual data lives at `data[\"pipeline\"][\"leads\"]`. This means the report only finds 1 lead total (the first unrelated key) instead of all leads. | Use the enrichment engine for stale-detection heuristics only. For accurate per-lead enrichment status, read each pipeline JSON directly and check individual `enriched_at`, `verification_status`, and `contact_email` fields. The reusable `scripts/daily-pipeline-analysis.py` handles this correctly. |
+| **Enrichment engine `--report` misreads pipeline structure** | `enrichment-engine.py --report` calls `data.get("leads", ...)` on each pipeline JSON file, but the actual data lives at `data["pipeline"]["leads"]`. This means the report only finds 1 lead total (the first unrelated key) instead of all leads. | Use the enrichment engine for stale-detection heuristics only. For accurate per-lead enrichment status, read each pipeline JSON directly and check individual `enriched_at`, `verification_status`, and `contact_email` fields. The reusable `scripts/daily-pipeline-analysis.py` handles this correctly. |
+| **Nurture sequence gaps vs pipeline catalog** | The books pipeline may contain product titles (e.g., Cindy Lou Legal Capers series, standalone titles, business books) that are NOT referenced in `sequences/books-nurture.json`. The consulting pipeline may list products (e.g., "$199 Virtual Strategy Session") that are only implied by price references in nurture emails, not explicitly named. The `daily-pipeline-analysis.py` Step 4 check only compares `pipeline['pipeline']['products']['titles']` (No Blue Sky series) — it misses `cindy_lou`, `standalone`, and `business_books` sections. | For Step 4, do a COMPREHENSIVE check: collect ALL titles from ALL product sections in the pipeline JSON (including nested series, standalone, business_books, etc.) and verify each appears in the nurture sequence. For consulting, check that each product name from `pipeline['pipeline']['products']` appears in the nurture email bodies (not just price numbers). Flag any gaps as 🔴 ON HOLD for email sends. |
 | **Case sensitivity** | "Acme Corp" vs "acme corp" | Lead_key normalizes to lowercase |
 | **Whitespace** | " John " vs "John" | Script trims all values |
 | **Same org, different person** | Both at HealthBridge Tech | Fixed: only blocks same email OR same name+domain |
 | **Empty contact fields** | Consulting leads have no names/emails yet | Registry stores what exists — flagged for enrichment |
 | **Old leads not in registry** | Leads added before registry existed | Pipeline orchestrator re-indexes them on first run |
-| **Date format variance** | Consulting pipeline uses date-only (`2026-05-07`) while Books/SaaS use full ISO timestamps (`2026-05-07T14:00:39Z`). Registry entries store `registered_at` as ISO. | Any cross-reference script must handle both date formats. Use `datetime.fromisoformat()` for ISO and `datetime.strptime(..., '%Y-%m-%d')` for date-only strings.
+| **Date format variance** | Consulting pipeline uses date-only (`2026-05-07`) while Books/SaaS use full ISO timestamps (`2026-05-07T14:00:39Z`). Registry entries store `registered_at` as ISO. | Any cross-reference script must handle both date formats. Use `datetime.fromisoformat()` for ISO and `datetime.strptime(..., '%Y-%m-%d')` for date-only strings. **Timezone pitfall:** Mixing tz-aware and naive datetimes causes `TypeError`. Use naive datetimes everywhere: strip tzinfo with `.replace(tzinfo=None)` on parsed ISO dates, and use `datetime(YYYY, M, D)` (no tzinfo arg) for `now`. |
+| **Cron jobs can't use `execute_code`** | `execute_code` is blocked in cron sessions ("no user present to approve"). | Use `terminal()` for all Python. Write scripts to temp files via `write_file` first, then run with `python3 path/to/file.py`. Never pass Python via heredoc — f-strings and special chars cause shell quoting failures. |
 
 ## Enrichment Flow
 
@@ -198,6 +202,23 @@ When enriching leads:
 3. Update `enriched_at` timestamp in both pipeline JSON and registry
 
 ## Step 7: Registry Integrity — Resolving Count Mismatches
+
+**Verification pattern (confirmed 2026-06-22):**
+
+```python
+import json
+
+registry = json.load(open('data/leads-registry.json'))
+pipelines = ['books', 'saas', 'consulting']
+
+for p in pipelines:
+    actual = len(json.load(open(f'data/pipeline-{p}.json'))['pipeline']['leads'])
+    registered_total = registry['pipelines'][p]['total_leads']
+    print(f"{p}: actual={actual}, registered={registered_total}, match={actual == registered_total}")
+
+total_actual = sum(len(json.load(open(f'data/pipeline-{p}.json'))['pipeline']['leads']) for p in pipelines)
+assert registry['total_leads_all'] == total_actual, f"Total mismatch: {registry['total_leads_all']} vs {total_actual}"
+```
 
 When Step 7 flags a registry count mismatch (e.g., registry claims 10 consulting leads but only 8 exist in the pipeline file), follow this diagnostic flow:
 

@@ -1,7 +1,7 @@
 ---
 name: mempalace-complete
 description: Complete MemPalace long-term memory enhancement layer implementation with FAISS embedding integration
-version: 1.1.0
+version: 1.3.0
 author: Hermes Agent
 license: MIT
 metadata:
@@ -49,6 +49,7 @@ Also use this skill during **active sessions** when the in-memory memory store (
    ```python
    import sys, os
    sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace'))
+   from datetime import datetime, timezone  # Required for timestamp generation
    
    # Direct module import approach (more reliable in cron jobs/non-interactive environments)
    import capture
@@ -98,6 +99,10 @@ Also use this skill during **active sessions** when the in-memory memory store (
 - Compacted the memory files after successful offload
 - Ran comprehensive FAISS index rebuild to ensure all memory entries were properly indexed
 - Verified no stale vectors remained with `check_stale_vectors.py`
+- **Important lessons from this implementation:**
+  - Ensure all required imports are present in scripts (especially `datetime` and `timezone`)
+  - Test scripts in isolation before relying on them in cron jobs
+  - Verify that all MemPalace components are properly initialized before use
 
 ## Implementation Approach
 
@@ -146,7 +151,23 @@ Implement components in this order for easiest debugging:
   4. Check installation with `python3 -c "import package_name; print(package_name.__version__)"`
   5. Verify all required packages are installed: numpy, sentence-transformers, faiss-cpu, transformers
   6. If pip is missing in venv, ensure pip is installed: `/path/to/venv/bin/python -m ensurepip --upgrade`
-  7. **Hermes Agent environment**: When installing dependencies for MemPalace within the Hermes Agent runtime, use the agent's virtual environment pip: `/home/bob/.hermes/hermes-agent/venv/bin/pip install <package>`. The core MemPalace components (capture, tagging, scoring, consolidation, pruning) function without sentence-transformers and faiss-cpu; embedding-dependent features (retrieval, reinforcement, explainability) require these packages.
+  7. **Hermes Agent environment**: When installing dependencies for MemPalace within the Hermes Agent runtime, use the agent's virtual environment pip: `/home/bob/.hermes/hermes-agent/venv/bin/pip3 install <package>`. The core MemPalace components (capture, tagging, scoring, consolidation, pruning) function without sentence-transformers and faiss-cpu; embedding-dependent features (retrieval, reinforcement, explainability) require these packages.
+  8. **Installation order matters**: Install numpy first, then torch (CPU), then sentence-transformers, then faiss-cpu to avoid compatibility issues
+  9. **Virtual environment activation**: Ensure you're activating the correct virtual environment before installing (e.g., `source /home/bob/.hermes/hermes-agent/venv/bin/activate`)
+
+  10. **Handling timeouts**: `sentence-transformers` is a 600MB+ download (includes torch, transformers, huggingface-hub). Default pip timeout WILL fail. Use:
+      ```
+      /home/bob/.hermes/hermes-agent/venv/bin/pip3 install torch --index-url https://download.pytorch.org/whl/cpu --no-cache-dir --timeout 600 --retries 5
+      /home/bob/.hermes/hermes-agent/venv/bin/pip3 install sentence-transformers --no-cache-dir --timeout 600 --retries 5
+      ```
+      Install torch first (CPU index URL avoids downloading CUDA bundles), then sentence-transformers.
+
+  11. **Package importability**: After installation, make the `mempalace` package importable system-wide within the venv by creating a `.pth` file:
+      ```
+      echo "/home/bob/.hermes" > /home/bob/.hermes/hermes-agent/venv/lib/python3.11/site-packages/mempalace.pth
+      ```
+      **Important**: The `.pth` must point to the **parent** directory (`~/.hermes`), NOT the package directory itself (`~/.hermes/mempalace`). Python needs the parent on `sys.path` to find `mempalace/` as a package with `__init__.py`.
+      Verify with: `python3 -c "import mempalace; print(mempalace.__version__)"`
 
 #### Scoring Algorithm Tuning
 - The weighted scoring system works well but weights may need tuning based on domain
@@ -195,6 +216,7 @@ Implement components in this order for easiest debugging:
   - Be cautious with lazy imports inside functions (e.g., `from . import capture` inside a function) as they may not work reliably when the function is called from certain contexts (like from `__init__.py`). For critical functions called during initialization, consider top-level imports or using importlib for more reliable lazy loading.
   - Specific fix for prune.py and __init__.py: Changed lazy imports inside functions to top-level imports or ensured proper module loading sequence to resolve "name 'capture' is not defined" errors.
   - **Cron job import workaround**: When running MemPalace operations in cron jobs or isolated environments, direct module imports may be more reliable than package imports. If `from mempalace import init_mempalace` fails with ModuleNotFoundError, try importing modules directly: `import capture; import tag; import embed` etc., then call their individual initialization functions (e.g., `capture.init_capture(path)`, `tag.init_tagging(path)`, `embed.init_embedding(path)`).
+  - **Function name verification**: Always verify actual exported function names with `grep "^def " module.py` before writing imports. MemPalace module exports don't always match intuitive names (e.g., `prune.py` exports `prune_memories()` not `prune_events()`, and `reinforce.py` exports `reinforce_memory()` not `mark_reinforcement()`). Wrong function names cause immediate ImportError in cron/maintenance scripts.
 - **Datetime handling**: When processing timestamps from memory events, always handle both timezone-aware and naive datetime objects. Check if timestamp string ends with 'Z' and convert to proper ISO format (+00:00), then ensure the datetime object is timezone-aware (assume UTC if naive). This prevents "can't subtract offset-naive and offset-aware datetimes" errors in scoring and consolidation systems.
 - **FAISS compatibility**: The `add_with_ids` method may not be available in all FAISS installations (particularly with IndexFlatIP). Implement fallback logic that catches exceptions and uses `index.add()` with manual ID tracking when needed.
 - **Embedding dimension validation**: Always verify the embedding model's output dimension matches the FAISS index dimension before adding vectors.
@@ -206,6 +228,7 @@ Implement components in this order for easiest debugging:
 - **Import management**: Place imports at the top level of modules to avoid circular dependency and lazy import issues, especially for functions called during initialization.
 - **Cron job paths**: When creating maintenance scripts for cron jobs, ensure proper sys.path configuration to allow imports from the mempalace package (e.g., sys.path.insert(0, '/home/bob/.hermes')).
 - **Module interface design**: For cron job compatibility, ensure that key functions are exposed at the module level in __init__.py. Functions like consolidate_memories(), prune_memories(), and get_system_stats() should be explicitly defined in __init__.py to delegate to their respective module functions, as relative imports can fail in isolated environments.
+- **Script datetime handling**: In standalone scripts (like memory_offload.py), ensure all required imports are present, especially datetime and timezone. Missing imports will cause runtime failures that aren't apparent during initial testing.
 - **Documentation**: Include a comprehensive README with usage instructions for all commands and scripts.
 - **Integration points**: Provide clear examples of how to hook into Hermes' existing memory system.
 - **Verification**: Test each layer of retrieval independently to ensure the layered approach works correctly.
@@ -231,6 +254,19 @@ Implement components in this order for easiest debugging:
 ├── test_implementation.py  # Validation test suite
 └── scripts/\n    ├── maintenance.sh     # Bash maintenance wrapper\n    ├── cron_maintenance.py # Python maintenance for cron jobs\n    ├── cleanup_extractions.py  # Archive file-extraction noise & rebuild FAISS\n    └── verify_system.py     # Comprehensive system verification script\n\n## References\n- `references/direct-module-import-workaround.md` - Guidance for importing MemPalace modules in cron jobs\n- `references/faiss-stale-vectors.md` - Procedures for detecting and recovering from stale FAISS vectors
 ```
+
+#### Auto-Embed on Capture
+- `capture.py` now auto-generates FAISS embeddings for every captured event with meaningful content (≥10 chars)
+- The `_try_embed_event()` helper is called after each `capture_event()` — it silently skips if embedding deps are unavailable
+- This ensures the FAISS index stays up-to-date without requiring explicit `add_embedding()` calls
+- Disable with `capture._auto_embed = False` if needed
+
+#### Semantic Search Retrieval Layer
+- `retrieve.py` now includes a `retrieve_semantic()` function that uses FAISS vector similarity search
+- The semantic layer is inserted between working memory and high-confidence layers in `retrieve_memories()`
+- Layer order: `working → semantic (FAISS) → high_confidence → episodic → raw_evidence`
+- The `_normalize_event()` helper handles multiple event schemas (standard, nested data, legacy raw_text)
+- Semantic search is automatically disabled if embedding dependencies are unavailable (`EMBED_ENABLED = False`)
 
 #### Key Implementation Fixes:
 1. **Fixed sentence-transformers bug**: All embedding calls now use `model.encode([text], ...)` to guarantee proper tensor shape
@@ -259,6 +295,7 @@ When creating or fixing maintenance scripts like `cron_maintenance.py` for cron 
 7. **Fix system statistics retrieval** - Instead of relying on `explain.get_system_stats()` (which may not exist), compute system statistics directly by counting files in each directory, checking the embedding index, and counting reinforcement entries.
 8. **Check for dependency availability** - Before using embedding-dependent features, check if required dependencies (sentence-transformers, faiss-cpu) are available. Provide informative messages when dependencies are missing rather than failing, allowing core MemPalace functions to operate without embedding capabilities.
 9. **Test in isolated environments** - Verify the script works in non-interactive contexts like cron jobs before scheduling
+10. **Log initialization steps** - Add logging to track which components initialize successfully to aid in debugging
 
 #### Verification Completed
 - End-to-end testing of capture → scoring → consolidation → retrieval pipeline
@@ -426,6 +463,9 @@ After implementation, verify:
 13. Shows layered responses with appropriate detail levels
 14. Embedding search returns semantically related memories
 15. Tag-based and embedding-based search complement each other
+16. **Semantic search layer (`retrieve_semantic()`) returns results with similarity scores > 0.3 for related queries**
+17. **`_normalize_event()` correctly hoists nested `data.content` to top level**
+18. **Layered retrieval includes `semantic` layer when FAISS dependencies are available**
 
 **Maintenance and Performance:**
 16. Consolidation and pruning jobs can be scheduled via cron
@@ -473,9 +513,13 @@ This rebuilds the FAISS index from all meaningful memory events in the raw store
 
 These are fixes and improvements discovered during active development and maintenance of the MemPalace system. Update/append to this section when new issues are found.
 
+- **June 22, 2026**: Fixed the cron maintenance script `scripts/cron_maintenance_direct.py` to use the correct interfaces for the MemPalace components. The script now correctly handles the return value from `prune.prune_memories()` (which returns an integer) and uses `embed.get_index_stats()` for embedding statistics. This ensures the maintenance script runs successfully in cron job environments.
+
 See `references/direct-module-import-workaround.md` for guidance on importing MemPalace modules in cron jobs and isolated environments.
 
 See `references/cron_job_direct_imports.md` for a complete guide on using direct module imports for reliable MemPalace operations in cron job environments.
+
+See `references/dependency-installation-june-2026.md` for exact pip commands, versions, and package importability fix from the June 2026 installation session.
 
 #### Comprehensive FAISS Index Rebuild (June 2026)
 
@@ -716,17 +760,23 @@ No sklearn-specific issues or incompatibilities have been observed. The `sentenc
 12. **🚨 sentence-transformers single-string bug**: `model.encode("text")` returns shape `(384,)` (flat), not `(1, 384)`. Always wrap input in a list: `model.encode(["text"])`. On a flat array, `[0].tolist()` returns a single float, not a 384-dim vector. This bug silently corrupts entire FAISS indices and is the #1 cause of empty/trivial indexes.
 13. **Circular import risks in MemPalace modules**: When using MemPalace in cron jobs or non-interactive environments, avoid circular imports between modules (e.g., reinforce importing retrieve and retrieve importing reinforce). Use direct module imports at the top level and avoid relative imports inside functions. If circular dependencies exist, refactor to break the cycle (e.g., move shared utilities to a separate module or duplicate minimal logic). The safest approach for cron jobs is to import each module directly (`import capture`, `import tag`, etc.) and call their initialization functions explicitly.
 
-13. **Stale FAISS vectors after archive operations**: When raw store files are archived (by cleanup_extractions.py, manual moves, or any cleanup), the FAISS index retains vectors pointing to those deleted records. These stale vectors silently degrade search results — they return matches that lead to dead-end memory IDs. Always **verify FAISS consistency** after any archive/cleanup operation using the cross-reference script in `references/faiss-stale-vectors.md`. Run `cleanup_extractions.py --rebuild-only` to purge stale entries.
+14. **🚨 `__init__.py` import syntax bug**: If all 9 imports in `__init__.py` use `=` instead of `:` (e.g., `from .tag = init_tagging` instead of `from .tag import init_tagging`), the package will fail to import with a SyntaxError. Always verify the import syntax matches `from .module import func`. This was a real bug found in production.
+
+15. **🚨 `explain.py` wrong function name**: The `explain.py` module exports `get_component_status()`, NOT `get_system_stats()`. If `__init__.py` references `explain.get_system_stats`, the package will fail to load with `AttributeError: module 'explain' has no attribute 'get_system_stats'`. Always verify with `grep "^def " explain.py` before writing imports.
+
+16. **Multiple event schemas in raw store**: The raw store may contain events with different field names for embeddable content:
+    - Standard: `{"content": "text", ...}`
+    - Legacy: `{"raw_text": "text", ...}`
+    - Nested data: `{"id": "...", "data": {"content": "text", ...}}`
+    The `embed._extract_content()` helper and `retrieve._normalize_event()` handle all three. Always use these helpers rather than directly accessing `event['content']`.
 
 14. **cleanup_extractions.py format sensitivity**: The raw store uses `.jsonl` (events-per-line) files, not individual `.json` files per event. The cleanup script was originally designed for `.json` format and silently skipped `.jsonl` files, making it ineffective on the current store. Always run `--dry-run` first to confirm it detects extraction events. If it reports "No extraction noise found" when you know extraction events exist, the `.jsonl` scan path may have a bug — check the `classify_jsonl_file()` function.
 
 15. **Memory tool availability**: The Hermes `memory` tool may be disabled in some configurations or environments, returning "Memory is not available. It may be disabled in config or this environment." When this occurs, directly read/write the memory files (`~/.hermes/memories/MEMORY.md` and `~/.hermes/memories/USER.md`) using file tools (`read_file`, `write_file`, `patch`) as an alternative approach. The MemPalace system operates independently of the Hermes memory tool and continues to function normally.
 
-15. **Memory tool availability**: The Hermes `memory` tool may be disabled in some configurations or environments, returning "Memory is not available. It may be disabled in config or this environment." When this occurs, directly read/write the memory files (`~/.hermes/memories/MEMORY.md` and `~/.hermes/memories/USER.md`) using file tools (`read_file`, `write_file`, `patch`) as an alternative approach. The MemPalace system operates independently of the Hermes memory tool and continues to function normally.
-
 16. **FAISS rebuild from legacy Chapter_* entries (May 24, 2026)**: After running `cleanup_extractions.py --rebuild-only`, all 61 FAISS entries were confirmed stale (pointing to archived `Chapter_*` extraction blobs from May 11 cleanup). `embed.rebuild_index()` was patched from a stub that only cleared the index to a working rebuild that scans `semantic/`, `procedural/`, `palace/`, `preferences/` for `mem_*.json` files, extracts text from `content`/`summary`/`memory_text` fields, and re-embeds. After rebuild: 6 live vectors remain, all stale entries purged. The system is designed to capture user interactions, not self-generate traffic. Monitor only the ratio of meaningful-to-extraction events, not the raw consolidation count.
 
-16. **Reinforcement staleness after idle periods**: The `reinforcement.jsonl` file only receives entries when `mark_reinforcement()` is explicitly called — this happens when a memory is retrieved and the agent confirms it was useful. If the user hasn't had any agent sessions for 20+ days, the reinforcement file will be stale with no new entries since the last active session. This is **expected**, not broken. The reinforcement system tracks usage during sessions, not wall-clock time. Last reinforcement timestamps can safely be ignored during long idle gaps.
+17. **Reinforcement staleness after idle periods**: The `reinforcement.jsonl` file only receives entries when `mark_reinforcement()` is explicitly called — this happens when a memory is retrieved and the agent confirms it was useful. If the user hasn't had any agent sessions for 20+ days, the reinforcement file will be stale with no new entries since the last active session. This is **expected**, not broken. The reinforcement system tracks usage during sessions, not wall-clock time. Last reinforcement timestamps can safely be ignored during long idle gaps.
 
 18. **Legacy summary JSON fixed (May 24, 2026)**: `semantic/mifeco_summary.json` (500 entries, 260KB) and `procedural/workflow_summary.json` (213 entries, 98KB) were **lists of dicts** instead of dicts. No code references them. Fixed by wrapping in `{"metadata": {...}, "entries": [...]}` dicts. If any future consumer hits them expecting a dict, it now works. Alternatively safe to delete.
 
@@ -744,7 +794,11 @@ embed.rebuild_index()
 ```
 This re-scans all non-archived files in `raw/`, re-embeds their content, and writes a fresh index + ID map. The `rebuild_index()` function must exist in `embed.py` — verify with `grep "def rebuild_index" embed.py` before running.
 
-21. **FAISS index size mismatch**: If the FAISS index vector count is significantly lower than the number of meaningful memory entries in the raw store (e.g., < 10% of raw .json and .jsonl files containing actual memories), this indicates the index may not be properly populated. Always verify index size after installation, dependency changes, or maintenance operations. A small index (like single-digit vectors when thousands of memory files exist) typically indicates missing dependencies (faiss-cpu, sentence-transformers) or a failed embedding integration. Check that required packages are installed in the correct environment (e.g., Hermes Agent venv: `/home/bob/.hermes/hermes-agent/venv/bin/pip install faiss-cpu sentence-transformers`) and run a comprehensive rebuild using `scripts/cleanup_extractions.py --rebuild-only` if needed.
+24. **FAISS index size mismatch**: If the FAISS index vector count is significantly lower than the number of meaningful memory entries in the raw store (e.g., < 10% of raw .json and .jsonl files containing actual memories), this indicates the index may not be properly populated. Always verify index size after installation, dependency changes, or maintenance operations. A small index (like single-digit vectors when thousands of memory files exist) typically indicates missing dependencies (faiss-cpu, sentence-transformers) or a failed embedding integration. Check that required packages are installed in the correct environment (e.g., Hermes Agent venv: `/home/bob/.hermes/hermes-agent/venv/bin/pip install faiss-cpu sentence-transformers`) and run a comprehensive rebuild using `scripts/cleanup_extractions.py --rebuild-only` if needed.
+
+25. **Isolated environment testing**: Always test MemPalace scripts in isolated environments (like cron jobs) before relying on them for production use. What works in an interactive session may fail in cron due to path issues, missing imports, or initialization order problems.
+
+26. **Memory offload procedure preparation**: Before running the Memory-Full Offload Procedure, verify that all required imports are present in your scripts (especially datetime and timezone) and that all MemPalace components can be initialized successfully. Test the procedure in a non-production environment first to avoid data loss risks.
 
 ### 9. Example Workflow
 
@@ -763,9 +817,9 @@ See `demo_integration.py` for a complete end-to-end example showing:
 3. **Tagging taxonomy**: Extend CONTEXT_TAG_TAXONOMY and PALACE_TAG_MAPPING in tag.py
 4. **Pruning criteria**: Modify should_prune_memory() in prune.py based on your retention policies
 
-## Example Usage
+### Example Usage
 
-### Standard Usage (Interactive Sessions)
+#### Standard Usage (Interactive Sessions)
 ```python
 # Initialize MemPalace
 from mempalace import init_mempalace, capture_memory, retrieve_memory
@@ -786,7 +840,7 @@ for memory in memories:
     print(f"{memory['type']}: {memory['content']}")
 ```
 
-### Cron Job / Non-Interactive Usage
+#### Cron Job / Non-Interactive Usage
 For cron jobs or isolated environments where package imports may fail, use direct module imports:
 
 ```python
@@ -823,11 +877,20 @@ event_id = capture.capture_event({
     'context': 'MIFECO dashboard, book writing',
     'timestamp': '2025-01-15T10:30:00Z'
 })
+
+# Example: reinforce a memory
+reinforce.reinforce_memory(event_id, "User found this memory helpful")
+
+# Example: retrieve memories
+memories = retrieve.retrieve_memories('book progress')
+for memory in memories:
+    print(f"{memory['type']}: {memory['content']}")
 ```
 
 ## References
 - `references/direct-module-import-workaround.md` - Guidance for importing MemPalace modules in cron jobs
 - `references/faiss-stale-vectors.md` - Procedures for detecting and recovering from stale FAISS vectors
- - `references/cron_job_direct_imports.md` - Complete guide to direct module imports for reliable MemPalace operations in cron jobs
- - `references/dependency-installation.md` - Guide to installing required Python dependencies for MemPalace
+- `references/cron_job_direct_imports.md` - Complete guide to direct module imports for reliable MemPalace operations in cron jobs
+- `references/dependency-installation.md` - Guide to installing required Python dependencies for MemPalace
+- `references/import-verification.md` - Best practices for verifying function names and imports in MemPalace modules
 - `scripts/verify_system.py` - Verification script for detecting stale FAISS vectors and checking system health after maintenance operations

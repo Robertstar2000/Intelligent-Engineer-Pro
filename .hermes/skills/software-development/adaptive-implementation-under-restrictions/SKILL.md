@@ -25,7 +25,15 @@ A skill for implementing complex systems when facing environmental constraints s
 - Need to deliver verifiable results despite limitations
 - When trial and error reveals that initial approaches are blocked by environmental factors
 
-## Core Principles
+## DOX Integration
+
+When working in a project that uses the [DOX (Self-documenting AGENTS.md)](https://github.com/agent0ai/dox) framework:
+
+- **Read Before Editing:** Walk the DOX tree from root to the target path. Read every AGENTS.md along the route before making any changes.
+- **Update After Editing:** If the change affects purpose, scope, ownership, structure, workflows, or operating rules, update the closest owning AGENTS.md and refresh the Child DOX Index.
+- **Reference:** [agent0ai/dox](https://github.com/agent0ai/dox) — copy `AGENTS.md` from the repo root into your project to initialize.
+
+## Principles
 
 ### 1. Decompose and Prioritize
 - Break large specifications into smallest independently valuable components

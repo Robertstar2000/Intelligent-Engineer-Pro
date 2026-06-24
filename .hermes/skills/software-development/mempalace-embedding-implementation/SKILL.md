@@ -241,6 +241,14 @@ for memory_id, score in results:
 - **Memory pruning**: When memories are pruned from MemPalace, also update the embedding index (currently simplified with lazy rebuild)
 - **Model updates**: If changing embedding model, recreate the index as dimensions may differ
 
+## DOX Integration
+
+When implementing in a project that uses the [DOX (Self-documenting AGENTS.md)](https://github.com/agent0ai/dox) framework:
+
+- **Read Before Editing:** Walk the DOX tree from root to the target path. Read every AGENTS.md along the route before making any changes.
+- **Update After Editing:** If the implementation affects purpose, scope, ownership, structure, workflows, or operating rules, update the closest owning AGENTS.md and refresh the Child DOX Index.
+- **Reference:** [agent0ai/dox](https://github.com/agent0ai/dox) — copy `AGENTS.md` from the repo root into your project to initialize.
+
 ## Lessons Learned
 
 1. **Always validate data types** when working with FAISS - it's strict about float32

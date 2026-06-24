@@ -21,32 +21,52 @@ All books live on the USB mount at `/mnt/usb_4tb/books/` with this EXACT structu
 
 ```
 /mnt/usb_4tb/books/
-├── KDP_Packages/                          ← FINAL KDP zips ONLY (one per book)
-│   ├── PascalName/                        ← PascalCase book title
-│   │   ├── PascalName_KDP_PACKAGE.zip     ← the uploadable zip
-│   │   ├── Cover.jpg                      ← front cover
-│   │   ├── Back_Cover.txt                 ← back cover blurb
-│   │   ├── Author_Bio.txt                 ← author biography
-│   │   ├── Description.txt                ← listing description
-│   │   ├── Keywords.txt                   ← 7 KDP keywords
-│   │   ├── Title.txt                      ← title/subtitle/series
-│   │   ├── Infographic.png                ← marketing infographic
-│   │   └── Author_Photo.jpg               ← author photo
-│   └── ... (one per book, 20 total)
-│
-├── No_Blue_Sky_Series/                    ← working source for NBS books
-│   └── Book_I_Built_from_Dust/
-│       ├── manuscript_src/                ← chapter .xhtml files
-│       ├── generated_images/               ← cover + chapter illustrations
-│       ├── output/                         ← EPUB, PDF builds
-│       └── (metadata .txt files)
-│
 ├── Age_of_Lightships_Series/
-├── Lunar_Foundation_Series/
-├── Business_Series/
-├── Cindy_Lou_Legal_Capers/
-└── Tomorrow_Remembered/                    ← standalone (no series dir)
+│   ├── SERIES_PLOT_MAP.md
+│   ├── SERIES_CHARACTERS_MAP.md
+│   ├── SERIES_DESCRIPTION.md
+│   ├── SERIES_INFOGRAPHIC.png
+│   └── Book_1_Sunward_Exodus/
+│       ├── BOOK_PLOT_MAP.md
+│       ├── BOOK_CHARACTERS.md
+│       ├── manuscript/
+│       │   ├── MANUSCRIPT.md
+│       │   └── book-review.md
+│       ├── html/                    ← chapter source files (.md/.xhtml)
+│       ├── images/                  ← chapter images (ch01.png, ch02.png, ...)
+│       ├── images_bw/               ← auto-generated B&W conversions (fiction only)
+│       ├── KDP_Package/
+│       │   ├── cover.jpg/png
+│       │   ├── Book_1_Sunward_Exodus_final.pdf
+│       │   ├── Book_1_Sunward_Exodus_final.epub
+│       │   ├── Author_Bio.txt
+│       │   ├── Back_Cover.txt
+│       │   ├── Book_Description.txt
+│       │   ├── Keywords.txt
+│       │   ├── Title.txt
+│       │   └── Author_Photo.jpg
+│       └── Promotion/
+│           ├── infographic.png
+│           ├── sales_text.txt
+│           ├── target_audience.txt
+│           ├── qr_amazon.png
+│           └── qr_mifeco.png
+│
+├── Lunar_Foundation_Series/       (same structure)
+├── No_Blue_Sky_Series/            (Book_1 through Book_5)
+├── Cindy_Lou_Legal_Capers/        (Book_1 through Book_3)
+├── Business_Series/               (Book_1 through Book_3)
+└── Tomorrow_Remembered/           (standalone — series dir = book dir)
 ```
+
+**Naming rules:** `Book_N_Title_Words` (Arabic numerals, underscores, no spaces). No Roman numerals. No lowercase book dir names.
+
+**⚠️ B&W Image Requirement (MANDATORY):**
+- **ALL books** (fiction, memoir, mystery, AND business) use B&W chapter images
+- The hermes_publish pipeline handles this automatically via the `images-bw` step
+- B&W versions are cached in `images_bw/` subdirectory
+- Source images go in `images/` → pipeline converts to `images_bw/` → PDF/EPUB use B&W automatically
+- Image specs: PNG preferred, 300 DPI, named `ch{NN}.png` matching chapter numbers
 
 **RULE:** Never create KDP zips anywhere except `KDP_Packages/PascalName/`. Never use kebab-case for the zip filename. Always PascalCase_Title_KDP_PACKAGE.zip.
 
@@ -60,10 +80,12 @@ The Books Creation pipeline has 8 stages that map to the MIFECO product pipeline
 | 2 | Build Book Bible | Extract styles, plots, character descriptions and consolidate them. Do not use character names from existing works |
 | 3 | Build Framework | Create list of characters (name from random US top 50 names), create list of chapters, write chapter beats |
 | 4 | Write | Write chapter contents for all chapters |
-| 5 | Enrich | Add front matter, TOC and page numbering, and back matter, add B&W images where needed |
-| 6 | Edit | Run iterative editorial review loop (see `publishing/book-editorial-review` skill): load skill, examine book > compare to bestselling genre benchmarks > create `book-review.md` with A-F rating. If A, pass to Step 7. If below A, incorporate changes into BOOK SOURCE FILES (not just the review), recompile MANUSCRIPT.md, and re-run review. Repeat until A achieved. **WARNING:** Existing book-review.md may be stale — read actual MANUSCRIPT.md to verify what still needs fixing. |
-| 7 | Prep for KDP | Create front cover color image, description, back cover materials, author bio, keywords, etc. |
-| 8 | Finish | Save book project, update in dashboards, Hermes memory and mifeco.com/books |
+| 5 | Enrich | Add front matter, TOC and page numbering, and back matter, add images to `images/` directory (color source; B&W conversion is automatic in stage 6) |
+| 6 | Convert Images | Run `images-bw` step via hermes_publish pipeline — converts all chapter images to grayscale for fiction/memoir/mystery. Business books skip automatically. |
+| 7 | Edit | Run iterative editorial review loop (see `publishing/book-editorial-review` skill): load skill, examine book > compare to bestselling genre benchmarks > create `book-review.md` with A-F rating. If A, pass to Step 8. If below A, incorporate changes into BOOK SOURCE FILES (not just the review), recompile MANUSCRIPT.md, and re-run review. Repeat until A achieved. **WARNING:** Existing book-review.md may be stale — read actual MANUSCRIPT.md to verify what still needs fixing. |
+| 8 | Build PDF/EPUB | Run `pdf` and `epub` steps via hermes_publish pipeline. B&W images from `images_bw/` are used automatically for fiction/memoir. |
+| 9 | Prep for KDP | Create front cover color image, description, back cover materials, author bio, keywords, etc. |
+| 10 | Finish | Save book project, update in dashboards, Hermes memory and mifeco.com/books |
 
 **Email Inbox:** bigtruck444@agentmail.to
 **Nurture:** 4-email sequence over 14 days
@@ -96,6 +118,51 @@ Use `delegate_task` with subagents for parallel chapter writing (max 2-3 chapter
 ```
 
 **TOC:** Every book MUST have a Table of Contents. Generate after all chapters complete.
+
+#### Extending an Existing Manuscript with New Chapters
+
+When the task is to write new chapters for an already-existing manuscript (e.g., a new final chapter, a new appendix, a missing chapter), the priority is **matching the established voice, not creating one**. Do this before writing anything. The more thorough you are in the analysis phase, the less the user will need to correct you.
+
+**Phase 1: Voice & Structure Analysis (read 3+ points in the manuscript)**
+
+1. **Read the END of the manuscript** — The last 100-200 lines show the author's most recent voice, chapter-closing conventions, and any recent stylistic decisions. For books in active development, the latest chapters are the most reliable style reference.
+
+2. **Read an EARLY chapter opening** — The first full chapter (after front matter) establishes the narrative pattern that runs through the entire book. Extract: does each chapter open with a story? A quote? A statistic? Does it follow story → analysis → framework → case study → exercise structure? Note the exact conventions and sequence of sections.
+
+3. **Read a MIDDLE chapter** — Check if the pattern holds across the entire book. Sometimes the first chapter is more elaborate and later chapters are tighter. Document both the ideal pattern (from early chapters) and the "real" pattern (what actually appears in chapters 10–15).
+
+4. **Cross-reference the Table of Contents** — Check that the new chapter follows the naming convention (e.g., `# Chapter N — Title` vs `## Chapter N: Title`), fits in the correct Part, and doesn't conflict with existing appendices. Also check: are there existing appendices? If not, the first appendix establishes the format.
+
+5. **Check for recurring signature elements** — Document every structural pattern you find:
+   - Does every chapter end with "The One Thing"? (Exact phrasing and formatting)
+   - Does it include a "Reader Exercise" or "Reader Reflection Questions"?
+   - Are there case studies with specific dollar amounts and company names?
+   - Are checkboxes `- [ ]` used for implementation checklists?
+   - Are there tables (and if so, what format — pipe tables or HTML)?
+   - What's the chapter-opening convention? (Bold tagline in italics? A story hook? A quote?)
+   - Is there an "Implementation Checklist" before or after the reflection questions?
+
+**Phase 2: Framework & Domain Extraction**
+
+For NEW sections (final chapters, appendices) that need to reference existing content:
+
+6. **Extract the book's core framework** — Search the manuscript for the framework name (e.g., READY, SPADE, etc.). Document each pillar/step and what it means. Ensure any new chapter references all pillars and uses the same terminology. For business books, also check the `book-review.md` for the editorial review's framework map description.
+
+7. **Extract key terms for glossary/new appendices** — If writing a glossary or reference appendix, search the manuscript for all terms that should be included. Don't guess — actually grep/search the manuscript for terms like "force majeure", "single point of failure", etc. to confirm they appear in the book before adding them to a glossary. Cross-reference with the ToC chapter list to ensure coverage.
+
+8. **Note the author's persona and data conventions** — Does the author use first-person "I" stories? Are there specific numbers with dollar signs (e.g., "$47,000")? Does the author refer to MIFECO as a case study? Are client stories anonymized? Match these conventions exactly.
+
+**Phase 3: Writing & Verification**
+
+9. **Write to the existing voice** — Match sentence rhythm, level of conversational directness, and the pattern of personal story → business lesson. If the book is first-person with specific dollar amounts, don't write third-person with hypotheticals. Use the same paragraph length, same use of bold or italics for emphasis, same frequency of data citations.
+
+10. **Use consistent formatting for new elements** — For appendices with unique formatting (glossaries, reference tables, checklists), match the manuscript's existing conventions. If the book uses `**Term** — Definition.` for bold-term style, use that. If it uses `- **Term**: Definition`, use that. Look for any existing appendix or the closest structural element in the book as a template.
+
+11. **Write section-by-section, not all at once** — After you understand the voice, write the new content in logical sections. For a glossary, write term by term (alphabetical). For a final chapter, write story → phases → scorecard → decision tree → checklists → close, following the book's established section pattern.
+
+12. **Verify word count separately from formatting** — When the target is specific (e.g., "~4,000-4,500 words" or "~10 pages"), use `wc -w` but also strip markdown formatting to get the prose-only count. Tables, checkboxes, and list markers inflate raw word counts. Run: `cat file.md | sed 's/^- \[ \] //g; s/|//g; s/\[//g; s/\]//g' | wc -w` for a cleaner count.
+
+13. **Do NOT modify the original MANUSCRIPT.md** — Write new content to a separate file (e.g., `/tmp/new_chapter.md`) for review. The user integrates it. Never make assumptions about integration points — write standalone files.
 
 ### Stage 2: Generate Cover
 
@@ -138,51 +205,22 @@ Also create:
 
 ### Stage 4: Build EPUB + Print PDF
 
-**Available tools on this system:**
-- **EPUB:** Pure Python via `zipfile` + `xml.sax.saxutils` — no external dependencies needed
-- **PDF:** `fpdf2` (install via `pip3 install fpdf2`). **WeasyPrint is NOT available** on this system.
-- **Fonts:** DejaVuSerif.ttf and DejaVuSerif-Bold.ttf at `/usr/share/fonts/truetype/dejavu/`. No `DejaVuSerif-Italic.ttf` — use DejaVuSerif as italic fallback.
-
-**EPUB — Build from manuscript chapter files:**
-
-```python
-import zipfile, io, re
-from xml.sax.saxutils import escape as xmlescape
-from datetime import datetime, timezone
-# Split content on # and ## headings, build content.opf + nav.xhtml + toc.ncx
-# Write as ZIP with uncompressed mimetype entry
-# See publishing/reader-magnet-production skill for full implementation
-```
-
-Convert RGBA images to RGB before building:
+**The hermes_publish pipeline handles all builds.** Run via:
 ```bash
-python3 -c "
-from PIL import Image; import glob
-for p in glob.glob('generated_images/**/*.png', recursive=True):
-    img = Image.open(p)
-    if img.mode == 'RGBA':
-        bg = Image.new('RGB', img.size, (255, 255, 255))
-        bg.paste(img, mask=img.split()[3]); bg.save(p)
-"
+cd /mnt/usb_4tb/books && python3 hermes_publish.py --book <key> --steps images-bw pdf epub
 ```
 
-**Print PDF (6x9 inch):** Use fpdf2 (NOT WeasyPrint — it is not installed). 6x9" = 152.4x228.6 mm:
+**Available tools on this system:**
+- **EPUB:** Pure Python via `zipfile` — no external dependencies
+- **PDF:** `weasyPrint` (installed). Falls back to HTML-only if WeasyPrint unavailable.
+- **B&W conversion:** PIL/Pillow via `hermes_publish.utils.convert_image_to_bw()`
+- **Fonts:** DejaVuSerif at `/usr/share/fonts/truetype/dejavu/`
 
-```python
-from fpdf import FPDF
-W, H = 152.4, 228.6
-MARGIN = 14  # ~0.55 inches
-FS = 11
-pdf = FPDF(orientation='P', unit='mm', format=(W, H))
-pdf.set_auto_page_break(auto=True, margin=MARGIN)
-pdf.add_font("D", "", "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf")
-pdf.add_font("D", "B", "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf")
-pdf.add_font("D", "I", "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf")  # no italic variant
-```
+**Page sizes:**
+- ALL books (fiction, memoir, business): 6×9" (152.4×228.6 mm)
+- **NEVER** use 8.5×11 for business books — KDP rejects non-standard trim sizes
 
-**Page count estimate at 6x9 with 11pt:** ~280-320 words per page of body text. 7,000 words ≈ 22-25 pages. Front/back matter adds ~4-5 pages.
-
-**AUTHOR line encoding bug:** When writing Python build scripts via write_file, the line `AUTHOR=*** J Mills"` frequently corrupts (characters replaced with `***`). After writing, verify: `grep -n "^AUTHOR" build_script.py`. If corrupted, patch carefully.
+**Page count estimate at 6x9 with 11pt:** ~280-320 words per page. Front/back matter adds ~4-5 pages.
 
 ### Stage 5: Assemble KDP Package
 
@@ -243,11 +281,13 @@ Total: X complete | X incomplete | X blocked
 
 1. Every book MUST have a TOC
 2. Starts on new page, next section on new page
-3. Synchronized page numbers (2-pass: render → extract → hardcode → re-render)
-4. One line per entry, dot leaders between title and page number
-5. No `<a>` tags in TOC for print PDFs
-6. No `string-set` on h1/h2 (breaks WeasyPrint)
-7. No `target-counter()` (doesn't work in WeasyPrint)
+3. Synchronized page numbers via CSS `target-counter()` on `<a>` tags — WeasyPrint resolves these automatically
+4. Dot leaders: use `border-bottom: 1px dotted #000` on a title span (NOT `leader(dotted)` CSS — unsupported in WeasyPrint)
+5. PDF TOC: page numbers ARE shown (via `target-counter` on `<a>` elements)
+6. EPUB TOC: NO page numbers (NCX format doesn't support them)
+7. No `<a>` tags with `href` in TOC for print PDFs — use `<span>` with `id` for cross-references
+8. No `string-set` on h1/h2 (breaks WeasyPrint)
+9. **EPUB NCX playOrder**: Every `<navPoint>` in the NCX file MUST have a `playOrder` attribute (sequential integers starting from 0). Without this, Kindle cannot display the TOC. See `references/epub-ncx-toc-fix.md` for the fix script and details.
 
 ## The 11 Editorial Review Rules (WRITE TO THESE FROM DAY ONE)
 
@@ -325,6 +365,29 @@ Every manuscript must be built with these 11 checks as design requirements, not 
 - White space adequate: fiction chapters should not look like dense legal documents
 - Inconsistent format = -0.5. Genre-mismatched = -1 (e.g., bullet lists in novel prose)
 
+## HTML to DOCX Conversion (KDP Review)
+
+When KDP rejects an EPUB and you need a DOCX for manual review, convert the print HTML manuscript to DOCX using python-docx + lxml. **Do not use LibreOffice or pandoc** — neither works for EPUB→DOCX on this system.
+
+**Reference:** See `references/html-to-docx-conversion.md` for the full conversion technique, image path resolution strategies, and verification steps.
+
+Quick usage (pre-built script at `/tmp/html_to_docx_v3.py`):
+```bash
+python3 /tmp/html_to_docx_v3.py
+```
+Output: `/mnt/usb_4tb/books/converted_docx/`
+
+## Image Update (Replacing Chapter Images in Published EPUBs/PDFs)
+
+When chapter_images have been regenerated and existing EPUB/PDF files need updating:
+
+1. **Compare dates**: Check `os.path.getmtime()` of latest image vs EPUB/PDF
+2. **Update EPUBs**: Use `zipfile` to replace `OEBPS/images/chXX.png` — write to `.tmp` then move
+3. **Update PDFs**: Use PyMuPDF `page.replace_image(xref, stream=data)` — save to `_updated.pdf`
+4. **Skip**: `_fixed.epub` (no images), `KDP_PACKAGE/Kindle` (legacy), non-overlapping chapter ranges
+
+See `nbs-book-rebuild` skill's `references/image-update-workflow.md` for complete code.
+
 ## Subagent Batch Rules
 
 - Max 2-3 chapters per `delegate_task` (10-chapter batches timeout at 600s)
@@ -334,13 +397,72 @@ Every manuscript must be built with these 11 checks as design requirements, not 
 
 ## Image Generation Rules
 
+### Cover Images (Color — Always)
 - Use `google/gemini-2.5-flash-image` (Gemini API key) or via OpenRouter
 - 5-6 second delay between API requests (avoid 429)
 - Fallback: `black-forest-labs/flux.2-max`
 - Minimum 1024×1024 resolution for covers
-- For print PDF: embed images at 200+ DPI
+- Covers are always in COLOR — saved to `KDP_Package/cover.jpg`
 
-## TOC Duplicate Pitfall
+### Chapter Images (B&W for Fiction/Memoir/Mystery)
+- Source images placed in `images/` directory as `ch01.png`, `ch02.png`, etc.
+- The hermes_publish `images-bw` step auto-converts to grayscale → `images_bw/`
+- B&W images are embedded in PDF and EPUB during build
+- Business books (charts, infographics) skip B&W conversion — kept in color
+- For print PDF: embed images at 300 DPI, max height 4" (fiction) or 5" (business)
+- Image format: PNG preferred; JPEG accepted
+- **Reference:** See `references/bw-image-pipeline.md` for function signatures and integration details
+- **Markdown-to-HTML pipeline:** See `references/md-to-html-pipeline.md` for `md_to_html_simple()` capabilities, table/list support, TOC pipeline, and common pitfalls
 
-When injecting a new TOC into HTML that already has a placeholder: verify after injection: `grep -c 'class="toc"' manuscript.html` should be 1.
-If duplicate, remove old block before re-injecting.
+## Business Book Manuscript Formatting (MANDATORY)
+
+Business books have dense structured content that `md_to_html_simple()` must render correctly. The pipeline's markdown-to-HTML converter supports tables, lists, and inline HTML — use them.
+
+### Tables
+Use markdown pipe tables for timelines, matrices, comparisons, and any grid layout:
+```markdown
+| Quarter | Focus Area 1 | Focus Area 2 |
+|---------|-------------|-------------|
+| Q1 | [Quick Win] ____________ | [Foundation] ____________ |
+```
+- Header row + separator row required
+- `md_to_html_simple()` converts to `<table style="width:100%;border-collapse:collapse;">` with bordered cells
+- Do NOT put all items on one line with brackets/underscores — that renders as a broken paragraph
+
+### Lists
+Use `- item` for bullets, `1. item` for numbered lists:
+```markdown
+### Do:
+- Start with Why: Always begin with business objectives
+- Involve Your Team: Get input from affected people
+```
+- `md_to_html_simple()` converts to `<ul><li>` and `<ol><li>` with proper margins
+- Do NOT write list items as plain text paragraphs — they won't have bullets
+
+### Fill-in-the-Blank Form Fields
+Use `<br/>` between label and underline to prevent line-wrapping:
+```markdown
+**Biggest Financial Frustration:**<br/>_____________________________________________
+```
+- Short fields can be inline: `Bookkeeping: _____ hours`
+- Long fields MUST be on separate lines with `<br/>`
+- Do NOT put long labels + long blanks on the same line — WeasyPrint wraps mid-line
+
+### Problem/Solution and Bottleneck/Solution Patterns
+Put labels on separate bold lines:
+```markdown
+**Problem:** Text here.
+**Solution:** Text here.
+```
+- Do NOT put "Problem: ... Solution: ..." on a single line — it wraps awkwardly
+
+### Checkbox Lists
+Always use `- [ ]` format:
+```markdown
+- [ ] Problem/solution fit verified
+- [ ] Free trial completed
+```
+- Do NOT use `[ ]` without the `-` prefix — won't be recognized as list items
+
+### Chapter Title Deduplication
+The PDF/EPUB templates already generate `<h3>Chapter N: Title</h3>` headings. Strip the first `# Chapter N: Title` line from each chapter's content in the manuscript to avoid duplicate headings. The pipeline does this automatically via `content = re.sub(r'^#{1,2}\s+Chapter\s+\d+\s*[:—\-–]?\s*.*?\n', '', content, count=1)`.

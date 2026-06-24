@@ -20,6 +20,7 @@ The internal SaaS-vs-SaaS comparison pattern (Product A vs Product B, both from 
 File: `~/.hermes/pipeline-engine/data/pipeline-books.json`
 - Only use books with `"status": "published"` (skip "draft")
 - 17 published books across: No Blue Sky (5), Lunar Foundation (4), Age of Lightships (4), Business (3), Standalone (1)
+- **⚠️ Nested JSON structure**: Books are scattered across multiple paths (`products.titles`, `products.moon_books.titles`, `products.age_of_lightships.titles`, `products.standalone`, `products.business_books.titles`). See `references/pipeline-books-extraction.md` for the exact paths and a ready-to-use Python extraction snippet.
 
 ### Books on mifeco.com/books (comparison targets)
 Available at `https://www.mifeco.com/books/`:
@@ -30,6 +31,8 @@ Available at `https://www.mifeco.com/books/`:
 - **Business Books**: Owner's Manual for AI Agents, AI That Works for Small Business, The Crisis Ready Company
 - **Memoir**: Tomorrow Remembered
 - Free prequel novellas for each series
+
+**⚠️ Title discrepancy — pipeline vs website**: The pipeline JSON uses `"Waters End"` and `"Waters Horizon"` (no apostrophe), but mifeco.com/books and most existing blog posts use `"Water's End"` and `"Water's Horizon"` (with apostrophe). When selecting Book B or writing blog post titles, **always use the apostrophe forms** (`Water's End`, `Water's Horizon`) to match the website and existing content. When checking dedup against WP posts, be aware that some older posts may use either form — check both variants.
 
 ### SaaS Products on mifeco.com (comparison targets)
 Available at `https://www.mifeco.com/`:
@@ -97,7 +100,8 @@ Generate a Gemini image that incorporates visual themes from BOTH book covers �
 
 **Rotation Logic:**
 1. Internal pool (round-robin): Project Hypatia Pro → PM Accelerator → VibraEngineer → Virtual Consulting ($199) → AI Readiness Assessment → Strategic Planning → Digital Transformation → Growth Optimization → Team Development → Performance Analytics → Risk Management → (wrap to start)
-2. External pool (used uniquely, reset when exhausted): Microsoft Project, Asana, Jira, Monday.com, Smartsheet, ClickUp, Notion, Trello, Basecamp, Wrike, Teamwork, Airtable, Microsoft Planner, GitHub Projects, Linear, Height, Shortcut, ZenHub, Targetprocess, Planview
+2. External pool (used uniquely, reset when exhausted): Microsoft Project, Asana, Jira, Monday.com, Smartsheet, ClickUp, Notion, Trello, Basecamp, Wrike, Teamwork, Airtable, Microsoft Planner, GitHub Projects, Linear, Height, Shortcut, ZenHub, Targetprocess, Planview (20 total)
+   - **⚠️ Pool size mismatch**: Older state files may have only 18 entries in `used_external_apps` (missing Targetprocess and Planview from the initial pool). When reading state, if `used_external_apps` has fewer than 20 entries, treat the missing ones as available. Never remove apps from the documented pool — only add new ones.
 3. Read state file → pick internal at `next_internal_index` (modulo) → pick first external NOT in `used_external_apps` → if all used, clear list and pick first → increment index → write state back
 
 See `references/round-robin-state-cron.md` for the full Python rotation implementation.
@@ -155,6 +159,7 @@ Generate a Gemini infographic that visually represents the comparison — side-b
 ### Step 1: Read data files
 1. Read `~/.hermes/pipeline-engine/data/pipeline-books.json` → extract all books with `"status": "published"`
 2. Read `~/.hermes/pipeline-engine/data/generated-blog-posts.json` → extract existing slugs/titles for dedup
+   - **⚠️ Inconsistent keys**: Some entries use `"slug"`, others use `"post_name"` for the slug field. Some entries lack a slug key entirely (older posts). Always use `entry.get('slug', entry.get('post_name', ''))` to safely extract slugs.
 
 ### Step 2: Deduplication check
 1. SSH into DreamHost and query existing WP posts (use the **heredoc pattern** - see `references/ssh-mysql-quoting.md`):
@@ -279,9 +284,35 @@ Append both new posts to `~/.hermes/pipeline-engine/data/generated-blog-posts.js
 }
 ```
 
-Also update `~/.hermes/pipeline-engine/data/saas-comparison-state.json` (the rotation state) after a successful external SaaS publish — write back the new `next_internal_index`, the `used_external_apps` list with the consumed app appended, and the updated `last_run` timestamp.
+Also update `~/.hermes/pipeline-engine/data/saas-comparison-state.json` (the rotation state) after a successful external SaaS publish — write back the new `next_internal_index`, the `used_external_apps` list with the consumed app appended, increment `total_posts_generated` by 1, and update the `last_run` timestamp.
 
-**⚠️ JSON append pitfall**: The `patch` tool cannot reliably append to a JSON array (the `old_string` approach breaks on multi-line JSON objects). Use `write_file` with the full file content instead. Read the file, parse the JSON, append new entries, then write it back. The `write_file` tool handles JSON syntax validation automatically. Index `[0]` is a metadata dictionary — always preserve it.
+**⚠️ JSON append — `patch` tool escape-drift**: The `patch` tool's fuzzy matcher can fail on JSON files containing `\"` (escaped quotes) with an "Escape-drift detected" error. This happens because the tool's serialization adds spurious backslashes around quote characters. **Do not retry `patch` multiple times** — if it fails once on a JSON file, switch to the Python heredoc approach below.
+
+**Preferred method — Python heredoc via `terminal()`** (always works, cron-safe):
+```bash
+python3 << 'PYEOF'
+import json
+path = '/home/bob/.hermes/pipeline-engine/data/generated-blog-posts.json'
+with open(path, 'r') as f:
+    data = json.load(f)
+data.append({
+    "title": "New Post Title",
+    "slug": "new-post-slug",
+    "type": "book",
+    # ... other fields
+})
+with open(path, 'w') as f:
+    json.dump(data, f, indent=2)
+print(f"OK — {len(data)} entries total")
+PYEOF
+```
+This pattern works for any JSON data file (not just `generated-blog-posts.json`). Always validate with `python3 -c "import json; json.load(open('file'))"` after writing.
+
+**`write_file` fallback**: `write_file` works for JSON data files that do NOT contain `***` (triple asterisks). It silently corrupts lines containing `***`. For data files without `***`, you can use `write_file` with the full serialized JSON content.
+
+**⚠️ `write_file` corrupts `***`**: The `write_file` tool silently corrupts lines containing `***` (triple asterisks). This affects any Python script that captures `DREAMHOST_PASSWORD` from `.env` via `subprocess.run`, and has been observed in JSON files containing `***` patterns. To write scripts that use the password, use `terminal("python3 << 'PYEOF'")` heredoc pattern instead of `write_file`. For data files, verify no `***` sequences exist before using `write_file`.
+
+**⚠️ `terminal()` backgrounding on `&`**: The `terminal()` tool interprets `&` as a backgrounding operator (e.g., `command &`). When writing HTML content containing `&` characters (like `&amp;`, `&mdash;`, or even text with "A & B" patterns), the `terminal()` heredoc command fails with: `"Foreground command uses '&' backgrounding."`. **Workaround**: Use `write_file` to write HTML blog post content to `/tmp/` first, then upload the file via SCP. This is actually faster than heredoc for large HTML blocks. Only fall back to `terminal()` heredoc for Python scripts (which rarely contain raw `&`).
 
 ### Step 9: Report
 Output a summary (under 400 words):
@@ -393,15 +424,31 @@ python3 scripts/generate-blog-image.py \
 - If image generation fails → publish post without featured image
 - If WP publish returns duplicate slug error → modify slug (add suffix) and retry
 - If SSH times out → retry once, then report error and continue
+- **SCP timeout for large images**: The `scp_upload()` function uses a 60s default timeout. Gemini `cover-inspired` images can be ~2MB and may exceed this. If SCP times out on the first attempt, retry with a longer timeout by calling `scp_upload()` with a longer timeout parameter (e.g., 180s), or use a direct pexpect spawn with a custom timeout. The upload usually succeeds on the second attempt. Do NOT assume a timeout means the file failed to upload — always verify with `ls -la` on the remote before retrying.
 - Always record successfully published posts even if one of the two fails
 
 - `references/round-robin-state-cron.md` — Round-robin state file pattern for cron jobs that rotate through item pools across runs
+- `references/cron-execution-log-2026-06-24.md` — Latest successful end-to-end cron execution (2026-06-24), state transitions, pool status
+- `references/cron-execution-log-2026-06-20.md` — Successful end-to-end cron execution example with concrete outputs and state transitions
+- `references/json-append-patterns.md` — Python heredoc pattern for appending to JSON data files (the `patch` tool fails on JSON with escaped quotes)
+- `references/pipeline-data-exploration.md` — Interactive JSON exploration pattern when `execute_code` is blocked (cron mode); includes title discrepancy reference
+- `references/tool-backgrounding-pitfalls.md` — `terminal()` interprets `&` as backgrounding (breaks HTML content heredocs); `write_file` corrupts `***`; workaround patterns
+
+## Prerequisites
+
+Before running this skill (especially in cron mode), verify `pexpect` is installed:
+
+```bash
+pip3 install pexpect
+```
+
+The `scripts/ssh_blog.py` helper imports `pexpect` at the top level. If it's missing, SSH/SCP operations will fail with `ModuleNotFoundError`. This is a one-time install — the package persists across sessions.
 
 ## Cron Mode Pitfalls
 
 This skill frequently runs as a cron job. In cron mode, several tools behave differently:
 
-1. **`execute_code` is BLOCKED** — Do not write SSH/SCP operations inside an `execute_code` call. Instead, write standalone Python scripts to `/tmp/` with `write_file`, then run them via `terminal("python3 /tmp/script.py")`. The pexpect SSH functions belong in these scripts, not in execute_code. **Use the helper script `scripts/ssh_blog.py`** which is designed for cron-safe execution.
+1. **`execute_code` is BLOCKED** — Do not write SSH/SCP operations inside an `execute_code` call. **Use the helper script `scripts/ssh_blog.py`** which is designed for cron-safe execution. If you need custom pexpect logic, use `terminal()` with a Python heredoc (`python3 << 'PYEOF'`) — do NOT write standalone scripts with `write_file` because it corrupts lines containing `***` (which appears in any script that reads `DREAMHOST_PASSWORD` from `.env`). See the working pattern in Step 2 (Deduplication) and Step 6 (Upload) of this skill.
 
 2. **Long timeouts for WP publishing** — The `wp-publish-post.php` PHP script takes 60-180 seconds. The `scripts/ssh_blog.py` `wp_publish()` function uses a 240s timeout. If calling `ssh_run()` directly, override to 240s for publish commands:
    ```python
@@ -410,7 +457,65 @@ This skill frequently runs as a cron job. In cron mode, several tools behave dif
 
 3. **No user present** — Cannot ask for clarification or approval. Make reasonable decisions (pick comparisons randomly, handle errors gracefully). If SSH/SCP fails, retry once then report the error and continue with the other post.
 
-4. **Final report is auto-delivered** — Keep under 400 words. If nothing to report, output exactly `[SILENT]` (nothing else).
+4. **SCP timeouts on large image uploads** — Gemini-generated `cover-inspired` images can be ~2MB. The default SCP timeout (60s) may not be enough for DreamHost's connection speed. If an SCP upload times out, retry once with a longer timeout (180s) before reporting failure. Use `scp_upload(path, path, timeout=180)` or a direct pexpect call.
+
+5. **Final report is auto-delivered** — Keep under 400 words. If nothing to report, output exactly `[SILENT]` (nothing else).
+
+## Social Media Cross-Posting
+
+After publishing a blog post to WordPress, use the `social-direct-publisher` skill to cross-post to social media.
+
+### Auto-Generate Social Posts from Blog Content
+
+For each published blog post, generate:
+
+**LinkedIn post:**
+- Professional angle on the blog topic
+- 2-3 sentence hook + key insight
+- Link to the full blog post on mifeco.com
+- Hashtags: relevant topic tags
+- Campaign tag: `blog-[post-slug]`
+
+**Facebook post:**
+- Conversational summary of the blog post
+- Question to engage readers
+- Link to the full blog post
+- Campaign tag: `blog-[post-slug]`
+
+**Instagram post:**
+- Visual: Use the blog post's featured image or generate a new social-specific image
+- Caption: Short teaser + "Link in bio" for the full post
+- Campaign tag: `blog-[post-slug]`
+
+### Workflow Integration
+
+After Step 7 (Publish to WordPress) and Step 8 (Record the posts):
+1. Generate social post content for all 3 platforms
+2. Submit to `social-direct-publisher` as drafts (approval mode: `approve_then_publish`)
+3. Include blog post URL as the link
+4. Bob approves → social publisher publishes via API
+5. Log social post URLs in the blog post record
+
+**⚠️ Service unavailable fallback**: The social publisher service runs on `localhost:8000`. If it's not running (common in cron mode), do NOT block the rest of the workflow. Instead:
+   - Note the unavailability in the final report
+   - Include the exact CLI commands Bob can run later to submit drafts for each published post:
+     ```bash
+     cd ~/.hermes/pipeline-engine && \
+     python3 scripts/social_publisher_client.py --action blog_crosspost \
+       --blog-title "Post Title" \
+       --blog-slug "post-slug" \
+       --blog-url "https://www.mifeco.com/post-slug/"
+     ```
+   - The `generate_blog_crosspost()` function in the client script handles LinkedIn, Facebook, and Instagram formatting automatically with campaign tag `blog-[slug]`
+
+### Image Reuse
+
+The Gemini-generated blog post image (from Step 5) can be reused for social media:
+- LinkedIn: Use as-is (1200×627 recommended, will be cropped)
+- Facebook: Use as-is (1200×630 recommended)
+- Instagram: Crop to 1080×1080 or 1080×1350
+
+Generate platform-specific crops using the image generation script's `--mode=social` flag if available.
 
 ## Cron Delivery
 This skill runs as a cron job. Final output is delivered automatically.

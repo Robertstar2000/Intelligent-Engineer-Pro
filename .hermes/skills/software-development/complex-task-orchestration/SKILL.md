@@ -26,7 +26,15 @@ Build a reusable approach for:
 4. Setting up automated maintenance and verification
 5. Documenting lessons learned for future reuse
 
-## Core Principles
+## DOX Integration
+
+When working in a project that uses the [DOX (Self-documenting AGENTS.md)](https://github.com/agent0ai/dox) framework:
+
+- **Read Before Editing:** Walk the DOX tree from root to the target path. Read every AGENTS.md along the route before making any changes.
+- **Update After Editing:** If the change affects purpose, scope, ownership, structure, workflows, or operating rules, update the closest owning AGENTS.md and refresh the Child DOX Index.
+- **Reference:** [agent0ai/dox](https://github.com/agent0ai/dox) — copy `AGENTS.md` from the repo root into your project to initialize.
+
+## Principles
 
 - **Modular Decomposition**: Break large objectives into independent, testable components
 - **Consistency Patterns**: Use templates and reference implementations to ensure uniformity

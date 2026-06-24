@@ -104,6 +104,18 @@ Where `<your_chat_id>` is your numeric Telegram chat ID (e.g. `8137891480`). Fin
 
 **Pitfall:** The `.env` variable `TELEGRAM_ALLOWED_USERS` is a separate gate from `config.yaml`. If it is set to `n`, `0`, empty, or any value that doesn't include your chat ID, incoming messages are rejected even when `config.yaml` is correct. Always check BOTH locations.
 
+**Common `.env` misconfigurations seen in the field:**
+- `TELEGRAM_ALLOWED_USERS=n` — blocks ALL incoming messages (the `n` is treated as a non-matching user ID). This was the actual root cause in a live incident — the value `n` looks like it might mean "none" or "no one" but the gateway treats it as a literal user ID to match against, and no chat ID matches `n`.
+- `TELEGRAM_ALLOWED_USERS=` (empty) — blocks all messages
+- `TELEGRAM_ALLOWED_USERS=8137891480` — correct, only allows that specific chat ID
+- The `.env` file may also have `GATEWAY_ALLOW_ALL_USERS=true` which bypasses the allowlist entirely — this is acceptable for single-user setups
+
+**Fix command for `.env`:**
+```bash
+sed -i "s/^TELEGRAM_ALLOWED_USERS=.*/TELEGRAM_ALLOWED_USERS=<your_chat_id>/" ~/.hermes/.env
+```
+Always verify with `grep 'TELEGRAM_ALLOWED_USERS' ~/.hermes/.env` after editing. The `.env` file may have the variable defined twice (once commented, once active) — make sure the active (uncommented) line is correct.
+
 ### 6. Check for Polling Conflicts
 ```bash
 TOKEN=$(grep '^TELEGRAM_BOT_TOKEN=' ~/.hermes/.env | cut -d= -f2-)

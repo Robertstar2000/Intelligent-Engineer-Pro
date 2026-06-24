@@ -48,14 +48,23 @@ if [ $SYNC_EXIT -ne 0 ]; then
 fi
 
 # ── Step 2: Sync state to dashboard ─────────────────────────────────────
-echo "▶ Step 2/3: Syncing to dashboard..."
+echo "▶ Step 2/4: Syncing to dashboard..."
 cp "$STATE_FILE" "$DASHBOARD_DIR/pipeline-state.json"
 echo "  ✓ pipeline-state.json → dashboard/"
+
+# ── Step 2.5: Run social media publisher ─────────────────────────────────
+echo "▶ Step 2.5/4: Running social media publisher..."
+SOCIAL_PUBLISHER_URL="${SOCIAL_PUBLISHER_URL:-http://localhost:8000}"
+if python3 -c "import httpx" 2>/dev/null; then
+    python3 "$SCRIPTS_DIR/social_publisher_client.py" --action publish_approved 2>&1 || echo "  ⚠ Social publisher: no approved posts or service unavailable"
+else
+    echo "  ⚠ httpx not installed — skipping social publisher"
+fi
 echo ""
 
 # ── Step 3: Read state and report ────────────────────────────────────────
 echo ""
-echo "▶ Step 3/3: Pipeline Status Report"
+echo "▶ Step 3/4: Pipeline Status Report"
 
 if [ ! -f "$STATE_FILE" ]; then
     echo "⚠ ERROR: $STATE_FILE not found after sync"
@@ -103,6 +112,8 @@ print(f'  Enrichment:        {cs.get(\"enrichment\", 0)}')
 print(f'  X/Twitter Posts:   {cs.get(\"x-posts\", 0)}')
 print(f'  Blog Posts:        {cs.get(\"blog-posts\", 0)}')
 print(f'  LinkedIn Posts:    {cs.get(\"linkedin-posts\", 0)}')
+print(f'  Social Drafts:     {cs.get(\"social-drafts\", 0)}')
+print(f'  Social Published:  {cs.get(\"social-published\", 0)}')
 print(f'  ─────────────────────────')
 print(f'  Total:             {cs.get(\"totalItems\", 0)}')
 print(f'  Sent:              {cs.get(\"sentItems\", 0)}')

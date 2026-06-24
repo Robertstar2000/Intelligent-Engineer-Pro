@@ -1,11 +1,11 @@
 ---
 name: book-editorial-review
-displayName: Book Editorial Review
-description: "Deep editorial analysis comparing manuscripts to bestselling genre benchmarks. Iterative loop: examine book, rate A-F, if A pass to next pipeline step, if below A incorporate changes into source and re-run review. Creates and updates book-review.md files per book directory."
+displayName: Editorial Review
+description: "Deep editorial analysis comparing manuscripts to bestselling genre benchmarks. Iterative loop: examine book, rate A-F, if A pass to next pipeline step, if below A incorporate changes into source and re-run review. Creates book-review.md files per book directory."
 category: publishing
 tags: [editorial, review, manuscript, critique, benchmark, subagent]
 related_skills: [reader-magnet-production, book-creation, writing-plans]
-triggers: [review all books, editorial review, deep review, benchmark comparison, book-review.md, assess quality, word count expansion, final push, subagent delegation, business book expansion, front matter, back matter, copyright, TOC, Also by, acknowledgments, structural checks, book condition report, character consistency, series flow, plot coherence, readability, formatting check, bestseller quality, engaging read, page turner, duplicate scene, surname overload, continuity gap, fleet size check, cross-book review, series-level review, interstitial chapters, .5 chapters, unresolved thread, name inconsistency, book 1 to book 2 comparison, genre identity crisis, alien contact mismatch, genre incompatibility, image placement check, TOC image sync, set dressing consistency, prop continuity, location drift, office inconsistency, plant continuity, cross-book setting]
+triggers: [review all books, editorial review, deep review, benchmark comparison, book-review.md, assess quality, word count expansion, business book expansion, front matter, back matter, copyright, TOC, acknowledgments, structural checks, character consistency, series flow, plot coherence, readability, formatting check, bestseller quality, page turner, surname overload, continuity gap, cross-book review, series-level review, unresolved thread, name inconsistency, image placement check, set dressing consistency, prop continuity, location drift, cross-book setting]
 ---
 
 # Book Editorial Review
@@ -77,71 +77,17 @@ done
 
 ### 4. Restoration Methods by Backup Format
 
-**Direct copy (fastest):** When backup is a .md file in the same directory:
-```bash
-cp Book_X/MANUSCRIPT.md.backup Book_X/MANUSCRIPT.md     # .backup
-cp Book_X/MANUSCRIPT.md.BEFORE_FRONT_BACK Book_X/MANUSCRIPT.md  # .BEFORE_*
-cp Book_X/_archived/manuscript.md.bak Book_X/MANUSCRIPT.md       # .bak
-```
+**Direct copy:** `cp Book_X/MANUSCRIPT.md.backup Book_X/MANUSCRIPT.md`
 
-**HTML → Markdown (use html2text, NOT regex):** Regex-based HTML stripping (`re.sub(r'<[^>]+>', ...)`) leaves artifacts: `<p>` tags, inline `<span>` fragments, escaped HTML entities. `html2text` produces clean markdown:
+**HTML → Markdown:** Use `html2text` (NOT regex). `pip3 install html2text`
 
-```bash
-pip3 install html2text
-```
+**EPUB → Markdown:** EPUBs are zipped HTML. Extract and convert with html2text.
 
-```python
-import html2text
-h = html2text.HTML2Text()
-h.body_width = 0  # No line wrapping
-h.ignore_links = False
-h.ignore_images = False
-
-with open('book.html', 'r') as f:
-    md = h.handle(f.read())
-
-with open('MANUSCRIPT.md', 'w') as f:
-    f.write(md)
-```
-
-Verify: `grep -c '<[a-z]' MANUSCRIPT.md` should return 0. If it doesn't, the conversion left artifacts — rerun with html2text.
-
-**EPUB → Markdown:** EPUBs are zipped HTML:
-```python
-import zipfile, re
-
-with zipfile.ZipFile('book.epub') as z:
-    html_files = sorted([f for f in z.namelist() if f.endswith(('.html', '.xhtml', '.htm'))])
-    content_files = [f for f in html_files if 'toc' not in f.lower() and 'nav' not in f.lower() and 'cover' not in f.lower()]
-    all_text = []
-    for h in content_files:
-        content = z.read(h).decode('utf-8', errors='replace')
-        text = re.sub(r'<[^>]+>', ' ', content)
-        text = re.sub(r'\s+', ' ', text).strip()
-        all_text.append(text)
-    combined = '\n\n'.join(all_text)
-```
-
-**From book_backups archive:** Check `books/_archived/book_backups/` for series-level directories with HTML, EPUB, or manuscript.md files.
+**From book_backups archive:** Check `books/_archived/book_backups/` for series-level directories.
 
 ### 5. Post-Restoration Verification
 
-After restoring:
-```bash
-# Confirm word count matches expected
-wc -w Book_X/MANUSCRIPT.md
-
-# Confirm no HTML artifacts
-grep -c '<[a-z]' Book_X/MANUSCRIPT.md   # Must be 0
-
-# Confirm chapter images directory still exists (from prior generation)
-ls Book_X/chapter_images/ | wc -l
-
-# Spot-check first chapter reads correctly
-head -20 Book_X/MANUSCRIPT.md
-```
-
-Then proceed to the editorial loop.
+After restoring, confirm word count matches expected, no HTML artifacts remain (`grep -c '<[a-z]' MANUSCRIPT.md` should return 0), chapter images directory still exists, and first chapter reads correctly. Then proceed to the editorial loop.
 
 ### Chapter Length Target (2,500-3,000 Words)
 
@@ -154,7 +100,42 @@ When the user says "2500 to 3000" in the context of chapter length, they mean **
 For a 22-chapter book: 22 × 2,500 = 55,000 words total.
 For a 20-chapter book: 20 × 2,500 = 50,000 words total.
 
-### ⚠️ CRITICAL: write_file() Size Limit
+### ⚠️ CRITICAL: Check Existing Backups Before Redoing Work
+
+Before condensing, expanding, or rewriting any manuscript, check for existing work that may already be sized correctly:
+
+1. **Check for `MANUSCRIPT_CONDENSED.md`** in the book directory — this is a previously-condensed version
+2. **Check `*.expanded` / `*.backup` files** — these are backups from prior operations
+3. **Check `_archived/` directories** — `_archived/book_backups/` and `_archived/publishing_output/` contain previously-built PDFs and manuscripts that show target page counts
+4. **Check `deprecated/` or `output/` directories** — may contain older but correctly-sized versions
+5. **Compare word counts**: If a backup has significantly more words and the current manuscript is over page count, the backup may be closer to the target. If the backup has fewer words and is within page count, use it as the base.
+
+**Why this matters**: In this session, condensed versions already existed (e.g., `MANUSCRIPT_CONDENSED.md` for LF Book 1 at 38,608 words) that were the correct target size. Redoing the work from scratch wasted time.
+
+### ⚠️ CRITICAL: Content vs Formatting for Page Count Fixes
+
+**NEVER change page size, margins, or font size to fix page counts.** The user explicitly requires:
+- Fiction: 6×9" page size
+- Business: 8.5×11" page size
+
+**If a book is over 275 pages:**
+1. Check for excessive scene breaks (`---`) — reduce them first
+2. Check for short chapters that each start on a new page — combine chapters
+3. Condense the longest chapters (reduce dialogue, tighten descriptions)
+4. As a LAST resort, increase page size slightly (6.25×9.25" max) — but only with user approval
+
+**If a book is under 160 pages:**
+1. Expand the shortest chapters (add scenes, deepen dialogue, add sensory detail)
+2. Add new chapters if the structure supports it
+3. For business books: add case studies, exercises, infographics
+4. Check if the manuscript was truncated — compare to backups for missing content
+
+**Image directory patterns vary by book type:**
+- Fiction: `chapter_images/` (most common)
+- Business: `images/` (AI That Works, Crisis Ready, Owners Manual)
+- Business charts: `charts/` (AI That Works has 20+ charts)
+- Mixed: `generated_images/`
+When building PDFs or checking images, scan ALL four directories.
 
 `write_file()` has a ~8K token limit on content strings. When writing large expansion scripts or content, the call will fail silently if content exceeds this limit.
 
@@ -220,19 +201,17 @@ The target rating is **user-configurable** and not always A. Common targets:
 1. Do NOT stop after writing the review. If the book is not at target quality, you MUST incorporate the changes into the actual book files.
 2. After incorporating changes, re-run the full review from Step 1 (read the updated book, write a NEW book-review.md with the new rating, check if at target).
 3. Each iteration produces a NEW book-review.md that REPLACES the old one in the book's directory.
-4. The user's instruction: "If the book achieves the target rating, the editorial review is completed and go to the next pipeline step. If it is not at target, continue with this process. Recommend sections to be rewritten. Then incorporate the changes into the book source. Then rerun this entire editorial review process from the start."
 
 ### What "Incorporate Changes" Means
 
-After writing the review with a below-A rating:
-1. Read the review's recommended rewrites section
-2. Apply every P0 and P1 fix to the actual book source files (chapter .md files in manuscript_src/ or chapters/)
-3. Rewrite the specific chapters/sections identified
-4. Rebuild the MANUSCRIPT.md from the updated chapters
-5. **Verify the MANUSCRIPT.md was actually recompiled** — do NOT assume the source edit propagates. Run `grep -c "old-template-phrase" MANUSCRIPT.md` to confirm old content is gone. Read the first 50 lines of the MANUSCRIPT.md to confirm new content appears.
-6. Then return to Step 1: read the updated book and write a NEW book-review.md
+Apply every P0 and P1 fix to the actual book source files. Rewrite the specific chapters/sections identified. Rebuild the MANUSCRIPT.md. Then return to Step 1.
 
-Do NOT just update the review file. Update the BOOK ITSELF. The review is a diagnostic tool. The actual work is changing the manuscript.
+Do NOT just update the review file. Update the BOOK ITSELF.
+
+## Support Files
+
+- `references/page-count-target.md` — **CORRECTED page count formulas** (empirically verified 2026-06-19). The old `(words / 275) + 6` formula overestimates by 15-20%. Use `(words / 320) + 4` for fiction. Also includes the multi-round expansion workflow.
+- `references/image-gen-and-toc-lessons.md` — Lessons learned: Gemini image response format change, TOC extraction fix, image post-processing.
 
 ## Workflow
 
@@ -532,16 +511,28 @@ Every editorial review MUST verify these items. Flag any missing item as a P1 is
 - NO covers should be embedded in MANUSCRIPT.md — covers go in EPUB/PDF build pipeline, not the manuscript source
 - Flag: "Image missing" or "Image before header (remove and re-place after header)"
 
-**⚠️ Common defect — images exist in directory but zero references in manuscript:** The most common chapter image defect is when `chapter_images/` has N files but `grep -c 'chapter_images' MANUSCRIPT.md` returns 0. This means chapter images were generated but never inserted into the manuscript. Always run this check as a cross-book verification:
-
+**⚠️ CRITICAL: Images may exist in directory but have ZERO references in manuscript.** Always run:
 ```bash
 # Images in directory
 ls chapter_images/ | wc -l
 # Image references in manuscript
 grep -c 'chapter_images' MANUSCRIPT.md
 ```
+If N vs 0, insert `![](chapter_images/chXX.png)` after each chapter header. This is a P0 defect.
 
-If the count is N vs 0, every chapter needs `![](chapter_images/chXX.png)` inserted after each chapter header. This is a P0 defect.
+**Multiple image directory patterns exist across books:**
+- `chapter_images/` — fiction books (most common)
+- `images/` — business books (AI That Works, Crisis Ready Company, Owners Manual)
+- `charts/` — business book charts/diagrams (AI That Works has 20 charts here)
+- `generated_images/` — mixed use
+When checking images, scan ALL four directories.
+
+**Chapter header formats vary — detect before inserting images:**
+- `## Chapter N — Title` (standard, most fiction)
+- `# Chapter N — Title` (No Blue Sky Books III+)
+- `## Chapter N: Title` (variant)
+- Worded: `Chapter One`, `Chapter Two` (memoir, some fiction)
+Use `grep -n "^#\|^##" MANUSCRIPT.md | head -20` to detect the actual format.
 
 ### 2. Copyright and Acknowledgments Page
 - The manuscript must include a copyright page with:
@@ -621,18 +612,23 @@ If the TOC lists chapters 1-39 but the headers only go to 38, or the TOC starts 
 - An image at the start of MANUSCRIPT.md that looks like a cover (full-page, has title/author on it) should be flagged and REMOVED from the manuscript
 - Verify: `grep "cover" path/to/MANUSCRIPT.md` should return NO matches for book-cover-type images
 
-### Page Count Target (160-190 Pages)
-- Every full-length book must generate a 6x9" PDF between 160 and 190 pages
-- **Word count target: ~44K-52K words** (160-190 pages × ~275 words/page)
-- The user explicitly confirmed: "the actual target is 180 pages" at 6x9" format
-- This is the UNIVERSAL target for ALL full-length books regardless of genre
-- Genre-specific targets (80K-110K for sci-fi, etc.) are guidelines only — the hard floor is 44K (160 pages) and soft ceiling is 52K (190 pages)
-- If below 160 pages → P0: "Book is N pages short. Expand with genre-appropriate content"
-- If above 190 pages → P1: "Book is N pages over. Tighten PDF formatting or trim"
-- A book below 160 pages (~44K words) CANNOT be rated B+ or higher — the word count deficit is a P0 blocker
-- A book above 190 pages can still reach B+ if the content earns the length, but the overage must be explicitly flagged
-- **Estimation formula**: words ÷ 275 = text pages, +6 for front/back matter = total pages
-- Examples: 45K words = 169 pages ✅ | 50K words = 187 pages ✅ | 32K words = 122 pages ❌ | 60K words = 224 pages ❌
+### Page Count Target (160-275 Pages)
+
+**⚠️ Formula correction (2026-06-19):** The old `(words / 275) + 6` overestimates by 15-20%. Use `(words / 320) + 4` for fiction. Always verify with actual PDF build. See `references/page-count-target.md` for full details and expansion workflow.
+
+### 11. Gutter Margin Compliance (KDP Print Requirement)
+- KDP requires minimum gutter (inside margin) based on page count. The gutter prevents text from disappearing into the spine binding.
+- **This check applies to the GENERATED PDF, not the manuscript.** If the PDF margins are wrong, KDP rejects the file with "Insufficient gutter."
+
+| Page Count | Gutter (inside) | Outside | Top/Bottom |
+|---|---|---|---|
+| < 200 pages | 0.375" | 0.25" | 0.375" |
+| 200-299 pages | 0.5" | 0.25" | 0.375" |
+| 300+ pages | 0.625" | 0.25" | 0.375" |
+
+- **Pipeline:** `hermes_publish/step_pdf.py` handles gutter CSS via `_get_gutter_css()`. The default `@page` margin uses gutter width on both sides as a safety net (WeasyPrint `@page :left/:right` overrides are unreliable).
+- **Verify:** After PDF generation, check build log for "Est. pages:" and gutter value. Spot-check with PyMuPDF: odd-page text x0 should be ≥ 36pt (0.5") for 200+ page books.
+- **Rejection:** "Insufficient gutter" = P0 blocker. Fix: increase gutter in CSS, regenerate PDF. Do NOT change page size.
 
 ## Genre-Specific Checks
 
@@ -657,6 +653,7 @@ If the TOC lists chapters 1-39 but the headers only go to 38, or the TOC starts 
 These checks apply to EVERY book in a series context and must be explicitly evaluated in every review. Flag any failure as a P0 or P1 issue depending on severity.
 
 ### 7. Consistent Character Identity (Names & Personas) — WITH CHARACTER MAP REQUIREMENT
+- **Character names must avoid AI-typical / ethnically-diverse names** — see `references/character-name-avoid-list.md` for the blocked list (Elena, Elena Vasquez, Diego, Mei-Lin, Rajiv, Jean-Luc, Aisha, Ana, Kenji). All first names must come from the top 50 most common US names (SSA data). Any match is a P1 defect.
 - **Character names must be stable across every chapter** — no name-switching (e.g., "Tom"/"Thomas"/"Tommy" used interchangeably for the same character), no last-name changes mid-book, no character renaming from one chapter to the next
 - **Character personas must be consistent** — a character who is brave in Chapter 3 should not be cowardly in Chapter 12 with no character arc explanation. Personality traits, speech patterns, and decision-making logic should be coherent across the entire book
 - **Cross-book consistency** — a character who appears in Book 1 and Book 4 must have the same name, same personality baseline, same relationships. Any change must be explained by in-story events between books
@@ -693,7 +690,56 @@ These checks apply to EVERY book in a series context and must be explicitly eval
 - **Check method:** Take the 3 biggest mysteries/conflicts introduced in the first third. Track them through the middle third. Verify they are resolved or meaningfully advanced by the final third. Any that are simply dropped count as P0
 - **Rating impact:** Dropped plot thread = -1 letter grade per thread. Deus ex machina climax = -1.5 letter grades. Perfect follow-through = +0.5
 
-### 11. Genre-Appropriate Formatting
+### 14. Page Count Compliance (160-275 pages)
+|- Fiction at 6×9": 160-275 pages (40k-82k words)
+|- Business at 6×9": 160-275 pages (46k-79k words, accounting for denser formatting)
+|- Business at 8.5×11": 160-275 pages (56k-110k words)
+|- See references/page-count-target.md for genre-specific formulas and verification method
+- Memoir at 6×9": 160-275 pages
+- **Never change page size to fix page count** — rewrite content instead
+- If over 275: tighten prose, cut redundant scenes, combine chapters
+- If under 160: expand using PLOT_MAP.md, add chapters, deepen scenes
+- Check backups (MANUSCRIPT.md.expanded, _archived/, publishing_output/) before redoing work
+
+### ⚠️ CRITICAL: Chapter Renumbering Pitfall
+
+When renumbering chapters (e.g., from series-continuous 22-53 to standalone 1-32), **NEVER use a descending global replace loop** like:
+```python
+for old_num in range(53, 21, -1):
+    content = content.replace(f'## Chapter {old_num} —', f'## Chapter {old_num - 21} —')
+```
+This causes **cascading replacements**: after changing 22→1, 23→2, etc., a second pass (or a loop that processes overlapping ranges) will re-match the already-renumbered text. Result: all headers collapse to the same number.
+
+**Safe approach — line-specific replacement:**
+```python
+# 1. Find each header's line number and current number
+# 2. Build a list of (line_index, new_number) pairs
+# 3. Apply in REVERSE order (highest line number first) to avoid index shifts
+fixes = [(2319, 32), (2273, 31), ...]  # (line_idx, new_num)
+for line_idx, new_num in fixes:
+    lines[line_idx] = re.sub(r'^(## Chapter )\d+( — )', f'\\g<1>{new_num}\\g<2>', lines[line_idx])
+```
+
+**Safe approach — title-based replacement (when line numbers are unknown):**
+```python
+title_to_num = {
+    "Covert Operations Revealed": 23,
+    "The Deimos Accord": 24,
+    # ... map each unique title to its correct number
+}
+for title, new_num in title_to_num.items():
+    # Match the specific title to avoid cascading
+    content = content.replace(f'## Chapter {{old_num}} — {title}', f'## Chapter {new_num} — {title}')
+```
+
+**Always verify after renumbering:**
+```python
+headers = re.findall(r'^## Chapter (\d+) —', content, re.MULTILINE)
+assert len(set(headers)) == len(headers), "DUPLICATE CHAPTER NUMBERS DETECTED"
+assert sorted(set(int(h) for h in headers)) == list(range(1, len(headers)+1)), "GAPS IN CHAPTER NUMBERS"
+```
+
+### 13. Genre-Appropriate Formatting
 
 ### 12. Plot Flow & Bestseller Quality — WITH PLOT MAP REQUIREMENT
 - **Plot flows consistently** — each scene causes the next, not "and then this happened." Cause and effect must be visible from chapter to chapter.
@@ -937,18 +983,10 @@ Subagents need `terminal` and `file` toolsets to read manuscripts and write revi
 
 **The Fix + Review Split Pattern (Most Reliable Approach)**
 
-This session tested two delegation approaches:
-- **Old approach:** Subagent does BOTH the fix AND writes the new review → Subagent runs out of tool calls on the review, doesn't finish, or over-reports results (claimed 63K words but actual was 44K)
-- **New approach (recommended):** Subagent does ONLY the fix work. You write the review yourself after verifying the subagent's changes.
-  1. Delegate subagents with "DO NOT write the review — I'll handle that. Just make the edits." in the goal
-  2. Subagents use all 50 tool calls on reading, analyzing, and applying changes
-  3. After subagents complete, verify the actual word counts and file contents yourself
-  4. Write new book-review.md files yourself with accurate ratings
-
-**Why this works better:**
-- Subagents consistently OVER-REPORT their results. The Book 2 subagent claimed 63,430 words but actual was 44,491 — a 19K-word gap. The fixes were real but the quantity was inflated. Writing reviews yourself catches these gaps.
-- Subagents hit the 50-call tool limit before timeouts. Giving them review-writing work burns calls that should go to content changes.
-- Writing reviews yourself also catches structural issues (wrong file, old manuscript, missing chapters) that the subagent may have overlooked.
+- Subagent does ONLY the fix work. You write the review yourself after verifying changes.
+- Delegate with "DO NOT write the review — I'll handle that. Just make the edits." in the goal
+- Subagents consistently OVER-REPORT results (claimed 63K words, actual 44K). Writing reviews yourself catches these gaps.
+- Writing reviews yourself also catches structural issues (wrong file, old manuscript, missing chapters) the subagent may have overlooked.
 
 **Batch-and-Reassess Pattern for Multi-Book Loops**
 
@@ -1426,6 +1464,8 @@ This skill has reference files for session-specific detail:
 - `references/complete-review-checklist.md` — compact 13-point checklist covering all structural checks (1-6) and series-level/readability checks (7-13). Load with skill_view('book-editorial-review', file_path='references/complete-review-checklist.md')
 - `references/cross-book-duplication-patterns.md` — detecting copy-paste content across multiple books in the same series: opening-paragraph identity, shared placeholder text blocks, formulaic chapter templates repeated across books, character name inconsistency across series entries, genre incompatibility between books, and cross-contaminated scene fragments. Includes detection commands, real examples from No Blue Sky review, and rating impact table.
 - `references/series-level-failure-patterns.md` — multi-book failure patterns: duplicate scenes, surname overload, continuity gaps, narrative cascade across books, name inconsistency, interstitial fragmentation, unresolved finale threads. Includes detection commands and real examples from Age of Lightships reviews.
+- `references/memoir-source-retention-verification.md` — technique for verifying ALL original stories are retained in a memoir, comparing manuscript to plot map, checking archived backups, measuring word counts, identifying duplicate content, and detecting rebranding artifacts. Use when analyzing memoir integrity or when a book has gone through multiple revision passes.
+- `references/memoir-source-retention-verification.md` — technique for verifying ALL original stories are retained in a memoir, comparing manuscript to plot map, checking archived backups, measuring word counts, identifying duplicate content, and detecting rebranding artifacts. Use when analyzing memoir integrity or when a book has gone through multiple revision passes.
 
 **See `book-editorial-fix` skill for:**
 - `templates/front-matter.md` — copyright + TOC + acknowledgments boilerplate

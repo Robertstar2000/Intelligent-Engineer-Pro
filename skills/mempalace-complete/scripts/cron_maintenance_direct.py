@@ -48,12 +48,6 @@ def main():
         print("\nRunning memory consolidation...")
         consolidated_count = consolidate.consolidate_memories()
         print(f"✓ Consolidated {consolidated_count} memories")
-        if consolidated_count > 0:
-            # Load some consolidated memories to show an example
-            consolidated_memories = consolidate.load_consolidated_memories(limit=1)
-            if consolidated_memories:
-                first = consolidated_memories[0]
-                print(f"  Example: {first.get('type', 'N/A')} - {first.get('summary', '')[:100]}...")
     except Exception as e:
         print(f"✗ Error during consolidation: {e}")
         import traceback
@@ -62,15 +56,10 @@ def main():
     # Run pruning
     try:
         print("\nRunning memory pruning...")
-        prune_stats = prune.prune_memories()
-        print(f"✓ Pruning complete:")
-        print(f"  Kept: {prune_stats.get('kept', 0)}")
-        print(f"  Pruned: {prune_stats.get('pruned', 0)}")
-        print(f"  Archived: {prune_stats.get('archived', 0)}")
-        if prune_stats.get('errors'):
-            print(f"  Errors: {len(prune_stats['errors'])}")
-            for err in prune_stats['errors'][:3]:  # Show first 3 errors
-                print(f"    - {err}")
+        pruned_count = prune.prune_memories()  # Returns integer count
+        archive_size = prune.get_archive_size()  # Returns size in MB
+        print(f"✓ Pruning complete: {pruned_count} memories pruned")
+        print(f"  Archive size: {archive_size:.2f} MB")
     except Exception as e:
         print(f"✗ Error during pruning: {e}")
         import traceback
@@ -79,9 +68,7 @@ def main():
     # Get system statistics
     try:
         print("\nGetting system statistics...")
-        stats = explain.get_explanation_stats()
-        print("✓ System stats:")
-        # Count files in each directory
+        # Directory counts
         directories = {}
         for subdir in ['raw', 'semantic', 'episodic', 'procedural', 'preferences', 'indexes', 'palace']:
             dir_path = os.path.join(storage_path, subdir)
@@ -93,18 +80,25 @@ def main():
                     directories[subdir] = 0
             else:
                 directories[subdir] = 0
-        print(f"  Directories: {directories}")
         
         # Embedding stats
         index_stats = embed.get_index_stats()
-        print(f"  Embedding: {index_stats.get('status', 'not_initialized')} (vectors: {index_stats.get('total_vectors', 0)})")
+        # Reinforcement stats: read reinforcement.jsonl
+        reinforcement_path = os.path.join(storage_path, 'reinforcement.jsonl')
+        reinforced_count = 0
+        if os.path.exists(reinforcement_path):
+            try:
+                with open(reinforcement_path, 'r') as f:
+                    lines = [line.strip() for line in f if line.strip()]
+                    reinforced_count = len(lines)
+            except Exception:
+                reinforced_count = 0
         
-        # Reinforcement stats
-        reinforced_memories = reinforce.get_reinforced_memories(limit=10)
-        print(f"  Reinforcement: {len(reinforced_memories)} memories reinforced")
-        
-        # Explanation stats
-        print(f"  Explanations logged: {stats.get('total_explanations', 0)}")
+        print("✓ System stats:")
+        print(f"  Directories: {directories}")
+        print(f"  Embedding: {index_stats}")
+        print(f"  Reinforcement: {reinforced_count} memories reinforced")
+        print(f"  MemPalace components initialized: capture, tag, score, consolidate, retrieve, reinforce, prune, explain, embed")
     except Exception as e:
         print(f"✗ Error getting system stats: {e}")
         import traceback

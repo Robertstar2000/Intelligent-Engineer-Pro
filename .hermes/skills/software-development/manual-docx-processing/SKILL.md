@@ -78,6 +78,14 @@ Manually treat the DOCX file as a ZIP archive and extract/process the XML conten
    - Ensure no major content loss
    - Validate paragraph boundaries are preserved
 
+## DOX Integration
+
+When working in a project that uses the [DOX (Self-documenting AGENTS.md)](https://github.com/agent0ai/dox) framework:
+
+- **Read Before Editing:** Walk the DOX tree from root to the target path. Read every AGENTS.md along the route before making any changes.
+- **Update After Editing:** If the change affects purpose, scope, ownership, structure, workflows, or operating rules, update the closest owning AGENTS.md and refresh the Child DOX Index.
+- **Reference:** [agent0ai/dox](https://github.com/agent0ai/dox) — copy `AGENTS.md` from the repo root into your project to initialize.
+
 ## Pitfalls & Solutions
 
 - **Missing Namespaces**: Always define the proper WordprocessingML namespace (`w:` prefix) when searching elements

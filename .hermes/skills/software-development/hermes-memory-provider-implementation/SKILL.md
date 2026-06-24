@@ -72,6 +72,14 @@ Configuration guidance: To use this provider, set the memory provider in Hermes 
 - Provide explainability metadata with all memories
 - Implement auto-tagging for context and palace tags
 
+## DOX Integration
+
+When implementing in a project that uses the [DOX (Self-documenting AGENTS.md)](https://github.com/agent0ai/dox) framework:
+
+- **Read Before Editing:** Walk the DOX tree from root to the target path. Read every AGENTS.md along the route before making any changes.
+- **Update After Editing:** If the implementation affects purpose, scope, ownership, structure, workflows, or operating rules, update the closest owning AGENTS.md and refresh the Child DOX Index.
+- **Reference:** [agent0ai/dox](https://github.com/agent0ai/dox) — copy `AGENTS.md` from the repo root into your project to initialize.
+
 ## Pitfalls to Avoid
 - Forgetting to implement the `name` property correctly (must return string)
 - Not properly initializing storage directories

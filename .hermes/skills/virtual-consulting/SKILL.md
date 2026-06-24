@@ -206,8 +206,44 @@ initial → generating_questions → in_progress → analyzing → complete
 2. Admin dashboard: 💼 Virtual Consulting card
 3. Register form: POST with Robertstar@aol.com / Rm2214ri#
 
+## Social Media — Consulting Promotion
+
+Use the `social-direct-publisher` skill to promote MIFECO Virtual Consulting services on social media.
+
+### When to Publish
+- **New engagement tier launched** — Announce new consulting packages
+- **Client success story** — With permission, share anonymized results/impact
+- **Thought leadership** — AI/business transformation insights that position MIFECO as an expert
+- **Promotional campaigns** — Seasonal offers, limited-time pricing, webinar announcements
+
+### Content per Platform
+
+**LinkedIn** (B2B/professional):
+- Thought leadership: AI transformation insights, business automation tips
+- Case study format: "How [industry] companies are using AI to [result]"
+- CTA: Link to mifeco.com/consult/
+- Use `social-direct-publisher` LinkedIn formatter (3000 char max, link at end)
+
+**Facebook Page** (small business owners):
+- Conversational: "Struggling with [problem]? Here's what I've seen work..."
+- Include: Link to consulting page, short testimonial or result
+- Use `social-direct-publisher` Facebook formatter (link preview auto-generates)
+
+**Instagram** (visual/brand awareness):
+- Quote graphics, infographics, short video tips
+- Caption: Brief insight + "Link in bio" for mifeco.com/consult/
+- Use `social-direct-publisher` Instagram formatter (2200 char max, "Link in bio" appended)
+
+### Campaign Tagging
+Tag consulting social posts with campaign: `consulting-promo` or `consulting-[tier]` (e.g., `consulting-tier1`)
+
+### Approval Flow
+All consulting social posts MUST go through the `social-direct-publisher` approval gate:
+1. Generate → 2. Policy check → 3. Draft stored → 4. Bob approves → 5. API publish → 6. Audit log
+
 ## Pitfalls
 
 - **Reports are NOT KDP packages** — Virtual consulting deliverables are single PDF reports (cover + letter + TOC + 30+ pages). They have nothing to do with KDP book packages. Never generate consulting deliverables in KDP format.
 - **Pipeline stages are research-oriented, not purchase-oriented** — The stages are Lead → Contacted → Survey → Research → Generate Reports → Quality Review → Delivery → Complete. Old incorrect stages (Qualifier → Buy → Process → Deliverables → Edit) were borrowed from a book sales pipeline and do not apply.
+- **Social posts require approval** — Never publish consulting social media posts directly from LLM output. Always route through `social-direct-publisher` for policy check + approval gate.
 

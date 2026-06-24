@@ -102,6 +102,41 @@ print(f"✅ Restored {len(restored_chapters)} chapters")
 - No duplicate or orphaned content sections
 - The manuscript flows logically from chapter to chapter
 
+## Duplicate Content Detection
+
+When a manuscript has duplicate story sections (same event appearing in multiple chapters):
+
+1. **Identify duplicates by scanning for repeated scene headers/subheadings**:
+   ```bash
+   grep -n "^### \|^## " MANUSCRIPT.md | sort | uniq -d
+   ```
+2. **Compare line counts** — the longer version is usually the canonical one
+3. **Remove the shorter/duplicate version** — typically the later occurrence is the duplicate
+4. **Verify flow after removal** — check that the surrounding paragraphs connect logically
+
+**Pattern from Tomorrow Remembered cleanup**: Three duplicate sections (TV repair shop, first car, science fair) were found in Chapter 5 that duplicated content from Chapter 3. The Chapter 3 versions were full-length; Chapter 5 versions were abbreviated duplicates. Removed 67 lines total.
+
+## Title Change Verification
+
+When a book title has changed (e.g., "Tomorrow Is Still Open" → "Tomorrow Remembered"):
+
+1. **Grep across ALL files** in the book directory:
+   ```bash
+   grep -r "Old Title" /path/to/book/ --include="*.md" --include="*.txt" --include="*.html" --include="*.pdf" --include="*.epub"
+   ```
+2. **Check PDF metadata** (not just content):
+   ```python
+   from PyPDF2 import PdfReader
+   r = PdfReader("book.pdf")
+   print(r.metadata.get("/Title", "NO TITLE"))
+   ```
+3. **Check EPUB metadata** by extracting and reading `content.opf`:
+   ```bash
+   unzip -p book.epub OEBPS/content.opf | grep -i "<dc:title>"
+   ```
+4. **Delete old-title files** — remove any files with the old title in the filename from KDP_PACKAGE and other directories
+5. **Update README/metadata files** that reference old filenames
+
 ## Limitations
 - Works best with manuscripts that have a clear TOC structure
 - May not work well with highly irregular formatting
