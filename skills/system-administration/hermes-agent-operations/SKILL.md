@@ -8,14 +8,12 @@ platforms: [linux, macos, windows]
 ---
 
 
-## 🔍 MemPalace Query (MANDATORY FIRST STEP)
-Before proceeding, query MemPalace for existing context:
-```python
-import sys, os; sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace'))
-import embed; embed.init_embedding(os.path.expanduser('~/.hermes/mempalace'))
-results = embed.search_embeddings("Hermes agent operations maintenance status", k=5)
-```
-This retrieves previous decisions, domain-specific context, and lessons learned from the vector memory store.
+## Memory context (Hindsight)
+
+Long-term memory context is now provided automatically by Hindsight (bank
+`mifeco-default`) on every turn — the retired MemPalace manual query step no
+longer applies. Do NOT attempt to import `~/.hermes/mempalace` (it was removed
+2026-08-19).This retrieves previous decisions, domain-specific context, and lessons learned from the vector memory store.
 
 # Hermes Agent Operations
 
@@ -96,19 +94,9 @@ When MEMORY.md is near the 2,200 char limit and new entries would exceed it:
 
 **Step 1**: Identify stale/compactable entries in MEMORY.md. Replace verbose entries with concise versions to free space.
 
-**Step 2**: Offload displaced entries to MemPalace:
-```python
-import sys, os
-sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace'))
-import embed
-embed.init_embedding(os.path.expanduser('~/.hermes/mempalace'))
+**Step 2**: Offload displaced entries to long-term memory via Hindsight (MemPalace was retired 2026-08-19; its role is now filled by Hindsight, bank `mifeco-default`, tools `hindsight_recall`/`hindsight_retain`).
 
-# API: embed.add_embedding(memory_id: str, raw_text: str) → bool
-# memory_id = any unique string (e.g., "2026-06-07-saas")
-embed.add_embedding("unique_id_here", "Full text of the memory entry to preserve")
-```
-
-**Do NOT** create a new MEMORY.md entry saying "offloaded to MemPalace" — that wastes the space you just freed. The `memory` tool is the canonical list; MemPalace is the overflow store.
+**Do NOT** create a new MEMORY.md entry saying "offloaded to MemPalace" — that wastes the space you just freed. The `memory` tool is the canonical list; Hindsight is the overflow store.
 
 **Do NOT** capture environment-dependent failures (missing packages, unconfigured credentials, one-off errors that resolved). Only capture durable patterns and user preferences.
 Symptom: `memory(action='add')` fails with `"Refusing to write MEMORY.md: file on disk has content that wouldn't round-trip"`.

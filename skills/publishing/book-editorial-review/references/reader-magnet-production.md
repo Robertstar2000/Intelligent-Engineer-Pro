@@ -57,7 +57,7 @@ The ending must seed a mystery that drives readers into Book 1 (subsurface refle
 
 All reader magnet source `.md` files live under the website source at:
 ```
-/home/bob/cindy-lou-series/books-mifeco-website/magnets/
+/home/bob/Desktop/hermesfiles/cindy-lou-series/books-mifeco-website/magnets/
 ```
 
 **Naming:** lowercase kebab-case — `{series}-before-the-dust.md`, `cindy-lou-missing-retainer.md`
@@ -341,9 +341,9 @@ The user reviews work through Telegram and provides feedback or sign-off there.
 
 - **USB sync:** After updating local magnet files, sync to both USB directories:
   ```bash
-  cp /home/bob/cindy-lou-series/books-mifeco-website/magnets/*.epub /mnt/usb_4tb/books/Cindy_Lou_Legal_Capers/books-mifeco-website/magnets/
-  cp /home/bob/cindy-lou-series/books-mifeco-website/magnets/*.pdf /mnt/usb_4tb/books/Cindy_Lou_Legal_Capers/books-mifeco-website/magnets/
-  cp /home/bob/cindy-lou-series/books-mifeco-website/magnets/*.md /mnt/usb_4tb/books/Cindy_Lou_Legal_Capers/books-mifeco-website/magnets/
+  cp /home/bob/Desktop/hermesfiles/cindy-lou-series/books-mifeco-website/magnets/*.epub /mnt/usb_4tb/books/Cindy_Lou_Legal_Capers/books-mifeco-website/magnets/
+  cp /home/bob/Desktop/hermesfiles/cindy-lou-series/books-mifeco-website/magnets/*.pdf /mnt/usb_4tb/books/Cindy_Lou_Legal_Capers/books-mifeco-website/magnets/
+  cp /home/bob/Desktop/hermesfiles/cindy-lou-series/books-mifeco-website/magnets/*.md /mnt/usb_4tb/books/Cindy_Lou_Legal_Capers/books-mifeco-website/magnets/
   ```
   Also sync to the secondary USB path at `/mnt/usb_4tb/books/books-section/magnets/`. Remove old-named files from USB mirrors.
 

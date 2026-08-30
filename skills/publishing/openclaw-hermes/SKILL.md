@@ -3,14 +3,12 @@ name: openclaw-hermes
 description: book publishing preparation and compliance workflow for authors publishing wide through amazon kdp, kobo writing life, barnes and noble press, google play books, and promotion sites such as book barbarian. use when the user asks for publishing checklists, retailer readiness, isbn decisions, compliance review, ai disclosure review, metadata cleanup, launch sequencing, promo readiness, or official publishing links.
 ---
 
-## 🔍 MemPalace Query (MANDATORY FIRST STEP)
-Before proceeding, query MemPalace for existing context:
-```python
-import sys, os; sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace'))
-import embed; embed.init_embedding(os.path.expanduser('~/.hermes/mempalace'))
-results = embed.search_embeddings("book publishing compliance KDP Kobo Barnes Noble Google Play ISBN AI disclosure", k=5)
-```
-This retrieves previous decisions, domain-specific context, and lessons learned from the vector memory store.
+## Memory context (Hindsight)
+
+Long-term memory context is now provided automatically by Hindsight (bank
+`mifeco-default`) on every turn — the retired MemPalace manual query step no
+longer applies. Do NOT attempt to import `~/.hermes/mempalace` (it was removed
+2026-08-19).This retrieves previous decisions, domain-specific context, and lessons learned from the vector memory store.
 
 # OpenClaw Hermes
 

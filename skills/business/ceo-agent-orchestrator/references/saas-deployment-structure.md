@@ -5,7 +5,7 @@
 
 ## Source Code Location
 
-All 3 SaaS apps live under `/home/bob/saas/`:
+All 3 SaaS apps live under `/home/bob/Desktop/hermesfiles/saas/`:
 
 | App | Directory | Local Port | server.ts helmet line |
 |-----|-----------|------------|----------------------|
@@ -17,7 +17,7 @@ All 3 SaaS apps live under `/home/bob/saas/`:
 
 All apps are started together via `start-mifeco.sh` which runs:
 ```bash
-cd /home/bob/saas/<AppName>
+cd /home/bob/Desktop/hermesfiles/saas/<AppName>
 PORT=30XX nohup npx tsx server.ts > /tmp/<app>.log 2>&1 &
 ```
 
@@ -26,7 +26,7 @@ PORT=30XX nohup npx tsx server.ts > /tmp/<app>.log 2>&1 &
 **No Dockerfile or cloudbuild.yaml exists** in any app repo. Deployments use Google Cloud Build's automatic Node.js detection:
 
 ```bash
-cd /home/bob/saas/<AppName>
+cd /home/bob/Desktop/hermesfiles/saas/<AppName>
 gcloud run deploy --source .
 ```
 
@@ -48,7 +48,7 @@ The `node_modules/` directories are pre-bundled in source, so `npm install` is s
 
 ```bash
 # Check current paths
-grep -r "database.sqlite" /home/bob/saas/*/server.ts
+grep -r "database.sqlite" /home/bob/Desktop/hermesfiles/saas/*/server.ts
 
 # Fix: change to /tmp path
 # In server.ts, replace:

@@ -4,14 +4,12 @@ description: Systematically change a book's title, subtitle, author name, and/or
 tags: [publishing, rebranding, rename, title-change, series, metadata]
 ---
 
-## 🔍 MemPalace Query (MANDATORY FIRST STEP)
-Before proceeding, query MemPalace for existing context:
-```python
-import sys, os; sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace'))
-import embed; embed.init_embedding(os.path.expanduser('~/.hermes/mempalace'))
-results = embed.search_embeddings("book identity rebranding rename title subtitle author series metadata", k=5)
-```
-This retrieves previous decisions, domain-specific context, and lessons learned from the vector memory store.
+## Memory context (Hindsight)
+
+Long-term memory context is now provided automatically by Hindsight (bank
+`mifeco-default`) on every turn — the retired MemPalace manual query step no
+longer applies. Do NOT attempt to import `~/.hermes/mempalace` (it was removed
+2026-08-19).This retrieves previous decisions, domain-specific context, and lessons learned from the vector memory store.
 
 # Book Identity Rebranding
 

@@ -5,7 +5,7 @@
 REMOTE_USER="dh_mwpxuu"
 REMOTE_HOST="IAD1-SHARED-B8-42.DREAMHOST.COM"
 REMOTE_PATH="/home/dh_mwpxuu/mifeco.com/books/api/subscribers.json"
-LOCAL_PATH="/mnt/usb_4tb/books/books-section/api/subscribers.json"
+LOCAL_PATH="/media/bob/usb_8tb/books/books-section/api/subscribers.json"
 SSH_PASS="Rm2214ri####"
 
 # Sync using SSH

@@ -2,7 +2,7 @@
 
 ## Script Location
 
-`/home/bob/cindy-lou-scripts/sync-books-site.py`
+`/home/bob/Desktop/hermesfiles/cindy-lou-scripts/sync-books-site.py`
 
 Runs weekly as a cron job (Monday 9 AM). Scans for new/changed book files, deploys them to `books.mifeco.com` via SFTP.
 
@@ -53,12 +53,12 @@ Without paramiko, the script falls back to a subprocess `sftp` call that tries t
 ## What Gets Synced
 
 Scanned directories:
-- `/home/bob/cindy-lou-series/book-*/chapters/*.md`
-- `/home/bob/cindy-lou-series/book-*/Marketing_and_Compliance/*`
-- `/home/bob/cindy-lou-series/covers/*`
-- `/home/bob/cindy-lou-series/kdp-packages/*.zip`
-- `/home/bob/cindy-lou-series/reader-magnet/*.md`
-- `/home/bob/cindy-lou-series/books-mifeco-website/**/*`
+- `/home/bob/Desktop/hermesfiles/cindy-lou-series/book-*/chapters/*.md`
+- `/home/bob/Desktop/hermesfiles/cindy-lou-series/book-*/Marketing_and_Compliance/*`
+- `/home/bob/Desktop/hermesfiles/cindy-lou-series/covers/*`
+- `/home/bob/Desktop/hermesfiles/cindy-lou-series/kdp-packages/*.zip`
+- `/home/bob/Desktop/hermesfiles/cindy-lou-series/reader-magnet/*.md`
+- `/home/bob/Desktop/hermesfiles/cindy-lou-series/books-mifeco-website/**/*`
 - `/mnt/usb_4tb/books/*/chapters/*.md`
 - `/mnt/usb_4tb/books/*/Marketing_and_Compliance/*`
 - `/mnt/usb_4tb/books/*/*.epub`

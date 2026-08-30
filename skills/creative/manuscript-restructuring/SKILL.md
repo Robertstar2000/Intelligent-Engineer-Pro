@@ -4,14 +4,12 @@ displayName: Manuscript Restructuring
 description: A systematic approach for restructuring manuscripts by identifying patterns, rewriting content in a more personal voice, repositioning sections, and performing bulk automated text transformations with output format rebuild. Also covers editorial proposal-driven chapter compression (removing AI voice, tightening), chapter expansion (adding scene work, sensory detail, dialogue, vignettes), and hybrid chapter revision (mixed compress/expand/deduplicate operations on the same chapter).
 ---
 
-## 🔍 MemPalace Query (MANDATORY FIRST STEP)
-Before proceeding, query MemPalace for existing context:
-```python
-import sys, os; sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace'))
-import embed; embed.init_embedding(os.path.expanduser('~/.hermes/mempalace'))
-results = embed.search_embeddings("manuscript restructuring editing rewrite voice compression expansion", k=5)
-```
-This retrieves previous decisions, domain-specific context, and lessons learned from the vector memory store.
+## Memory context (Hindsight)
+
+Long-term memory context is now provided automatically by Hindsight (bank
+`mifeco-default`) on every turn — the retired MemPalace manual query step no
+longer applies. Do NOT attempt to import `~/.hermes/mempalace` (it was removed
+2026-08-19).This retrieves previous decisions, domain-specific context, and lessons learned from the vector memory store.
 
 ## When to Use This Skill
 

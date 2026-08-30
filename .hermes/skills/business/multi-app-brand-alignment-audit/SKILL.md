@@ -31,7 +31,7 @@ This retrieves previous decisions, domain-specific context, and lessons learned 
 Get the list of live app URLs. Sources:
 - Agent memory (`Memory: "Existing live apps on Cloud Run:..."`)
 - User directly provides URLs
-- Local repo directories: `ls /home/bob/saas/` or similar
+- Local repo directories: `ls /home/bob/Desktop/hermesfiles/saas/` or similar
 - Previous session search for deployment URLs
 
 ```bash

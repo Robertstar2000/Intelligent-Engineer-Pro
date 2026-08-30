@@ -678,14 +678,14 @@ Vite-based apps (Project Hypatia Pro, VibraEngineer) that use **esm.sh import ma
 VibraEngineer and PM Accelerator both write SQLite databases to `./database.sqlite` in their working directory. **Cloud Run's filesystem is read-only except `/tmp`**, meaning these apps will crash on first database write after deployment. This has NOT happened yet because the apps haven't been deployed since the SQLite code was added.
 
 **Before any deployment:**
-1. Check each app's server.ts for SQLite path: `grep -r "database.sqlite" /home/bob/saas/*/`
+1. Check each app's server.ts for SQLite path: `grep -r "database.sqlite" /home/bob/Desktop/hermesfiles/saas/*/`
 2. If path is relative (`./database.sqlite` or `path.join(__dirname, 'database.sqlite')`), change to `/tmp/database.sqlite` or similar
 3. Update the deployment runbook with this fix
 
 **Documented in:** `references/deployment-runbook-may2026.md` — section per app + troubleshooting section 8.6.
 
 ### Source code vs deployed image distinction
-Always distinguish between "source code has the fix" and "the deployed image has the fix" in the briefing. The apps are at `/home/bob/saas/<AppName>/server.ts`. There is no cloudbuild.yaml or Dockerfile in the repos — deployments use `gcloud run deploy --source .` which triggers Google Cloud Build. The `node_modules/` are pre-bundled so `npm install` is not needed for production builds.
+Always distinguish between "source code has the fix" and "the deployed image has the fix" in the briefing. The apps are at `/home/bob/Desktop/hermesfiles/saas/<AppName>/server.ts`. There is no cloudbuild.yaml or Dockerfile in the repos — deployments use `gcloud run deploy --source .` which triggers Google Cloud Build. The `node_modules/` are pre-bundled so `npm install` is not needed for production builds.
 
 ### .app TLD blocks curl security scanner
 The terminal's security scanner blocks curl commands to `.app` TLDs with a "Lookalike TLD detected" error. This affects ALL security header checks on Cloud Run apps (which use `*.run.app` domains).

@@ -35,7 +35,7 @@ Sources: scan `/home/bob/books/` for manuscript.md, PDF, and FINAL_PACKAGE direc
 - PM Accelerator — GitHub: `https://github.com/Robertstar2000/Project-management-accelerator.git` — Cloud Run: `https://project-management-accelerator-845075991286.us-west1.run.app`
 - VibraEngineer — GitHub: `https://github.com/Robertstar2000/Intelligent-Engineer.git` — Cloud Run: `https://vibraengineer-845075991286.us-west1.run.app`
 - mifeco.com Website — GitHub: `https://github.com/Robertstar2000/mifeco_web.git` — DreamHost (no production URL exposed)
-Local code paths: `/home/bob/saas/Project_Hypatia_Pro/`, `/home/bob/saas/Project_Management_Accelerator/`, `/home/bob/saas/VibraEngineer/`, `/home/bob/mifeco_web/`
+Local code paths: `/home/bob/Desktop/hermesfiles/saas/Project_Hypatia_Pro/`, `/home/bob/Desktop/hermesfiles/saas/Project_Management_Accelerator/`, `/home/bob/Desktop/hermesfiles/saas/VibraEngineer/`, `/home/bob/Desktop/hermesfiles/mifeco_web/`
 
 ### Consulting Pipeline  
 8 leads (human consulting), 3 tiers ($199/$1,499/$3,999). AgentMail inbox: crowdedbutton536@agentmail.to  

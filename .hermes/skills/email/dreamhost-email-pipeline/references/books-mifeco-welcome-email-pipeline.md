@@ -4,7 +4,7 @@
 
 A standalone Python-based email automation system for the books.mifeco.com author site. Not part of the WordPress/DreamHost MIFECO mailer plugin — it runs independently on the agent host.
 
-**Location:** `/home/bob/cindy-lou-series/books-mifeco-website/api/send_welcome.py`
+**Location:** `/home/bob/Desktop/hermesfiles/cindy-lou-series/books-mifeco-website/api/send_welcome.py`
 
 ## Trigger
 

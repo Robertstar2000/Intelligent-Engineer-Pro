@@ -4,14 +4,12 @@ description: Systematically audit multiple deployed SaaS/web applications for br
 tags: [saas, branding, audit, landing-page, consistency, production-readiness]
 ---
 
-## 🔍 MemPalace Query (MANDATORY FIRST STEP)
-Before proceeding, query MemPalace for existing context:
-```python
-import sys, os; sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace'))
-import embed; embed.init_embedding(os.path.expanduser('~/.hermes/mempalace'))
-results = embed.search_embeddings("brand alignment audit SaaS web application consistency", k=5)
-```
-This retrieves previous decisions, domain-specific context, and lessons learned from the vector memory store.
+## Memory context (Hindsight)
+
+Long-term memory context is now provided automatically by Hindsight (bank
+`mifeco-default`) on every turn — the retired MemPalace manual query step no
+longer applies. Do NOT attempt to import `~/.hermes/mempalace` (it was removed
+2026-08-19).This retrieves previous decisions, domain-specific context, and lessons learned from the vector memory store.
 
 # Multi-App Brand Alignment Audit
 
@@ -31,7 +29,7 @@ This retrieves previous decisions, domain-specific context, and lessons learned 
 Get the list of live app URLs. Sources:
 - Agent memory (`Memory: "Existing live apps on Cloud Run:..."`)
 - User directly provides URLs
-- Local repo directories: `ls /home/bob/saas/` or similar
+- Local repo directories: `ls /home/bob/Desktop/hermesfiles/saas/` or similar
 - Previous session search for deployment URLs
 
 ```bash

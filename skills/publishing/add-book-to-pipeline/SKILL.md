@@ -4,14 +4,12 @@ description: Add a new book title to the MIFECO book pipeline — updates all da
 trigger: User provides a new book title, author, price, and optionally series/standalone/box-set designation
 ---
 
-## 🔍 MemPalace Query (MANDATORY FIRST STEP)
-Before proceeding, query MemPalace for existing context:
-```python
-import sys, os; sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace'))
-import embed; embed.init_embedding(os.path.expanduser('~/.hermes/mempalace'))
-results = embed.search_embeddings("add book pipeline MIFECO dashboard nurture sequence website", k=5)
-```
-This retrieves previous decisions, domain-specific context, and lessons learned from the vector memory store.
+## Memory context (Hindsight)
+
+Long-term memory context is now provided automatically by Hindsight (bank
+`mifeco-default`) on every turn — the retired MemPalace manual query step no
+longer applies. Do NOT attempt to import `~/.hermes/mempalace` (it was removed
+2026-08-19).This retrieves previous decisions, domain-specific context, and lessons learned from the vector memory store.
 
 # Add a New Book to the MIFECO Book Pipeline
 
@@ -53,7 +51,7 @@ Update **em13** body (Books welcome email) — add title+price to catalog listin
 Add X post + LinkedIn post entries for the new book.
 
 ## 6. Reader Magnet — NEW
-**Path:** `/home/bob/cindy-lou-series/books-mifeco-website/magnets/`
+**Path:** `/home/bob/Desktop/hermesfiles/cindy-lou-series/books-mifeco-website/magnets/`
 
 Every new series gets a reader magnet: a free novella (2,500-3,500 words) that appeals to the same audience, provides a complete experience, and hooks into Book 1.
 
@@ -65,7 +63,7 @@ Create:
 Update series landing page at `books-mifeco-website/SERIES-NAME/index.html`.
 
 ## 7. books.mifeco.com Website — NEW
-**Path:** `/home/bob/cindy-lou-series/books-mifeco-website/`
+**Path:** `/home/bob/Desktop/hermesfiles/cindy-lou-series/books-mifeco-website/`
 
 Update for every new book/series:
 1. Homepage `index.html` — add/update series card
@@ -73,7 +71,7 @@ Update for every new book/series:
 3. Reader magnet — add to series page
 4. Email template — update email-3.html (book showcase)
 5. **Deploy to DreamHost**: Use SFTP to upload to books.mifeco.com
-6. **Cron job**: Weekly auto-deploy via `cronjob` tool (Mondays 9 AM). Script: `/home/bob/cindy-lou-scripts/sync-books-site.py`
+6. **Cron job**: Weekly auto-deploy via `cronjob` tool (Mondays 9 AM). Script: `/home/bob/Desktop/hermesfiles/cindy-lou-scripts/sync-books-site.py`
 7. **Subagent delegation**: Single-file tasks only per subagent. Multi-file batches (4+ pages, 3+ novellas) timeout at 600s. Delegate one file per subagent. See `references/session-patterns.md`.
 
 ## Deploy Main Site
@@ -92,7 +90,7 @@ sftp.close(); ssh.close()
 ## Cron Job — Weekly Auto-Update
 The `books.mifeco.com` site is auto-updated weekly via cron:
 ```
-0 9 * * 1 /home/bob/.hermes/hermes-agent/venv/bin/python3 /home/bob/cindy-lou-scripts/sync-books-site.py
+0 9 * * 1 /home/bob/.hermes/hermes-agent/venv/bin/python3 /home/bob/Desktop/hermesfiles/cindy-lou-scripts/sync-books-site.py
 ```
 This script scans for new book materials (chapters, covers, magnets) and deploys to DreamHost.
 ## Verify

@@ -5,14 +5,12 @@ description: "Amazon KDP book publishing workflow: smart skip/publish pipeline, 
 
 # Book Publishing Workflow
 
-## 🔍 MemPalace Query (MANDATORY FIRST STEP)
-Before proceeding, query MemPalace for existing context:
-```python
-import sys, os; sys.path.insert(0, os.path.expanduser('~/.hermes/mempalace'))
-import embed; embed.init_embedding(os.path.expanduser('~/.hermes/mempalace'))
-results = embed.search_embeddings("book publishing [your specific topic]", k=5)
-```
+## Memory context (Hindsight)
 
+Long-term memory context is now provided automatically by Hindsight (bank
+`mifeco-default`) on every turn — the retired MemPalace manual query step no
+longer applies. Do NOT attempt to import `~/.hermes/mempalace` (it was removed
+2026-08-19).
 ## Amazon ASIN Lookup
 To find ASINs for published books, search Amazon for author "Bob J Mills":
 1. Go to `https://www.amazon.com/s?k=%22Bob+J+Mills%22&i=digital-text`

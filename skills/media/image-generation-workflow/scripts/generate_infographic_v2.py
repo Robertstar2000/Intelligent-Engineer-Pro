@@ -13,9 +13,9 @@ from PIL import Image, ImageDraw, ImageFont
 import os, shutil
 
 # ── Paths ───────────────────────────────────────────────────────────
-OUTPUT_DIR    = "/home/bob/cindy-lou-series/outputs"
-QR_MIFECO     = "/home/bob/cindy-lou-series/qr_mifeco.png"
-QR_AMAZON     = "/home/bob/cindy-lou-series/qr_amazon.png"
+OUTPUT_DIR    = "/home/bob/Desktop/hermesfiles/cindy-lou-series/outputs"
+QR_MIFECO     = "/home/bob/Desktop/hermesfiles/cindy-lou-series/qr_mifeco.png"
+QR_AMAZON     = "/home/bob/Desktop/hermesfiles/cindy-lou-series/qr_amazon.png"
 FONT_BOLD     = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 FONT_REG      = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 FONT_SERIF    = "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"
@@ -283,13 +283,13 @@ if __name__ == "__main__":
     gen_square()
     gen_landscape()
     gen_story()
-    main = "/home/bob/cindy-lou-series/Marketing_Infographic.png"
+    main = "/home/bob/Desktop/hermesfiles/cindy-lou-series/Marketing_Infographic.png"
     shutil.copy2(os.path.join(OUTPUT_DIR,"Marketing_Infographic_Portrait.png"), main)
     print(f"Main -> {main}")
     for kd in [
-        "/home/bob/cindy-lou-series/kdp-packages/Retainer_to_Trouble/Marketing_and_Compliance",
-        "/home/bob/cindy-lou-series/kdp-packages/Clause_for_Alarm/Marketing_and_Compliance",
-        "/home/bob/cindy-lou-series/kdp-packages/Affidavits_and_Alibis/Marketing_and_Compliance",
+        "/home/bob/Desktop/hermesfiles/cindy-lou-series/kdp-packages/Retainer_to_Trouble/Marketing_and_Compliance",
+        "/home/bob/Desktop/hermesfiles/cindy-lou-series/kdp-packages/Clause_for_Alarm/Marketing_and_Compliance",
+        "/home/bob/Desktop/hermesfiles/cindy-lou-series/kdp-packages/Affidavits_and_Alibis/Marketing_and_Compliance",
     ]:
         os.makedirs(kd, exist_ok=True)
         for fn in os.listdir(OUTPUT_DIR):

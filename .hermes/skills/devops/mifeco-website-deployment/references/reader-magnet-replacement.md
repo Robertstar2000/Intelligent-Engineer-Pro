@@ -20,7 +20,7 @@ When the user asks you to rewrite or improve a reader magnet novella, the key ru
 
 ## 0a. Generate EPUB + PDF from Novella Source
 
-Each series has a novella source file at `/home/bob/cindy-lou-series/reader-magnet/Missing_Retainer_Novella.md` (or equivalent for other series under `/home/bob/<series>/reader-magnet/`).
+Each series has a novella source file at `/home/bob/Desktop/hermesfiles/cindy-lou-series/reader-magnet/Missing_Retainer_Novella.md` (or equivalent for other series under `/home/bob/<series>/reader-magnet/`).
 
 **Build approach:** Pure-Python EPUB (zipfile + stdlib — no ebooklib needed). PDF uses fpdf2 (install: `pip3 install fpdf2`). Both are built from a single Python script at `/tmp/build_reader_magnet.py`.
 
@@ -56,7 +56,7 @@ Upload to `/home/dh_mwpxuu/mifeco.com/books/magnets/`:
 ```python
 import pexpect
 for f in ['<slug>-magnet.epub', '<slug>-magnet.pdf']:
-    local = f'/home/bob/cindy-lou-series/books-mifeco-website/magnets/{f}'
+    local = f'/home/bob/Desktop/hermesfiles/cindy-lou-series/books-mifeco-website/magnets/{f}'
     child = pexpect.spawn(f'scp {local} dh_mwpxuu@mifeco.com:/home/dh_mwpxuu/mifeco.com/books/magnets/{f}', timeout=60, encoding='utf-8')
     child.expect('password:', timeout=15)
     child.sendline('PASSWORD')

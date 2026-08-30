@@ -4,7 +4,7 @@ Build EPUB + PDF for a reader magnet novella from a markdown source file.
 Outputs to the website magnets directory for deployment.
 
 Usage:
-  cd /home/bob/cindy-lou-series/books-mifeco-website
+  cd /home/bob/Desktop/hermesfiles/cindy-lou-series/books-mifeco-website
   python3 /path/to/build_reader_magnet.py
 
 Config vars at the top of the file:
@@ -20,9 +20,9 @@ from datetime import datetime, timezone
 from xml.sax.saxutils import escape as xmlescape
 
 # --- CONFIGURE THESE ---
-NOVELLA_MD = "/home/bob/cindy-lou-series/reader-magnet/Missing_Retainer_Novella.md"
-MAGNETS_DIR = "/home/bob/cindy-lou-series/books-mifeco-website/magnets"
-OUTPUT_DIR = "/home/bob/cindy-lou-series/reader-magnet/output"
+NOVELLA_MD = "/home/bob/Desktop/hermesfiles/cindy-lou-series/reader-magnet/Missing_Retainer_Novella.md"
+MAGNETS_DIR = "/home/bob/Desktop/hermesfiles/cindy-lou-series/books-mifeco-website/magnets"
+OUTPUT_DIR = "/home/bob/Desktop/hermesfiles/cindy-lou-series/reader-magnet/output"
 
 TITLE = "Cindy Lou and the Case of the Missing Retainer"
 SUBTITLE = "A Cindy Lou Legal Caper Novella"
