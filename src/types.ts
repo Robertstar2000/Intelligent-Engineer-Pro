@@ -1,0 +1,197 @@
+
+export interface Message {
+  id: number;
+  sender: 'user' | 'team' | 'system';
+  userName?: string;
+  avatar?: string;
+  text?: string;
+  attachment?: {
+      name: string;
+      data: string; // base64
+      type: string;
+  };
+  timestamp: string;
+}
+
+export interface VersionedOutput {
+  version: number;
+  content: string;
+  reason: string;
+  createdAt: Date;
+}
+
+export interface Sprint {
+  id:string;
+  name: string;
+  description: string;
+  status: 'not-started' | 'in-progress' | 'completed';
+  deliverables: string[];
+  outputs: VersionedOutput[];
+  dependencies?: string[];
+  notes?: string;
+  attachments?: {
+    name: string;
+    content: string; // base64 encoded
+    mimeType: string;
+  }[];
+  selectedTool?: string;
+  chatLog?: Message[];
+  generatedDocId?: string;
+  activeAssetTypes?: string[];
+}
+
+export interface TuningSettings {
+  [key: string]: number | string | boolean;
+}
+
+export interface DesignReviewChecklistItem {
+    id: string;
+    text: string;
+    checked: boolean;
+}
+
+export interface Phase {
+  id: string;
+  name: string;
+  description: string;
+  status: 'not-started' | 'in-progress' | 'in-review' | 'completed';
+  sprints: Sprint[];
+  tuningSettings: TuningSettings;
+  outputs: VersionedOutput[];
+  isEditable: boolean;
+  diagramUrl?: string;
+  designReview?: {
+    required: boolean;
+    checklist: DesignReviewChecklistItem[];
+  };
+  chatLog?: Message[];
+  reviewStartDate?: string;
+  reviewEndDate?: string;
+  activeAssetTypes?: string[];
+}
+
+export interface User {
+  id: string;
+  name: string;
+  username?: string;
+  email: string;
+  role: string;
+  occupation?: string;
+  avatar: string;
+  passwordHash?: string;
+  geminiKey?: string;
+}
+
+export interface Comment {
+    id: string;
+    userId: string;
+    phaseId: string;
+    text: string;
+    createdAt: Date;
+}
+
+export interface Risk {
+  id: string;
+  title: string;
+  category: 'Technical' | 'Schedule' | 'Budget' | 'Resource' | 'Operational' | 'Other';
+  severity: 'Low' | 'Medium' | 'High' | 'Critical';
+  description: string;
+  mitigation: string;
+}
+
+export interface Resource {
+  id: string;
+  name: string;
+  source: string;
+  category: 'Software' | 'Equipment' | 'Other';
+  justification: string;
+}
+
+export interface AnalyticsMetrics {
+    completionRate: number;
+    sprintCompletionRate: number;
+    totalSprints: number;
+    completedSprints: number;
+    timeElapsedDays: number;
+    currentPhaseName: string;
+    phaseStatusCounts: {
+        [key in Phase['status']]: number;
+    };
+    industryBenchmarks: {
+        sprintVelocity: { value: number; benchmark: number }; // sprints per week
+        designReviewEfficiency: { value: number; benchmark: number }; // days
+    };
+}
+
+export interface Recommendation {
+    id: string;
+    title: string;
+    category: 'Methodology' | 'Process' | 'Tools' | 'Risk Mitigation';
+    description: string;
+    actionableStep: string;
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  status: 'todo' | 'in-progress' | 'done';
+  assigneeId: string | null;
+  phaseId: string;
+  sprintId?: string;
+  createdAt: Date;
+  priority?: 'Low' | 'Medium' | 'High';
+  dueDate?: string;
+}
+
+export interface MetaDocument {
+  id: string;
+  name: string;
+  content: string;
+  type: string; // Keeping it generic to handle standard/advanced types
+  createdAt: Date;
+  parentEntityId: string; // To track which phase/sprint it belongs to
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  description: string;
+  userId: string;
+  templateName: string;
+  requirements: string;
+  constraints: string;
+  disciplines: string[];
+  complianceStandards: string[];
+  developmentMode: 'full' | 'rapid';
+  automationMode: 'hmap' | 'automated';
+  currentPhase: number;
+  phases: Phase[];
+  createdAt: Date;
+  users: User[];
+  comments: {
+    [phaseId: string]: Comment[];
+  };
+  risks?: Risk[];
+  resources?: Resource[];
+  analytics?: AnalyticsMetrics;
+  recommendations?: Recommendation[];
+  tasks?: Task[];
+  compactedContext?: string;
+  metaDocuments?: MetaDocument[];
+  customConcept?: string;
+  aiModel?: string;
+  collaborators?: string[];
+}
+
+export interface ToastMessage {
+    message: string;
+    type: 'success' | 'error' | 'info';
+}
+
+export interface SearchResult {
+    docId: string;
+    docName: string;
+    snippet: string;
+    query: string;
+}
