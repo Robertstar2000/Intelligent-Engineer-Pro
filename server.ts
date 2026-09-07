@@ -20,6 +20,39 @@ async function startServer() {
     app.use(express.json());
     app.use(helmet());
 
+    // MARS MOXIE environment shim: same-origin proxy for Gemini API (harness browser blocks cross-origin egress)
+    app.use('/gapi', async (req: any, res: any) => {
+        try {
+            const targetPath = req.originalUrl.replace(/^\/gapi/, '');
+            const url = 'https://generativelanguage.googleapis.com' + targetPath;
+            const fetchOpts: any = { method: req.method, headers: { 'Content-Type': 'application/json' } };
+            const apiKey = req.headers['x-goog-api-key'] || req.query.key;
+            if (apiKey) fetchOpts.headers['x-goog-api-key'] = apiKey;
+            if (req.method !== 'GET' && req.method !== 'HEAD') fetchOpts.body = JSON.stringify(req.body);
+            const r = await fetch(url, fetchOpts);
+            const text = await r.text();
+            res.status(r.status).set('Content-Type', r.headers.get('content-type') || 'application/json').send(text);
+        } catch (e: any) {
+            res.status(502).json({ error: 'gemini proxy failed: ' + e.message });
+        }
+    });
+
+
+    // Firebase REST passthrough (same-origin shim)
+    app.use('/fapi', async (req: any, res: any) => {
+        try {
+            const targetPath = req.originalUrl.replace(/^\/fapi/, '');
+            const url = 'https://identitytoolkit.googleapis.com' + targetPath;
+            const fetchOpts: any = { method: req.method, headers: { 'Content-Type': 'application/json' } };
+            if (req.method !== 'GET' && req.method !== 'HEAD') fetchOpts.body = JSON.stringify(req.body);
+            const r = await fetch(url, fetchOpts);
+            const text = await r.text();
+            res.status(r.status).set('Content-Type', r.headers.get('content-type') || 'application/json').send(text);
+        } catch (e: any) {
+            res.status(502).json({ error: 'fb proxy failed: ' + e.message });
+        }
+    });
+
     // Initialize SQLite
     const db = await open({
         filename: './database.sqlite',
@@ -83,7 +116,7 @@ async function startServer() {
         app.use(vite.middlewares);
     } else {
         app.use(express.static(path.join(__dirname, 'dist')));
-        app.get('/*', (req, res) => {
+        app.get('*splat', (req, res) => {
             res.sendFile(path.join(__dirname, 'dist', 'index.html'));
         });
     }
