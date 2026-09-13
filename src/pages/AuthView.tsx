@@ -66,15 +66,19 @@ export const AuthView = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-[#0f172a] text-slate-50 flex flex-col md:flex-row relative">
+        <div className="min-h-screen bg-[#0f172a] text-slate-50 flex flex-col md:flex-row relative overflow-x-hidden">
             {/* Background Glows */}
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/20 blur-[120px] rounded-full"></div>
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-600/20 blur-[120px] rounded-full"></div>
 
             {/* Left Side: Hero */}
-            <div className="flex-1 p-8 md:p-16 flex flex-col justify-center relative z-10">
-                <div className="mb-12">
-                    <h1 className="text-6xl md:text-8xl font-bold tracking-tighter mb-2">
+            <div className="flex-1 p-8 md:p-16 flex flex-col justify-center relative z-10" style={{ background: 'linear-gradient(140deg, rgba(16,185,129,0.14) 0%, rgba(249,115,22,0.08) 50%, rgba(15,23,42,0) 85%)' }}>
+                <div className="mb-10">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 mb-5 rounded-full" style={{ border: '1px solid rgba(16,185,129,0.45)', background: 'rgba(16,185,129,0.10)', fontSize: '11px', letterSpacing: '0.22em', fontWeight: 700, color: '#6ee7b7' }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
+                        MIFECO ENGINEERING WORKSPACE
+                    </div>
+                    <h1 className="font-bold tracking-tighter mb-3 leading-tight" style={{ fontSize: 'clamp(2.4rem, 4.6vw, 4.2rem)' }}>
                         <span className="text-red-500">M</span>
                         <span className="text-cyan-400">I</span>
                         <span className="text-emerald-400">F</span>
@@ -82,21 +86,36 @@ export const AuthView = () => {
                         <span className="text-indigo-400">C</span>
                         <span className="text-pink-500">O</span>
                     </h1>
-                    <p className="font-mono text-sm tracking-[0.3em] text-slate-400 uppercase">
-                        VIBE ENGINEERING PROTOCOL
+                    <p className="font-mono text-sm tracking-[0.3em] uppercase mb-4" style={{ background: 'linear-gradient(90deg,#34d399,#fb923c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                        Vibe Engineer — engineering, minus the busywork
+                    </p>
+                    <p className="text-slate-400 text-base leading-relaxed mb-8" style={{ maxWidth: '520px' }}>
+                        VibraEngineer gives small engineering teams a focused home for the HMAP lifecycle: sprints, risks, documentation, and team sync in one lean workspace — AI generates the drafts, you make the calls.
                     </p>
                 </div>
 
-                <div className="space-y-8 max-w-lg">
+                <div className="grid gap-4 max-w-2xl" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
                     {features.map((f) => (
-                        <div key={f.id} className="flex gap-6 group">
-                            <span className={`font-mono text-xl font-bold ${f.color} opacity-50 group-hover:opacity-100 transition-opacity`}>
-                                {f.id}
-                            </span>
-                            <div>
-                                <h3 className="font-bold text-lg tracking-tight mb-1">{f.title}</h3>
-                                <p className="text-slate-400 text-sm leading-relaxed">{f.desc}</p>
+                        <div key={f.id} className="p-5 rounded-2xl transition-all hover:-translate-y-1" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(30,41,59,0.5)', backdropFilter: 'blur(12px)' }}>
+                            <div className="flex items-start gap-3">
+                                <span className={`font-mono text-lg font-bold ${f.color}`}>{f.id}</span>
+                                <div>
+                                    <h3 className="font-bold text-sm tracking-tight mb-1">{f.title}</h3>
+                                    <p className="text-slate-400 text-xs leading-relaxed mb-0">{f.desc}</p>
+                                </div>
                             </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="flex flex-wrap gap-3 mt-6">
+                    {[
+                        { i: '🚀', l: 'Sprints live in minutes' },
+                        { i: '🛡️', l: 'You review every output' },
+                        { i: '🔑', l: 'Bring your own AI key' },
+                    ].map((b) => (
+                        <div key={b.l} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(15,23,42,0.6)', fontSize: '11px', color: '#94a3b8' }}>
+                            <span>{b.i}</span> {b.l}
                         </div>
                     ))}
                 </div>
@@ -208,9 +227,38 @@ export const AuthView = () => {
                             disabled={isLoading}
                             className="w-full bg-white text-slate-900 font-black py-5 rounded-2xl uppercase tracking-widest hover:bg-cyan-400 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100"
                         >
-                            {isLoading ? 'Processing...' : (isLogin ? 'Initiate Sync' : 'Create Account')}
+                            {isLoading ? 'Processing...' : (isLogin ? 'Sign in to use your own key' : 'Create Account')}
                         </button>
                     </form>
+
+                    <div className="mt-4 text-center">
+                        <a
+                            href="https://buy.stripe.com/bJe3cw72j5LM5DY5DS7Vm06"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            data-test="open-source-support-link"
+                            data-buy-button-id="buy_btn_1UEyKaLFWluMTxK7KJNimjix"
+                            className="text-slate-500 text-[10px] font-bold uppercase tracking-widest hover:text-cyan-400 transition-colors"
+                        >
+                            Support Open-Source Development (optional)
+                        </a>
+                    </div>
+
+                    {/* Subscribe CTA (LIVE Stripe Payment Link) */}
+                    <div className="mt-8 flex flex-col items-center gap-3 p-6 rounded-[2rem]" style={{ border: '1px solid rgba(16,185,129,0.35)', background: 'linear-gradient(135deg, rgba(16,185,129,0.10), rgba(249,115,22,0.08))' }}>
+                        <a
+                            href="https://buy.stripe.com/5kQ5kEdqHb66giCaYc7Vm05"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            data-test="stripe-payment-link-public"
+                            data-buy-button-id="buy_btn_1UEyJALFWluMTxK7b31gagty"
+                            className="w-full text-center py-4 rounded-xl text-sm font-black uppercase tracking-widest hover:opacity-90 transition-all"
+                            style={{ background: 'linear-gradient(90deg,#10b981,#f97316)', color: '#052e1c', boxShadow: '0 12px 30px -12px rgba(16,185,129,0.6)' }}
+                        >
+                            Sign up for a paid subscription — $49/mo
+                        </a>
+                        <span className="text-slate-500 font-mono text-[10px] tracking-widest uppercase">Secure live monthly checkout</span>
+                    </div>
 
                     <div className="mt-8 text-center">
                         <button 

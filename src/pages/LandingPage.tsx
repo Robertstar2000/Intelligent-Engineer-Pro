@@ -31,6 +31,23 @@ export const LandingPage = ({ onOpenDatabase, onInitiateProtocol }: { onOpenData
                     </button>
                 </header>
 
+                {/* Subscribe CTA (LIVE Stripe Payment Link) */}
+                <div className="flex flex-col items-center gap-3 mb-12 p-6 border border-white/10 rounded-[2rem] bg-slate-800/30">
+                    <a
+                        href="https://buy.stripe.com/5kQ5kEdqHb66giCaYc7Vm05"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-test="stripe-payment-link"
+                        data-buy-button-id="buy_btn_1UEyJALFWluMTxK7b31gagty"
+                        className="bg-gradient-to-r from-emerald-400 to-cyan-500 text-slate-900 px-10 py-4 rounded-xl text-sm font-black uppercase tracking-widest hover:opacity-90 transition-all"
+                    >
+                        Sign up for a paid subscription — $49/mo
+                    </a>
+                    <span className="text-slate-500 font-mono text-[10px] tracking-widest uppercase">
+                        Secure live monthly checkout
+                    </span>
+                </div>
+
                 {/* Action Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                     {/* Card 1: Active Projects */}
@@ -95,6 +112,7 @@ export const LandingPage = ({ onOpenDatabase, onInitiateProtocol }: { onOpenData
                                 className="w-full bg-slate-900/50 border border-white/5 rounded-2xl px-6 py-4 text-sm font-mono focus:outline-none focus:border-indigo-500/50 transition-all"
                                 placeholder="Enter Gemini API Key"
                             />
+                            <p className="text-slate-500 text-[10px] font-mono tracking-wider mt-1">To use your own key</p>
                             <button 
                                 onClick={() => setShowKey(!showKey)}
                                 className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-[10px] font-bold uppercase tracking-widest"
