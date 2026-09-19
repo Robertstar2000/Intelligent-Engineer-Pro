@@ -24,7 +24,7 @@ import { NLPQueryInterface } from './components/NLPQueryInterface';
 import { Button } from './components/ui';
 import { Users, MessageSquare, HelpCircle, Save } from 'lucide-react';
 import { Toast } from './components/Toast';
-import { AuthModal } from './components/AuthModal';
+import { RecoveryCodeManager } from './components/auth/RecoveryFlow';
 import { ProjectHeader } from './components/ProjectHeader';
 
 type AutomationStatus = 'idle' | 'running' | 'paused' | 'error' | 'complete';
@@ -82,7 +82,7 @@ export const App = () => {
     const [automationStatus, setAutomationStatus] = useState<AutomationStatus>('idle');
     const [automatingPhaseId, setAutomatingPhaseId] = useState<string | null>(null);
     const [toast, setToast] = useState<ToastMessage | null>(null);
-    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [isSecurityOpen, setIsSecurityOpen] = useState(false);
     const [isCollaborationPanelOpen, setIsCollaborationPanelOpen] = useState(false);
     const automationController = useRef(new AbortController());
     const projectStateRef = useRef(currentProject);
@@ -479,7 +479,8 @@ export const App = () => {
     return (
         <div className="relative">
             {renderContent()}
-            <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} setToast={setToast} />
+            <button className="fixed bottom-5 left-5 z-40 bg-slate-800 text-white px-4 py-2 rounded-xl" onClick={() => setIsSecurityOpen(true)}>Account security</button>
+            {isSecurityOpen && <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"><div className="bg-slate-900 text-white rounded-2xl p-6 max-w-lg w-full"><RecoveryCodeManager/><button className="mt-4 w-full p-2 border rounded" onClick={() => setIsSecurityOpen(false)}>Close</button></div></div>}
             <SearchResultsModal 
                 isOpen={isSearchModalOpen}
                 onClose={() => setIsSearchModalOpen(false)}

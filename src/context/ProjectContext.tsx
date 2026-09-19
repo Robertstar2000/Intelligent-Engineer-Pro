@@ -3,9 +3,8 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 import { Project, User, Phase, Comment, Task } from '../types';
 import { generateUUID } from '../utils/crypto';
 import { setCustomApiKey } from '../services/geminiService';
-import { db, auth } from '../firebase';
-import { doc, getDoc, setDoc, collection, query, where, getDocs, deleteDoc, writeBatch } from 'firebase/firestore';
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { db } from '../firebase';
+import { doc, setDoc, collection, query, where, getDocs, deleteDoc, writeBatch } from 'firebase/firestore';
 
 interface ProjectContextType {
     project: Project | null;
@@ -20,7 +19,7 @@ interface ProjectContextType {
     
     // Auth & Project list management
     login: (email: string, pass: string) => Promise<boolean>;
-    signup: (username: string, email: string, pass: string, geminiKey?: string) => Promise<boolean>;
+    signup: (username: string, email: string, pass: string, geminiKey?: string) => Promise<string[] | false>;
     logout: () => void;
     updateUserProfile: (updates: Partial<User>) => void;
     
@@ -82,36 +81,18 @@ export const ProjectProvider = ({ children }: ProjectProviderProps) => {
         }
     };
 
-    // Firebase Auth listener
+    // Restore only a server-validated session; local user data alone never authenticates.
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // User is signed in, load data
-                const userDoc = await getDoc(doc(db, 'users', user.uid));
-                if (userDoc.exists()) {
-                    const userData = userDoc.data() as User;
-                    setCurrentUser(userData);
-                    if (userData.geminiKey) {
-                        setGeminiKeyInternal(userData.geminiKey);
-                        setCustomApiKey(userData.geminiKey);
-                        localStorage.setItem('hmap-gemini-api-key', userData.geminiKey);
-                    }
-                    
-                    // Load projects
-                    const q = query(collection(db, 'projects'), where('userId', '==', user.uid));
-                    const querySnapshot = await getDocs(q);
-                    const userProjects = querySnapshot.docs.map(doc => doc.data() as Project);
-                    setProjects(userProjects);
-                }
-            } else {
-                // User is signed out
-                setCurrentUser(null);
-                setProjects([]);
-                setProject(null);
-            }
-            setIsLoading(false);
-        });
-        return () => unsubscribe();
+        fetch('/api/auth/me', { credentials: 'same-origin' }).then(async r => {
+            if (!r.ok) throw new Error('expired');
+            const { user } = await r.json();
+            const mapped: User = { ...user, name: user.username, role: user.role || 'Engineer', avatar: user.avatar || '👤' };
+            setCurrentUser(mapped);
+            if (mapped.geminiKey) setGeminiKeyInternal(mapped.geminiKey);
+            const q = query(collection(db, 'projects'), where('userId', '==', mapped.id));
+            const snapshot = await getDocs(q);
+            setProjects(snapshot.docs.map(item => item.data() as Project));
+        }).catch(() => { setCurrentUser(null); }).finally(() => setIsLoading(false));
     }, []);
 
     const updateProject = async (updatedProject: Project) => {
@@ -283,34 +264,28 @@ export const ProjectProvider = ({ children }: ProjectProviderProps) => {
         }
     };
 
-    const login = async (email: string, pass: string): Promise<boolean> => {
-        try {
-            await signInWithEmailAndPassword(auth, email, pass);
-            return true;
-        } catch (error) {
-            console.error("Login error:", error);
-            return false;
-        }
+    const authPost = async (path: string, body: unknown) => {
+        const { csrfToken } = await fetch('/api/auth/csrf', { credentials: 'same-origin' }).then(r => r.json());
+        return fetch(path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type':'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify(body) });
     };
 
-    const signup = async (username: string, email: string, pass: string, geminiKey?: string): Promise<boolean> => {
+    const login = async (email: string, pass: string): Promise<boolean> => {
         try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-            const newUser: User = {
-                id: userCredential.user.uid,
-                name: username,
-                email,
-                role: 'Engineer',
-                avatar: '👤',
-                geminiKey
-            };
-            await setDoc(doc(db, 'users', userCredential.user.uid), newUser);
-            setCurrentUser(newUser);
+            const response = await authPost('/api/auth/login', { emailOrUsername: email, password: pass });
+            if (!response.ok) return false;
+            const data = await response.json();
+            setCurrentUser({ ...data.user, name: data.user.username, role: data.user.role || 'Engineer', avatar: data.user.avatar || '👤' });
             return true;
-        } catch (error) {
-            console.error("Signup error:", error);
-            return false;
-        }
+        } catch { return false; }
+    };
+
+    const signup = async (username: string, email: string, pass: string, geminiKey?: string): Promise<string[] | false> => {
+        try {
+            const response = await authPost('/api/auth/signup', { username, email, password: pass, geminiKey });
+            if (!response.ok) return false;
+            const data = await response.json();
+            return data.recoveryCodes;
+        } catch { return false; }
     };
 
     const updateUserProfile = async (updates: Partial<User>) => {
@@ -321,7 +296,7 @@ export const ProjectProvider = ({ children }: ProjectProviderProps) => {
     };
 
     const logout = async () => {
-        await auth.signOut();
+        await authPost('/api/auth/logout', {});
         setCurrentUser(null);
         setProject(null);
         setProjects([]);

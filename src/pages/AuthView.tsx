@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { Button } from '../components/ui';
 import { Shield, Zap, Layers, Cpu, Globe } from 'lucide-react';
+import { RecoveryFlow } from '../components/auth/RecoveryFlow';
 
 export const AuthView = () => {
     const { login, signup } = useProject();
@@ -17,6 +18,8 @@ export const AuthView = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false);
     const [showKeyInfo, setShowKeyInfo] = useState(false);
+    const [showRecovery, setShowRecovery] = useState(false);
+    const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
     const [waitlistData, setWaitlistData] = useState({
         name: '',
         profession: '',
@@ -47,8 +50,9 @@ export const AuthView = () => {
                 const success = await login(formData.email || formData.username, formData.password);
                 if (!success) setError('Invalid credentials');
             } else {
-                const success = await signup(formData.username, formData.email, formData.password, formData.geminiKey);
-                if (!success) setError('User already exists or signup failed');
+                const codes = await signup(formData.username, formData.email, formData.password, formData.geminiKey);
+                if (!codes) setError('User already exists or signup failed');
+                else setRecoveryCodes(codes);
             }
         } catch (err) {
             setError('An error occurred');
@@ -64,6 +68,8 @@ export const AuthView = () => {
         { id: '04', title: 'TEAM SYNC', desc: 'Orchestrate complex workflows with role-based access control, integrated task tracking, and a centralized communication hub for seamless team collaboration.', color: 'text-pink-400' },
         { id: '05', title: 'INSIGHT ENGINE', desc: 'Monitor project health with real-time analytics, industry-standard performance benchmarking, and dynamic recommendations for process optimization.', color: 'text-red-400' },
     ];
+
+    if (recoveryCodes.length) return <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6"><section className="max-w-lg w-full border border-amber-400 rounded-2xl p-6"><h1 className="text-xl font-bold">Save your recovery codes</h1><p className="text-slate-300 my-3">Shown once. Store them securely; each code works one time.</p><pre className="bg-black p-4 select-all overflow-auto">{recoveryCodes.join('\n')}</pre><button className="w-full p-3 border rounded-xl my-2" onClick={()=>{const b=new Blob([recoveryCodes.join('\n')+'\n']);const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='vibraengineer-recovery-codes.txt';a.click();URL.revokeObjectURL(a.href)}}>Download codes</button><button className="w-full p-3 bg-cyan-600 rounded-xl" onClick={()=>window.location.reload()}>I saved the codes</button></section></main>;
 
     return (
         <div className="min-h-screen bg-[#0f172a] text-slate-50 flex flex-col md:flex-row relative overflow-x-hidden">
@@ -142,7 +148,7 @@ export const AuthView = () => {
                         </button>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    {showRecovery ? <RecoveryFlow onClose={() => setShowRecovery(false)} /> : <form onSubmit={handleSubmit} className="space-y-6">
                         {!isLogin && (
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black tracking-[0.2em] text-slate-500 uppercase ml-2">Username</label>
@@ -174,6 +180,8 @@ export const AuthView = () => {
                             <input 
                                 type="password"
                                 required
+                                minLength={isLogin ? undefined : 12}
+                                maxLength={256}
                                 value={formData.password}
                                 onChange={(e) => setFormData({...formData, password: e.target.value})}
                                 className="w-full bg-slate-900/50 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all"
@@ -229,7 +237,8 @@ export const AuthView = () => {
                         >
                             {isLoading ? 'Processing...' : (isLogin ? 'Sign in to use your own key' : 'Create Account')}
                         </button>
-                    </form>
+                        {isLogin && <button type="button" onClick={() => setShowRecovery(true)} className="w-full text-cyan-400 text-sm underline">Forgot password?</button>}
+                    </form>}
 
                     <div className="mt-4 text-center">
                         <a
