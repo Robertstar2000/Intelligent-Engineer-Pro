@@ -29,7 +29,7 @@ export const AuthView = () => {
 
     const handleWaitlistSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const subject = encodeURIComponent('Vibra Engineer');
+        const subject = encodeURIComponent('Vibe Engineer');
         const body = encodeURIComponent(
             `Name: ${waitlistData.name}\n` +
             `Profession: ${waitlistData.profession}\n` +
@@ -96,7 +96,7 @@ export const AuthView = () => {
                         Vibe Engineer — engineering, minus the busywork
                     </p>
                     <p className="text-slate-400 text-base leading-relaxed mb-8" style={{ maxWidth: '520px' }}>
-                        VibraEngineer gives small engineering teams a focused home for the HMAP lifecycle: sprints, risks, documentation, and team sync in one lean workspace — AI generates the drafts, you make the calls.
+                        Vibe Engineer gives small engineering teams a focused home for the HMAP lifecycle: sprints, risks, documentation, and team sync in one lean workspace — AI generates the drafts, you make the calls.
                     </p>
                 </div>
 
@@ -324,7 +324,7 @@ export const AuthView = () => {
                                         value={waitlistData.proposedUse}
                                         onChange={(e) => setWaitlistData({...waitlistData, proposedUse: e.target.value})}
                                         className="w-full bg-slate-800/50 border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500/50 transition-all min-h-[100px]"
-                                        placeholder="How do you plan to use Vibra Engineer?"
+                                        placeholder="How do you plan to use Vibe Engineer?"
                                     />
                                 </div>
                                 <div className="flex gap-3 pt-4">
