@@ -78,6 +78,16 @@ async function startServer() {
         )
     `);
 
+    app.get('/health', async (_req, res) => {
+        try {
+            await db.get('SELECT 1 AS ok');
+            res.status(200).json({ status: 'ok', service: 'vibe-engineer' });
+        } catch (error) {
+            console.error('Health check failed:', error);
+            res.status(503).json({ status: 'error', service: 'vibe-engineer' });
+        }
+    });
+
     app.get('/api/health', async (_req, res) => {
         try {
             await db.get('SELECT 1 AS ok');
