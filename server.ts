@@ -9,7 +9,8 @@ import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
-import { installSecureAuth, type AuthDb } from './secureAuth.ts';
+import { currentUser, installSecureAuth, type AuthDb } from './secureAuth.ts';
+import { installEntitlementMiddleware } from '../entitlementMiddleware.mts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -105,6 +106,7 @@ async function startServer() {
         run: async (sql, params = []) => { const r = await db.run(sql, params); return { changes: r.changes, lastID: r.lastID }; },
     };
     await installSecureAuth(app, authDb, 'passwordHash');
+    await installEntitlementMiddleware(app, authDb, 'vibra', currentUser);
 
 
     // Vite middleware for development
