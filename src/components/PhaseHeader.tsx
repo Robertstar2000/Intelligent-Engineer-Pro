@@ -46,6 +46,7 @@ export const PhaseHeader = ({ phase, disciplines, onUpdatePhase }: PhaseHeaderPr
                             type="text"
                             value={editedName}
                             onChange={(e) => setEditedName(e.target.value)}
+                            aria-label="Phase name"
                             className="text-2xl font-bold bg-white/10 dark:bg-charcoal-700 border border-brand-primary/50 focus:outline-none focus:border-white rounded-md px-2 py-1"
                         />
                     ) : (
@@ -54,7 +55,7 @@ export const PhaseHeader = ({ phase, disciplines, onUpdatePhase }: PhaseHeaderPr
                 </div>
                 <div className="flex items-center space-x-2">
                     {isEditable && !isEditing && (
-                        <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="text-white hover:bg-white/10">
+                        <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="text-white hover:bg-white/10" aria-label="Edit phase details">
                             <Edit3 className="w-4 h-4" />
                         </Button>
                     )}
@@ -68,6 +69,7 @@ export const PhaseHeader = ({ phase, disciplines, onUpdatePhase }: PhaseHeaderPr
                     <textarea
                         value={editedDescription}
                         onChange={(e) => setEditedDescription(e.target.value)}
+                        aria-label="Phase description"
                         className="w-full text-gray-300 bg-white/10 dark:bg-charcoal-700 border border-brand-primary/50 focus:outline-none focus:border-white text-sm rounded-md p-2"
                         rows={2}
                     />
