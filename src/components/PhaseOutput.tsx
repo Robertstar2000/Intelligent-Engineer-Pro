@@ -45,7 +45,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ versions, selectedVersi
             ))}
         </select>
         {versions.length > 1 && (
-            <Button size="sm" variant="ghost" onClick={onCompare} className="whitespace-nowrap px-1">
+            <Button size="sm" variant="ghost" onClick={onCompare} className="whitespace-nowrap px-1" aria-label="Compare document versions">
                 <ArrowRightLeft className="w-3 h-3" />
             </Button>
         )}
@@ -137,7 +137,7 @@ export const PhaseOutput = ({ phase, onGenerate, onSave, isLoading, isEditable =
                             </Button>
                         )}
                         {isEditing && (
-                            <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}><X className="w-4 h-4"/></Button>
+                            <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} aria-label="Cancel editing"><X className="w-4 h-4"/></Button>
                         )}
                         {!isEditing && (
                             <div className="inline-flex flex-col items-end gap-1">
@@ -155,7 +155,7 @@ export const PhaseOutput = ({ phase, onGenerate, onSave, isLoading, isEditable =
                     <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm flex items-start gap-2 border border-red-100 dark:border-red-900/50">
                         <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                         <span>{error}</span>
-                        <button onClick={() => setError(null)} className="ml-auto hover:opacity-70"><X className="w-4 h-4"/></button>
+                        <button onClick={() => setError(null)} className="ml-auto hover:opacity-70" aria-label="Dismiss error"><X className="w-4 h-4"/></button>
                     </div>
                 )}
 
@@ -197,7 +197,7 @@ export const PhaseOutput = ({ phase, onGenerate, onSave, isLoading, isEditable =
                             className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-1 placeholder-gray-400 dark:placeholder-gray-500"
                             disabled={isRefining || isLoading}
                         />
-                        <Button type="submit" size="sm" disabled={isRefining || isLoading || !refineText.trim()} className="!p-2">
+                        <Button type="submit" size="sm" disabled={isRefining || isLoading || !refineText.trim()} className="!p-2" aria-label="Send refinement prompt">
                             <Send className="w-4 h-4" />
                         </Button>
                     </form>
