@@ -1,6 +1,6 @@
 
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { Button, Card } from './ui';
 
@@ -25,6 +25,19 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     cancelText = 'Cancel',
     confirmVariant = 'primary',
 }) => {
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     return (
@@ -32,6 +45,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             className="fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center z-[100] overflow-y-auto p-4 sm:p-10"
             onClick={onClose}
             aria-modal="true"
+            aria-labelledby="modal-title"
             role="dialog"
         >
             <Card
