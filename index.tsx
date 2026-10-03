@@ -1,5 +1,5 @@
 // Local CSS/JS bundles (replacing CDN dependencies)
-import './index.css';
+import './src/index.css';
 import 'prismjs/themes/prism-tomorrow.min.css';
 import 'prismjs';
 
