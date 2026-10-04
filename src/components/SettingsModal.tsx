@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Save, Download, Upload, User, BrainCircuit, LoaderCircle } from 'lucide-react';
 import { useProject } from '../context/ProjectContext';
 import { Button, Card } from './ui';
@@ -20,6 +20,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
     const [aiModel, setAiModel] = useState(project?.aiModel || 'gemini-3-flash-preview');
     const [localGeminiKey, setLocalGeminiKey] = useState(geminiKey || '');
     const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, onClose]);
 
     if (!isOpen) return null;
 
@@ -95,10 +108,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
     };
 
     return (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[200] p-4" onClick={onClose}>
+        <div
+            className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[200] p-4"
+            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="settings-modal-title"
+        >
             <Card className="w-full max-w-lg" onClick={e => e.stopPropagation()} noPadding>
                 <div className="flex items-center justify-between p-4 border-b dark:border-charcoal-700">
-                    <h2 className="text-xl font-bold">App Settings</h2>
+                    <h2 id="settings-modal-title" className="text-xl font-bold">App Settings</h2>
                     <button
                         onClick={onClose}
                         className="p-1 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-charcoal-700"
