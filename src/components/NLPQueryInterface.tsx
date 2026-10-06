@@ -36,6 +36,16 @@ export const NLPQueryInterface: React.FC<NLPQueryInterfaceProps> = ({ isOpen, on
         }
     }, [isOpen, messages.length]);
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (isOpen && e.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!query.trim() || !project || isLoading) return;
@@ -63,6 +73,9 @@ export const NLPQueryInterface: React.FC<NLPQueryInterfaceProps> = ({ isOpen, on
         <div 
             className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-end justify-center z-[100] p-4 sm:items-center"
             onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="nlp-query-title"
         >
             <Card 
                 className="w-full max-w-2xl h-[80vh] flex flex-col transform transition-all"
@@ -71,7 +84,7 @@ export const NLPQueryInterface: React.FC<NLPQueryInterfaceProps> = ({ isOpen, on
                 flexBody={true}
             >
                 <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-charcoal-700">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Project Q&A</h2>
+                    <h2 id="nlp-query-title" className="text-xl font-bold text-gray-900 dark:text-white">Project Q&A</h2>
                     <button 
                         onClick={onClose} 
                         className="p-1 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-charcoal-700"
@@ -106,9 +119,10 @@ export const NLPQueryInterface: React.FC<NLPQueryInterfaceProps> = ({ isOpen, on
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Ask about your project..."
+                        aria-label="Ask about your project"
                         className="w-full p-2 border rounded-lg bg-white dark:bg-charcoal-800 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary"
                     />
-                    <Button type="submit" disabled={!query.trim() || isLoading}>
+                    <Button type="submit" disabled={!query.trim() || isLoading} aria-label="Send message">
                         <Send className="w-5 h-5" />
                     </Button>
                 </form>
