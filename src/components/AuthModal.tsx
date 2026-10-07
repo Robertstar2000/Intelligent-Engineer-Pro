@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrainCircuit, X } from 'lucide-react';
 import { useProject } from '../context/ProjectContext';
 import { Button, Card } from './ui';
@@ -16,6 +16,19 @@ export const AuthModal = ({ isOpen, onClose, setToast }: { isOpen: boolean, onCl
     const [name, setName] = useState('');
     const [geminiKey, setGeminiKey] = useState('');
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, onClose]);
 
     if (!isOpen) return null;
 
@@ -51,23 +64,45 @@ export const AuthModal = ({ isOpen, onClose, setToast }: { isOpen: boolean, onCl
     };
 
     return (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center z-[100] overflow-y-auto p-4 sm:p-10" onClick={onClose}>
+        <div
+            className="fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center z-[100] overflow-y-auto p-4 sm:p-10"
+            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="auth-modal-title"
+        >
             <Card className="w-full max-w-md my-auto transform transition-all relative" onClick={e => e.stopPropagation()} noPadding>
                 <button 
                     onClick={onClose} 
                     className="absolute top-2 right-2 p-1 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 z-10"
-                    aria-label="Close"
+                    aria-label="Close authentication modal"
                 >
                     <X className="w-6 h-6" />
                 </button>
-                <div className="flex">
-                    <button onClick={() => setIsLoginView(true)} className={`flex-1 p-4 text-center font-semibold transition-colors ${isLoginView ? 'bg-white dark:bg-charcoal-800' : 'bg-gray-100 dark:bg-charcoal-900 hover:bg-gray-200 dark:hover:bg-charcoal-700'}`}>Login</button>
-                    <button onClick={() => setIsLoginView(false)} className={`flex-1 p-4 text-center font-semibold transition-colors ${!isLoginView ? 'bg-white dark:bg-charcoal-800' : 'bg-gray-100 dark:bg-charcoal-900 hover:bg-gray-200 dark:hover:bg-charcoal-700'}`}>Sign Up</button>
+                <div className="flex" role="tablist">
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={isLoginView}
+                        onClick={() => setIsLoginView(true)}
+                        className={`flex-1 p-4 text-center font-semibold transition-colors ${isLoginView ? 'bg-white dark:bg-charcoal-800' : 'bg-gray-100 dark:bg-charcoal-900 hover:bg-gray-200 dark:hover:bg-charcoal-700'}`}
+                    >
+                        Login
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={!isLoginView}
+                        onClick={() => setIsLoginView(false)}
+                        className={`flex-1 p-4 text-center font-semibold transition-colors ${!isLoginView ? 'bg-white dark:bg-charcoal-800' : 'bg-gray-100 dark:bg-charcoal-900 hover:bg-gray-200 dark:hover:bg-charcoal-700'}`}
+                    >
+                        Sign Up
+                    </button>
                 </div>
                 <div className="p-6">
                     <div className="text-center mb-4">
                       <BrainCircuit className="w-10 h-10 text-brand-primary mx-auto" />
-                      <h2 className="text-2xl font-bold mt-2">VibraEngineer</h2>
+                      <h2 id="auth-modal-title" className="text-2xl font-bold mt-2">VibraEngineer</h2>
                     </div>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {!isLoginView && (
