@@ -50,17 +50,23 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({ sprint, on
                                 <FileIcon className="w-4 h-4 text-gray-500" />
                                 <span className="truncate">{att.name}</span>
                             </div>
-                            <Button size="sm" variant="ghost" onClick={() => handleRemoveAttachment(index)} className="p-1 h-auto flex-shrink-0">
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleRemoveAttachment(index)}
+                                className="p-1 h-auto flex-shrink-0"
+                                aria-label={`Remove attachment ${att.name}`}
+                            >
                                 <X className="w-4 h-4" />
                             </Button>
                         </div>
                     ))}
                 </div>
             )}
-             <label className="w-full">
+             <label className="w-full block cursor-pointer">
                 <span className="sr-only">Attach file</span>
-                <input type="file" onChange={handleFileChange} className="hidden" />
-                <div className="flex items-center justify-center w-full px-3 py-2 text-sm text-gray-600 dark:text-gray-400 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-charcoal-800/50 dark:border-charcoal-700">
+                <input type="file" onChange={handleFileChange} className="sr-only" />
+                <div className="flex items-center justify-center w-full px-3 py-2 text-sm text-gray-600 dark:text-gray-400 border-2 border-dashed rounded-lg hover:bg-gray-100 dark:hover:bg-charcoal-800/50 dark:border-charcoal-700 focus-within:ring-2 focus-within:ring-brand-primary">
                     <Paperclip className="w-4 h-4 mr-2"/>
                     Attach a file
                 </div>
