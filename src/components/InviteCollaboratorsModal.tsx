@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { Button, Card } from './ui';
 import { X } from 'lucide-react';
@@ -11,6 +11,18 @@ export const InviteCollaboratorsModal: React.FC<InviteCollaboratorsModalProps> =
     const { project, updateCollaboratorEmails } = useProject();
     const [emails, setEmails] = useState(project?.collaborators?.join('\n') || '');
 
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [onClose]);
+
     const handleSave = () => {
         if (!project) return;
         const emailList = emails.split('\n').map(e => e.trim()).filter(e => e !== '');
@@ -19,11 +31,21 @@ export const InviteCollaboratorsModal: React.FC<InviteCollaboratorsModalProps> =
     };
 
     return (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]" onClick={onClose}>
+        <div
+            className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]"
+            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="invite-collaborators-title"
+        >
             <Card className="w-full max-w-md" onClick={e => e.stopPropagation()} noPadding>
                 <div className="flex items-center justify-between p-4 border-b dark:border-charcoal-700">
-                    <h2 className="text-xl font-bold">Invite Collaborators</h2>
-                    <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-charcoal-700">
+                    <h2 id="invite-collaborators-title" className="text-xl font-bold">Invite Collaborators</h2>
+                    <button
+                        onClick={onClose}
+                        className="p-1 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-charcoal-700"
+                        aria-label="Close"
+                    >
                         <X className="w-6 h-6" />
                     </button>
                 </div>
