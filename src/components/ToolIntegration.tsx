@@ -131,7 +131,7 @@ const ExportModal = ({ isOpen, onClose, asset, project, setToast }) => {
             <Card className="w-full max-w-md" onClick={e => e.stopPropagation()} noPadding>
                 <div className="flex items-center justify-between p-4 border-b dark:border-charcoal-700">
                     <h2 className="text-xl font-bold">Agentic Asset Export</h2>
-                    <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-charcoal-700">
+                    <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-charcoal-700" aria-label="Close export modal">
                         <X className="w-6 h-6" />
                     </button>
                 </div>
