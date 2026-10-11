@@ -54,7 +54,7 @@ const SuggestTasksModal = ({ onClose, setToast }) => {
                         <h2 className="text-xl font-bold">AI Suggest Tasks</h2>
                         <p className="text-sm text-gray-500 mt-1">Select a phase to generate relevant tasks based on its documentation.</p>
                     </div>
-                    <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-charcoal-700 self-start">
+                    <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-charcoal-700 self-start" aria-label="Close task suggestion modal">
                         <X className="w-6 h-6" />
                     </button>
                 </div>
@@ -146,7 +146,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ onClose, setToast }) => {
             <Card className="w-full max-w-lg" onClick={e => e.stopPropagation()} noPadding>
                 <div className="flex items-center justify-between p-4 border-b dark:border-charcoal-700">
                     <h2 className="text-xl font-bold">Add New Task</h2>
-                    <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-charcoal-700">
+                    <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-charcoal-700" aria-label="Close add task modal">
                         <X className="w-6 h-6" />
                     </button>
                 </div>

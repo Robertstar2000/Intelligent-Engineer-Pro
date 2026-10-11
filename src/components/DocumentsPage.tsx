@@ -103,7 +103,7 @@ const DocumentEditorModal = ({ isOpen, onClose, document, onSave }) => {
                                 <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}><Edit3 className="w-4 h-4 mr-2" />Edit</Button>
                             )
                         )}
-                        <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-charcoal-700">
+                        <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-charcoal-700" aria-label="Close document editor">
                             <X className="w-6 h-6" />
                         </button>
                     </div>
