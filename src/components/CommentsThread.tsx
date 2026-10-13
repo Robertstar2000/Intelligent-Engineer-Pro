@@ -67,6 +67,7 @@ export const CommentsThread: React.FC<CommentsThreadProps> = ({ comments, users,
                             value={newComment}
                             onChange={(e) => setNewComment(e.target.value)}
                             placeholder="Add a comment..."
+                            aria-label="Add a comment"
                             className="w-full p-2 border rounded-lg bg-white dark:bg-charcoal-800 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary"
                             rows={2}
                         />
