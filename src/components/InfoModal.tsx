@@ -49,6 +49,7 @@ export const InfoModal = ({ isOpen, onClose, title, content }) => {
             className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100] p-4"
             onClick={onClose}
             aria-modal="true"
+            aria-labelledby="info-modal-title"
             role="dialog"
         >
             <Card 
@@ -58,11 +59,11 @@ export const InfoModal = ({ isOpen, onClose, title, content }) => {
                 flexBody={true}
             >
                 <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
+                    <h2 id="info-modal-title" className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
                     <button 
                         onClick={onClose} 
                         className="p-1 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        aria-label="Close"
+                        aria-label="Close information modal"
                     >
                         <X className="w-6 h-6" />
                     </button>
