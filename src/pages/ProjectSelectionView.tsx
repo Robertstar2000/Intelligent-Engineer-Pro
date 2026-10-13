@@ -123,7 +123,16 @@ export const ProjectSelectionView = ({ onSelectProject, onCreateNew, theme, setT
                                 <div key={p.id} className="relative group">
                                     <Card 
                                         onClick={() => onSelectProject(p)} 
-                                        className="h-full cursor-pointer hover:border-brand-primary"
+                                        tabIndex={0}
+                                        role="button"
+                                        aria-label={`Select project ${p.name}`}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                onSelectProject(p);
+                                            }
+                                        }}
+                                        className="h-full cursor-pointer hover:border-brand-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                                     >
                                         <h3 className="font-bold">{p.name}</h3>
                                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{p.description}</p>
@@ -134,8 +143,9 @@ export const ProjectSelectionView = ({ onSelectProject, onCreateNew, theme, setT
                                     </Card>
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); setProjectToDelete(p); }}
-                                        className="absolute top-2 right-2 p-1.5 rounded-full bg-gray-200 dark:bg-charcoal-700 text-gray-500 dark:text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50 dark:hover:text-red-400 transition-opacity"
+                                        className="absolute top-2 right-2 p-1.5 rounded-full bg-gray-200 dark:bg-charcoal-700 text-gray-500 dark:text-gray-400 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 focus-visible:opacity-100 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50 dark:hover:text-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 transition-opacity"
                                         aria-label={`Delete project ${p.name}`}
+                                        title={`Delete project ${p.name}`}
                                     >
                                         <Trash2 className="w-4 h-4"/>
                                     </button>
