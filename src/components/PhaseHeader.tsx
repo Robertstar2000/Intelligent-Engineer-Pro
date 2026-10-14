@@ -54,7 +54,7 @@ export const PhaseHeader = ({ phase, disciplines, onUpdatePhase }: PhaseHeaderPr
                 </div>
                 <div className="flex items-center space-x-2">
                     {isEditable && !isEditing && (
-                        <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="text-white hover:bg-white/10">
+                        <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="text-white hover:bg-white/10" aria-label="Edit phase title and description">
                             <Edit3 className="w-4 h-4" />
                         </Button>
                     )}
