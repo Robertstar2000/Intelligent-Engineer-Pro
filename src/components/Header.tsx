@@ -17,9 +17,13 @@ export const Header = ({ onLoginClick, onFeaturesClick, onLifecycleClick, onAbou
           <BrainCircuit className="w-8 h-8 text-brand-primary" />
           <span className="text-xl font-bold text-white">VibraEngineer</span>
         </div>
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-6" aria-label="Main navigation">
           {navLinks.map(link => (
-            <button key={link.name} onClick={link.action} className="text-gray-300 hover:text-white transition-colors">
+            <button
+              key={link.name}
+              onClick={link.action}
+              className="text-gray-300 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary rounded-md px-2 py-1"
+            >
               {link.name}
             </button>
           ))}
