@@ -108,22 +108,22 @@ export const AuthModal = ({ isOpen, onClose, setToast }: { isOpen: boolean, onCl
                         {!isLoginView && (
                             <>
                                 <div>
-                                    <label className="block text-sm font-medium">Name</label>
-                                    <input type="text" value={name} onChange={e => setName(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary sm:text-sm dark:bg-charcoal-700 dark:border-gray-600 dark:text-white" />
+                                    <label htmlFor="auth-name" className="block text-sm font-medium">Name</label>
+                                    <input id="auth-name" type="text" value={name} onChange={e => setName(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary sm:text-sm dark:bg-charcoal-700 dark:border-gray-600 dark:text-white" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium">Gemini API Key</label>
-                                    <input type="password" value={geminiKey} onChange={e => setGeminiKey(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary sm:text-sm dark:bg-charcoal-700 dark:border-gray-600 dark:text-white" />
+                                    <label htmlFor="auth-gemini-key" className="block text-sm font-medium">Gemini API Key</label>
+                                    <input id="auth-gemini-key" type="password" value={geminiKey} onChange={e => setGeminiKey(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary sm:text-sm dark:bg-charcoal-700 dark:border-gray-600 dark:text-white" />
                                 </div>
                             </>
                         )}
                         <div>
-                            <label className="block text-sm font-medium">Email</label>
-                            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary sm:text-sm dark:bg-charcoal-700 dark:border-gray-600 dark:text-white" />
+                            <label htmlFor="auth-email" className="block text-sm font-medium">Email</label>
+                            <input id="auth-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary sm:text-sm dark:bg-charcoal-700 dark:border-gray-600 dark:text-white" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium">Password</label>
-                            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary sm:text-sm dark:bg-charcoal-700 dark:border-gray-600 dark:text-white" />
+                            <label htmlFor="auth-password" className="block text-sm font-medium">Password</label>
+                            <input id="auth-password" type="password" value={password} onChange={e => setPassword(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary sm:text-sm dark:bg-charcoal-700 dark:border-gray-600 dark:text-white" />
                         </div>
                         {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
                         <Button type="submit" className="w-full mt-2">{isLoginView ? 'Login' : 'Create Account'}</Button>
