@@ -21,7 +21,11 @@ const md = new Remarkable({
     },
 });
 
-export const HelpModal = ({ onClose }) => {
+interface HelpModalProps {
+    onClose: () => void;
+}
+
+export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
     useEffect(() => {
         if (typeof Prism !== 'undefined') {
             setTimeout(() => Prism.highlightAll(), 0);
@@ -30,7 +34,7 @@ export const HelpModal = ({ onClose }) => {
 
     // Close on escape key press
     useEffect(() => {
-        const handleKeyDown = (event) => {
+        const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
                 onClose();
             }
@@ -46,6 +50,7 @@ export const HelpModal = ({ onClose }) => {
             className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100] p-4"
             onClick={onClose}
             aria-modal="true"
+            aria-labelledby="help-modal-title"
             role="dialog"
         >
             <Card 
@@ -55,7 +60,7 @@ export const HelpModal = ({ onClose }) => {
                 flexBody={true}
             >
                 <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Help & User Guide</h2>
+                    <h2 id="help-modal-title" className="text-xl font-bold text-gray-900 dark:text-white">Help & User Guide</h2>
                     <button 
                         onClick={onClose} 
                         className="p-1 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
