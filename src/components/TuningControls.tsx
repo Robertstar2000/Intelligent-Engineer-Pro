@@ -90,10 +90,12 @@ export const TuningControls = ({ settings, onChangeSettings, title = "Tuning Con
                             key={profile.name}
                             type="button"
                             onClick={() => handleProfileSelect(profile)}
-                            className={`flex flex-col items-center p-3 rounded-lg border-2 text-center transition-all ${activeProfileName === profile.name ? 'border-brand-primary bg-brand-primary/10' : 'border-gray-200 dark:border-gray-700 hover:border-brand-primary/50'}`}
+                            aria-pressed={activeProfileName === profile.name}
+                            aria-label={`${profile.name} AI profile: ${profile.description}`}
+                            className={`flex flex-col items-center p-3 rounded-lg border-2 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${activeProfileName === profile.name ? 'border-brand-primary bg-brand-primary/10' : 'border-gray-200 dark:border-gray-700 hover:border-brand-primary/50'}`}
                             title={profile.description}
                         >
-                            <span className="text-2xl">{profile.icon}</span>
+                            <span className="text-2xl" aria-hidden="true">{profile.icon}</span>
                             <span className="text-sm font-semibold mt-1">{profile.name}</span>
                         </button>
                     ))}
@@ -101,30 +103,39 @@ export const TuningControls = ({ settings, onChangeSettings, title = "Tuning Con
                  {activeProfileName === 'Custom' && <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">You are using a custom configuration.</p>}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Object.entries(settings).map(([key, value]) => (
-                <div key={key} className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
-                    {key.replace(/([A-Z])/g, ' $1').trim()}: {value}{typeof value === 'number' ? '%' : ''}
-                </label>
-                {typeof value === 'number' ? (
-                    <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={value}
-                    onChange={(e) => handleSliderChange(key, parseInt(e.target.value))}
-                    className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-                    />
-                ) : (
-                    <input
-                    type="text"
-                    value={String(value)}
-                    onChange={(e) => onChangeSettings({ ...settings, [key]: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
-                )}
-                </div>
-            ))}
+            {Object.entries(settings).map(([key, value]) => {
+                const labelText = key.replace(/([A-Z])/g, ' $1').trim();
+                const inputId = `tuning-${key}`;
+                return (
+                    <div key={key} className="space-y-2">
+                    <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+                        {labelText}: {value}{typeof value === 'number' ? '%' : ''}
+                    </label>
+                    {typeof value === 'number' ? (
+                        <input
+                        id={inputId}
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={value}
+                        onChange={(e) => handleSliderChange(key, parseInt(e.target.value))}
+                        aria-label={`${labelText} percentage`}
+                        aria-valuenow={value}
+                        className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                        />
+                    ) : (
+                        <input
+                        id={inputId}
+                        type="text"
+                        value={String(value)}
+                        onChange={(e) => onChangeSettings({ ...settings, [key]: e.target.value })}
+                        aria-label={labelText}
+                        className="w-full p-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                        />
+                    )}
+                    </div>
+                );
+            })}
             </div>
         </Card>
     );
