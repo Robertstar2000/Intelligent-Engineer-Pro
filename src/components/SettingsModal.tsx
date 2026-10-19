@@ -134,16 +134,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-medium mb-1">Name</label>
-                                <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 border rounded-md dark:bg-charcoal-700 dark:border-gray-600" />
+                                <label htmlFor="settings-name" className="block text-xs font-medium mb-1">Name</label>
+                                <input id="settings-name" type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 border rounded-md dark:bg-charcoal-700 dark:border-gray-600" />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium mb-1">Email</label>
-                                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded-md dark:bg-charcoal-700 dark:border-gray-600" />
+                                <label htmlFor="settings-email" className="block text-xs font-medium mb-1">Email</label>
+                                <input id="settings-email" type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded-md dark:bg-charcoal-700 dark:border-gray-600" />
                             </div>
                             <div className="sm:col-span-2">
-                                <label className="block text-xs font-medium mb-1">Occupation</label>
-                                <input type="text" value={occupation} onChange={e => setOccupation(e.target.value)} placeholder="e.g. Senior Mechanical Engineer" className="w-full p-2 border rounded-md dark:bg-charcoal-700 dark:border-gray-600" />
+                                <label htmlFor="settings-occupation" className="block text-xs font-medium mb-1">Occupation</label>
+                                <input id="settings-occupation" type="text" value={occupation} onChange={e => setOccupation(e.target.value)} placeholder="e.g. Senior Mechanical Engineer" className="w-full p-2 border rounded-md dark:bg-charcoal-700 dark:border-gray-600" />
                             </div>
                         </div>
                     </div>
@@ -155,16 +155,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
                         </h3>
                         <div className="grid grid-cols-1 gap-4">
                             <div>
-                                <label className="block text-xs font-medium mb-1">Gemini Model</label>
-                                <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="w-full p-2 border rounded-md dark:bg-charcoal-700 dark:border-gray-600">
+                                <label htmlFor="settings-ai-model" className="block text-xs font-medium mb-1">Gemini Model</label>
+                                <select id="settings-ai-model" value={aiModel} onChange={e => setAiModel(e.target.value)} className="w-full p-2 border rounded-md dark:bg-charcoal-700 dark:border-gray-600">
                                     <option value="gemini-3-flash-preview">Gemini 3 Flash (Fast)</option>
                                     <option value="gemini-3-pro-preview">Gemini 3 Pro (Complex Reasoning)</option>
                                     <option value="gemini-2.5-flash-lite-latest">Gemini 2.5 Flash Lite</option>
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-medium mb-1">Gemini API Key</label>
+                                <label htmlFor="settings-gemini-key" className="block text-xs font-medium mb-1">Gemini API Key</label>
                                 <input 
+                                    id="settings-gemini-key"
                                     type="password" 
                                     value={localGeminiKey} 
                                     onChange={e => setLocalGeminiKey(e.target.value)} 
@@ -184,7 +185,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
                                 <Download className="w-4 h-4 mr-2" /> Backup
                             </Button>
                             <label className="w-full">
-                                <input type="file" onChange={handleFullRestore} className="hidden" accept=".json" />
+                                <input type="file" onChange={handleFullRestore} className="hidden" accept=".json" aria-label="Restore system backup" />
                                 <div className="flex items-center justify-center w-full px-3 py-2 text-sm border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-charcoal-800/50 dark:border-charcoal-700 border-gray-300 dark:border-gray-600">
                                     <Upload className="w-4 h-4 mr-2" /> Restore
                                 </div>
