@@ -8,6 +8,7 @@ import bcrypt from 'bcryptjs';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createFirebaseIdentityHandler, verifyFirebaseToken } from './server/firebaseIdentity.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,6 +39,22 @@ async function startServer() {
         )
     `);
 
+    app.get('/health', async (_req, res) => {
+        try {
+            await db.get('SELECT 1 AS ok');
+            res.json({ status: 'ok', service: 'intelligent-engineer-pro' });
+        } catch {
+            res.status(503).json({ status: 'error', service: 'intelligent-engineer-pro' });
+        }
+    });
+
+    // Uses the same Firebase identity as the current frontend. It grants no entitlement.
+    app.get('/api/auth/firebase/me', createFirebaseIdentityHandler({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        verifyToken: verifyFirebaseToken,
+    }));
+
+    // Legacy SQLite routes remain separate until an explicit identity migration.
     // Auth Routes
     app.post('/api/auth/signup', async (req, res) => {
         const { username, email, password, geminiKey } = req.body;
@@ -74,6 +91,10 @@ async function startServer() {
         }
     });
 
+    app.use('/api', (_req, res) => {
+        res.status(404).json({ error: 'API endpoint not found' });
+    });
+
     // Vite middleware for development
     if (process.env.NODE_ENV !== 'production') {
         const vite = await createViteServer({
@@ -83,7 +104,7 @@ async function startServer() {
         app.use(vite.middlewares);
     } else {
         app.use(express.static(path.join(__dirname, 'dist')));
-        app.get('/*', (req, res) => {
+        app.get('/{*splat}', (req, res) => {
             res.sendFile(path.join(__dirname, 'dist', 'index.html'));
         });
     }
