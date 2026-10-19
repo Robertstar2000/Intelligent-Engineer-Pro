@@ -8,6 +8,7 @@ import bcrypt from 'bcryptjs';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { installPaymentLinks } from './server/paymentLinks.mjs';
 import { createFirebaseIdentityHandler, verifyFirebaseToken } from './server/firebaseIdentity.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -18,12 +19,12 @@ async function startServer() {
     const PORT = parseInt(process.env.PORT || "3000", 10);
 
     app.use(cors());
-    app.use(express.json());
+    app.use((req, res, next) => req.path === '/api/billing/stripe-webhook' ? next() : express.json()(req, res, next));
     app.use(helmet());
 
     // Initialize SQLite
     const db = await open({
-        filename: './database.sqlite',
+        filename: process.env.DB_PATH || path.join(__dirname, 'database.sqlite'),
         driver: sqlite3.Database
     });
 
@@ -46,6 +47,16 @@ async function startServer() {
         } catch {
             res.status(503).json({ status: 'error', service: 'intelligent-engineer-pro' });
         }
+    });
+
+    await installPaymentLinks(app, { product: 'engineer',
+        paymentLink: 'https://buy.stripe.com/5kQ5kEdqHb66giCaYc7Vm05',
+        authenticate: async (req) => {
+            const match = /^Bearer ([^\s]+)$/i.exec(req.headers.authorization || '');
+            if (!match || !process.env.FIREBASE_PROJECT_ID) return null;
+            const identity = await verifyFirebaseToken(match[1], process.env.FIREBASE_PROJECT_ID);
+            return { id: identity.uid };
+        },
     });
 
     // Uses the same Firebase identity as the current frontend. It grants no entitlement.
@@ -115,3 +126,4 @@ async function startServer() {
 }
 
 startServer();
+
