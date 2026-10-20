@@ -40,12 +40,16 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange 
             <textarea
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
+                aria-label="Markdown content input"
                 className="w-full h-full p-3 border-r dark:border-gray-700 rounded-l-lg resize-none focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent font-mono text-sm bg-gray-50 dark:bg-charcoal-900/50 dark:text-gray-200"
                 spellCheck="false"
             />
             <div
                 ref={previewRef}
-                className="w-full h-full p-4 overflow-y-auto prose dark:prose-invert max-w-none"
+                tabIndex={0}
+                role="region"
+                aria-label="Markdown rendered preview"
+                className="w-full h-full p-4 overflow-y-auto prose dark:prose-invert max-w-none rounded-r-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             />
         </div>
     );
