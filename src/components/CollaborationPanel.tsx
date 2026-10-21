@@ -235,7 +235,7 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({ isOpen, 
                         <UsersIcon className="w-5 h-5 text-brand-primary" />
                         <h2 className="text-xl font-bold text-gray-900 dark:text-white">Team Collaboration</h2>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={onClose}><X className="w-6 h-6" /></Button>
+                    <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close team collaboration panel" title="Close panel"><X className="w-6 h-6" /></Button>
                 </div>
 
                 <div className="p-4 border-b dark:border-charcoal-700 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -312,8 +312,8 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({ isOpen, 
                 </div>
 
                 <form onSubmit={handleSendMessage} className="p-4 border-t dark:border-charcoal-700 flex items-center space-x-2 bg-gray-50 dark:bg-charcoal-900/30">
-                    <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-                    <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="!p-2">
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" aria-label="Upload attachment" />
+                    <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="!p-2" aria-label="Attach file" title="Attach file">
                         <Paperclip className="w-5 h-5" />
                     </Button>
                     <input
@@ -321,9 +321,10 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({ isOpen, 
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder={`Message ${getRecipientLabel(selectedRecipients)}...`}
+                        aria-label={`Message ${getRecipientLabel(selectedRecipients)}`}
                         className="w-full p-2 border rounded-lg bg-white dark:bg-charcoal-800 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary"
                     />
-                    <Button type="submit" disabled={!newMessage.trim() || !context} className="!p-2">
+                    <Button type="submit" disabled={!newMessage.trim() || !context} className="!p-2" aria-label="Send message" title="Send message">
                         <Send className="w-5 h-5" />
                     </Button>
                 </form>
