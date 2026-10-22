@@ -261,7 +261,9 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({ isOpen, 
                     <div className="flex items-center space-x-2 overflow-x-auto pb-1 no-scrollbar">
                         <button
                             onClick={() => toggleRecipient('all')}
-                            className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors border ${selectedRecipients.includes('all') ? 'bg-brand-primary text-charcoal-900 border-brand-primary' : 'bg-white dark:bg-charcoal-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}
+                            aria-pressed={selectedRecipients.includes('all')}
+                            aria-label="Toggle recipient: Everyone"
+                            className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors border focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${selectedRecipients.includes('all') ? 'bg-brand-primary text-charcoal-900 border-brand-primary' : 'bg-white dark:bg-charcoal-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}
                         >
                             Everyone
                         </button>
@@ -269,11 +271,13 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({ isOpen, 
                             <button
                                 key={user.id}
                                 onClick={() => toggleRecipient(user.id)}
-                                className={`flex-shrink-0 flex items-center space-x-2 px-2 py-1 rounded-full text-xs font-medium transition-colors border ${selectedRecipients.includes(user.id) ? 'bg-brand-secondary text-white border-brand-secondary' : 'bg-white dark:bg-charcoal-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}
+                                aria-pressed={selectedRecipients.includes(user.id)}
+                                aria-label={`Toggle recipient: ${user.name}`}
+                                className={`flex-shrink-0 flex items-center space-x-2 px-2 py-1 rounded-full text-xs font-medium transition-colors border focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${selectedRecipients.includes(user.id) ? 'bg-brand-secondary text-white border-brand-secondary' : 'bg-white dark:bg-charcoal-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}
                             >
-                                <span>{user.avatar}</span>
+                                <span aria-hidden="true">{user.avatar}</span>
                                 <span>{user.name}</span>
-                                {selectedRecipients.includes(user.id) && <Check className="w-3 h-3 ml-1" />}
+                                {selectedRecipients.includes(user.id) && <Check className="w-3 h-3 ml-1" aria-hidden="true" />}
                             </button>
                         ))}
                     </div>
