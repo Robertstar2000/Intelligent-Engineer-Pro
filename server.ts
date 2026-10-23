@@ -8,6 +8,8 @@ import bcrypt from 'bcryptjs';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { installPaymentLinks } from './server/paymentLinks.mjs';
+import { createFirebaseIdentityHandler, verifyFirebaseToken } from './server/firebaseIdentity.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,12 +19,12 @@ async function startServer() {
     const PORT = parseInt(process.env.PORT || "3000", 10);
 
     app.use(cors());
-    app.use(express.json());
+    app.use((req, res, next) => req.path === '/api/billing/stripe-webhook' ? next() : express.json()(req, res, next));
     app.use(helmet());
 
     // Initialize SQLite
     const db = await open({
-        filename: './database.sqlite',
+        filename: process.env.DB_PATH || path.join(__dirname, 'database.sqlite'),
         driver: sqlite3.Database
     });
 
@@ -38,6 +40,32 @@ async function startServer() {
         )
     `);
 
+    app.get('/health', async (_req, res) => {
+        try {
+            await db.get('SELECT 1 AS ok');
+            res.json({ status: 'ok', service: 'intelligent-engineer-pro' });
+        } catch {
+            res.status(503).json({ status: 'error', service: 'intelligent-engineer-pro' });
+        }
+    });
+
+    await installPaymentLinks(app, { product: 'engineer',
+        paymentLink: 'https://buy.stripe.com/5kQ5kEdqHb66giCaYc7Vm05',
+        authenticate: async (req) => {
+            const match = /^Bearer ([^\s]+)$/i.exec(req.headers.authorization || '');
+            if (!match || !process.env.FIREBASE_PROJECT_ID) return null;
+            const identity = await verifyFirebaseToken(match[1], process.env.FIREBASE_PROJECT_ID);
+            return { id: identity.uid };
+        },
+    });
+
+    // Uses the same Firebase identity as the current frontend. It grants no entitlement.
+    app.get('/api/auth/firebase/me', createFirebaseIdentityHandler({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        verifyToken: verifyFirebaseToken,
+    }));
+
+    // Legacy SQLite routes remain separate until an explicit identity migration.
     // Auth Routes
     app.post('/api/auth/signup', async (req, res) => {
         const { username, email, password, geminiKey } = req.body;
@@ -74,6 +102,10 @@ async function startServer() {
         }
     });
 
+    app.use('/api', (_req, res) => {
+        res.status(404).json({ error: 'API endpoint not found' });
+    });
+
     // Vite middleware for development
     if (process.env.NODE_ENV !== 'production') {
         const vite = await createViteServer({
@@ -83,7 +115,7 @@ async function startServer() {
         app.use(vite.middlewares);
     } else {
         app.use(express.static(path.join(__dirname, 'dist')));
-        app.get('/*', (req, res) => {
+        app.get('/{*splat}', (req, res) => {
             res.sendFile(path.join(__dirname, 'dist', 'index.html'));
         });
     }
@@ -94,3 +126,4 @@ async function startServer() {
 }
 
 startServer();
+
