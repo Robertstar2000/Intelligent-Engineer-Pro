@@ -38,6 +38,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ versions, selectedVersi
         <select
             value={selectedVersion}
             onChange={(e) => onSelectVersion(Number(e.target.value))}
+            aria-label="Select output version"
             className="text-xs border-gray-300 rounded-md shadow-sm dark:bg-charcoal-700 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary min-w-[120px]"
         >
             {versions.map((v) => (
@@ -194,6 +195,7 @@ export const PhaseOutput = ({ phase, onGenerate, onSave, isLoading, isEditable =
                             value={refineText}
                             onChange={(e) => setRefineText(e.target.value)}
                             placeholder="Prompt AI to refine content... (e.g. 'Add a risks section')"
+                            aria-label="Prompt AI to refine content"
                             className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-1 placeholder-gray-400 dark:placeholder-gray-500"
                             disabled={isRefining || isLoading}
                         />
