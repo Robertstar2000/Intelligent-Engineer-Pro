@@ -10,7 +10,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { currentUser, installSecureAuth, type AuthDb } from './secureAuth.ts';
-import { installEntitlementMiddleware } from '../entitlementMiddleware.mts';
+import { entitlementAuthorityFromEnv, installEntitlementMiddleware } from '../entitlementMiddleware.mts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -106,7 +106,8 @@ async function startServer() {
         run: async (sql, params = []) => { const r = await db.run(sql, params); return { changes: r.changes, lastID: r.lastID }; },
     };
     await installSecureAuth(app, authDb, 'passwordHash');
-    await installEntitlementMiddleware(app, authDb, 'vibra', currentUser);
+    const entitlementAuthority = entitlementAuthorityFromEnv();
+    installEntitlementMiddleware(app, authDb, 'vibra', currentUser, entitlementAuthority);
 
 
     // Vite middleware for development
@@ -123,8 +124,8 @@ async function startServer() {
         });
     }
 
-    app.listen(PORT, '127.0.0.1', () => {
-        console.log(`Server running on http://localhost:${PORT}`);
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`Server running on http://0.0.0.0:${PORT}`);
     });
 }
 
