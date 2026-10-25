@@ -9,3 +9,7 @@
 ## 2025-10-24 - Focus Visibility for Hover-Only Card Actions
 **Learning:** Overlay or corner action buttons on workspace cards using `group-hover:opacity-100` remain hidden to keyboard navigation unless `group-focus-within:opacity-100` and `focus-visible:opacity-100` are applied, and interactive card containers need explicit `role="button"` and `onKeyDown` handlers.
 **Action:** When making card components interactive with hover actions, ensure keyboard focus states (`group-focus-within`, `focus-visible`) and key handling (`Enter`/`Space`) are included.
+
+## 2026-10-25 - ARIA Attributes for Progress Bar Components
+**Learning:** Visual progress indicators built with plain HTML `<div>` elements are invisible to assistive technologies unless given `role="progressbar"`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax`, `aria-valuetext`, and a contextual `aria-label`.
+**Action:** When building or updating reusable progress bar components, ensure ARIA progressbar semantics and customizable labels are built into the component standard.

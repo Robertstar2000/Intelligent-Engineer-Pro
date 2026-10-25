@@ -37,11 +37,25 @@ export const Badge = ({ children, variant = 'default', className = '', ...props 
   return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variants[variant]} ${className}`} {...props}>{children}</span>;
 };
 
-export const ProgressBar = ({ progress, className = '' }: { progress: number, className?: string }) => (
-  <div className={`w-full bg-gray-200 dark:bg-charcoal-700 rounded-full h-2 ${className}`}>
-    <div className="bg-brand-primary h-2 rounded-full transition-all duration-500 ease-out" style={{ width: `${Math.max(0, Math.min(100, progress))}%` }} />
-  </div>
-);
+export const ProgressBar = ({ progress, className = '', label = 'Progress' }: { progress: number, className?: string, label?: string }) => {
+  const percentage = Math.round(Math.max(0, Math.min(100, progress)));
+  return (
+    <div
+      role="progressbar"
+      aria-valuenow={percentage}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={label}
+      aria-valuetext={`${percentage}%`}
+      className={`w-full bg-gray-200 dark:bg-charcoal-700 rounded-full h-2 ${className}`}
+    >
+      <div
+        className="bg-brand-primary h-2 rounded-full transition-all duration-500 ease-out"
+        style={{ width: `${percentage}%` }}
+      />
+    </div>
+  );
+};
 
 export const ModelBadge = ({ modelName, prefix = 'Using' }: { modelName: string, prefix?: string }) => {
     const isPro = modelName.includes('pro');
