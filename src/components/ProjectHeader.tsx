@@ -41,7 +41,11 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({ onGoHome, theme, s
   return (
     <header className="flex items-center justify-between mb-8 gap-4">
       <div className="flex-shrink-0 flex items-center gap-4">
-          <button onClick={onGoHome} className="flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white whitespace-nowrap">
+          <button
+            onClick={onGoHome}
+            className="flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white whitespace-nowrap px-2 py-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+            aria-label={showBackButton ? 'Back to Dashboard' : 'Back to Home'}
+          >
             <ArrowLeft className="w-4 h-4 mr-2" /> 
             {showBackButton ? 'Back to Dashboard' : 'Back to Home'}
         </button>
@@ -68,7 +72,7 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({ onGoHome, theme, s
         {project && onViewDocuments && (
             <button
                 onClick={onViewDocuments}
-                className="hidden md:flex items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-charcoal-800 transition-colors mr-2"
+                className="hidden md:flex items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-charcoal-800 transition-colors mr-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             >
                 <Archive className="w-4 h-4 mr-2" />
                 Artifacts
@@ -77,7 +81,7 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({ onGoHome, theme, s
         {project && <UserSwitcher />}
         <button
             onClick={onOpenSettings}
-            className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-charcoal-800 focus:outline-none"
+            className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-charcoal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-primary dark:focus-visible:ring-offset-charcoal-900"
             aria-label="Open settings"
         >
             <Settings className="w-5 h-5" />
