@@ -573,12 +573,12 @@ export const Dashboard = ({ onSelectPhase, onViewDocuments, onViewDocument, onVi
                          <div className="space-y-4">
                             <div>
                                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Phase Progress ({firstIncompleteIndex === -1 ? project.phases.length : firstIncompleteIndex}/{project.phases.length})</span>
-                                <ProgressBar progress={projectProgress} className="mt-1" />
+                                <ProgressBar progress={projectProgress} className="mt-1" label="Phase progress" />
                             </div>
                              {totalSprints > 0 && (
                                 <div>
                                     <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Sprint Progress ({completedSprints}/{totalSprints})</span>
-                                    <ProgressBar progress={sprintProgress} className="mt-1" />
+                                    <ProgressBar progress={sprintProgress} className="mt-1" label="Sprint progress" />
                                 </div>
                              )}
                             <div>
