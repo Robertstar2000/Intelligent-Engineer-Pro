@@ -1,6 +1,6 @@
 
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { Button, Card } from './ui';
 
@@ -25,6 +25,17 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     cancelText = 'Cancel',
     confirmVariant = 'primary',
 }) => {
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     return (
@@ -33,6 +44,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             onClick={onClose}
             aria-modal="true"
             role="dialog"
+            aria-labelledby="modal-title"
         >
             <Card
                 className="w-full max-w-md my-auto transform transition-all relative"
@@ -41,7 +53,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 <button 
                     onClick={onClose} 
                     className="absolute top-2 right-2 p-1 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 z-10"
-                    aria-label="Close"
+                    aria-label="Close confirmation dialog"
                 >
                     <X className="w-6 h-6" />
                 </button>

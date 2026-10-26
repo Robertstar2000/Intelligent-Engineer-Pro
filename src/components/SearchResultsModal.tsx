@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, FileText } from 'lucide-react';
-import { Card, Button } from './ui';
+import { Card } from './ui';
 import { SearchResult } from '../types';
 
 interface SearchResultsModalProps {
@@ -10,7 +10,12 @@ interface SearchResultsModalProps {
     onSelect: (docId: string) => void;
 }
 
-const HighlightedSnippet = ({ text, highlight }) => {
+interface HighlightedSnippetProps {
+    text: string;
+    highlight: string;
+}
+
+const HighlightedSnippet: React.FC<HighlightedSnippetProps> = ({ text, highlight }) => {
     if (!highlight.trim()) {
         return <span>{text}</span>;
     }
@@ -32,12 +37,26 @@ const HighlightedSnippet = ({ text, highlight }) => {
 
 
 export const SearchResultsModal: React.FC<SearchResultsModalProps> = ({ isOpen, onClose, results, onSelect }) => {
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     return (
         <div 
             className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100] p-4"
             onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="search-results-title"
         >
             <Card 
                 className="w-full max-w-2xl h-[80vh] flex flex-col"
@@ -46,8 +65,12 @@ export const SearchResultsModal: React.FC<SearchResultsModalProps> = ({ isOpen, 
                 flexBody
             >
                 <div className="flex items-center justify-between p-4 border-b dark:border-charcoal-700">
-                    <h2 className="text-xl font-bold">Search Results</h2>
-                     <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-charcoal-700">
+                    <h2 id="search-results-title" className="text-xl font-bold">Search Results</h2>
+                    <button
+                        onClick={onClose}
+                        className="p-1 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-charcoal-700"
+                        aria-label="Close search results"
+                    >
                         <X className="w-6 h-6" />
                     </button>
                 </div>
