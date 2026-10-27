@@ -13,3 +13,7 @@
 ## 2026-10-25 - ARIA Attributes for Progress Bar Components
 **Learning:** Visual progress indicators built with plain HTML `<div>` elements are invisible to assistive technologies unless given `role="progressbar"`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax`, `aria-valuetext`, and a contextual `aria-label`.
 **Action:** When building or updating reusable progress bar components, ensure ARIA progressbar semantics and customizable labels are built into the component standard.
+
+## 2026-03-30 - ARIA Alert Live Region and Clear Dismiss Icon Semantics for Error Banners
+**Learning:** Error banners using misleading non-interactive close icons (like `X`) confuse users into thinking the banner is dismissible when it is static. Adding `role="alert"` and `aria-live="assertive"` ensures screen readers announce generation failures immediately, while replacing non-functional icons with `AlertCircle` and adding an optional interactive dismiss button improves both UX clarity and keyboard accessibility.
+**Action:** Always pair `role="alert"` and `aria-live="assertive"` on error banners, use standard status icons (`AlertCircle`), and ensure dismiss buttons are fully keyboard-accessible with `aria-label`.

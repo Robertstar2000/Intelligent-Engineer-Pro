@@ -137,7 +137,7 @@ export const PhaseView: React.FC<PhaseViewProps> = ({ phase, onPhaseComplete, on
                 </Button>
             </div>
             {!process.env.API_KEY && <ApiKeyWarning />}
-            {generationError && <GenerationError message={generationError} />}
+            {generationError && <GenerationError message={generationError} onDismiss={() => setGenerationError('')} />}
             {renderWorkflow()}
 
             {localPhase.outputs && localPhase.outputs.length > 0 && (
