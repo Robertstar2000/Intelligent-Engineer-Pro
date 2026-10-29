@@ -67,10 +67,20 @@ export const ProjectExportPanel = ({ setToast }: { setToast: (toast: ToastMessag
             return (
                 <div className="space-y-4">
                     <p className="text-sm text-gray-600 dark:text-gray-400">Select a compatible tool to generate an export file containing all relevant project design data.</p>
-                    <select value={selectedTool} onChange={e => setSelectedTool(e.target.value)} className="w-full p-2 border rounded-lg bg-white dark:bg-charcoal-700 dark:border-gray-600">
-                        <option value="" disabled>Select an external application...</option>
-                        {EXTERNAL_TOOLS.map(tool => <option key={tool.id} value={tool.id}>{tool.name} ({tool.category})</option>)}
-                    </select>
+                    <div>
+                        <label htmlFor="export-tool-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Target Application
+                        </label>
+                        <select
+                            id="export-tool-select"
+                            value={selectedTool}
+                            onChange={e => setSelectedTool(e.target.value)}
+                            className="w-full p-2 border rounded-lg bg-white dark:bg-charcoal-700 dark:border-gray-600 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                        >
+                            <option value="" disabled>Select an external application...</option>
+                            {EXTERNAL_TOOLS.map(tool => <option key={tool.id} value={tool.id}>{tool.name} ({tool.category})</option>)}
+                        </select>
+                    </div>
                     <Button onClick={handleExport} disabled={!selectedTool} className="w-full">
                         <Share2 className="w-4 h-4 mr-2" /> Generate Project Export
                     </Button>
@@ -79,7 +89,7 @@ export const ProjectExportPanel = ({ setToast }: { setToast: (toast: ToastMessag
         }
 
         return (
-            <div className="space-y-3">
+            <div className="space-y-3" aria-live="polite" aria-atomic="false">
                 <div className="flex items-center space-x-2 p-2 bg-gray-100 dark:bg-charcoal-900/50 rounded-md">
                     {agentStatus !== 'complete' && agentStatus !== 'error' && <LoaderCircle className="w-4 h-4 text-brand-primary animate-spin" />}
                     {agentStatus === 'complete' && <CheckCircle className="w-4 h-4 text-green-500" />}
