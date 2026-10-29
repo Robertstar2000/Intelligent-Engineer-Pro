@@ -17,3 +17,7 @@
 ## 2026-03-30 - ARIA Alert Live Region and Clear Dismiss Icon Semantics for Error Banners
 **Learning:** Error banners using misleading non-interactive close icons (like `X`) confuse users into thinking the banner is dismissible when it is static. Adding `role="alert"` and `aria-live="assertive"` ensures screen readers announce generation failures immediately, while replacing non-functional icons with `AlertCircle` and adding an optional interactive dismiss button improves both UX clarity and keyboard accessibility.
 **Action:** Always pair `role="alert"` and `aria-live="assertive"` on error banners, use standard status icons (`AlertCircle`), and ensure dismiss buttons are fully keyboard-accessible with `aria-label`.
+
+## 2026-04-02 - Associated Labels and ARIA Live Regions for Export Workflow Tool Selectors
+**Learning:** Dropdown `<select>` elements in workflow panels without explicit `<label>` or `htmlFor` bindings fail to describe their target application to screen readers, and dynamic progress log output from asynchronous export generation is ignored by assistive technologies unless wrapped in an `aria-live` region.
+**Action:** Always pair form `<select>` elements with explicit `<label htmlFor="...">` and apply `aria-live="polite"` to containers displaying live status updates from multi-step workflows.
