@@ -185,8 +185,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
                                 <Download className="w-4 h-4 mr-2" /> Backup
                             </Button>
                             <label className="w-full">
-                                <input type="file" onChange={handleFullRestore} className="hidden" accept=".json" aria-label="Restore system backup" />
-                                <div className="flex items-center justify-center w-full px-3 py-2 text-sm border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-charcoal-800/50 dark:border-charcoal-700 border-gray-300 dark:border-gray-600">
+                                <input type="file" onChange={handleFullRestore} className="sr-only" accept=".json" aria-label="Restore system backup" />
+                                <div className="flex items-center justify-center w-full px-3 py-2 text-sm border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-charcoal-800/50 dark:border-charcoal-700 border-gray-300 dark:border-gray-600 focus-within:ring-2 focus-within:ring-brand-primary focus-within:ring-offset-2 dark:focus-within:ring-offset-charcoal-900">
                                     <Upload className="w-4 h-4 mr-2" /> Restore
                                 </div>
                             </label>
