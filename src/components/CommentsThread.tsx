@@ -13,11 +13,18 @@ interface CommentsThreadProps {
 export const CommentsThread: React.FC<CommentsThreadProps> = ({ comments, users, currentUser, onAddComment }) => {
     const [newComment, setNewComment] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
         if (newComment.trim()) {
             onAddComment(newComment.trim());
             setNewComment('');
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault();
+            handleSubmit();
         }
     };
 
@@ -39,7 +46,12 @@ export const CommentsThread: React.FC<CommentsThreadProps> = ({ comments, users,
     return (
         <Card title="Collaboration Thread" description="Discuss this phase with your team.">
             <div className="space-y-4">
-                <div className="max-h-72 overflow-y-auto space-y-4 pr-2">
+                <div
+                    className="max-h-72 overflow-y-auto space-y-4 pr-2"
+                    role="log"
+                    aria-live="polite"
+                    aria-label="Comment messages"
+                >
                     {comments.length === 0 ? (
                         <p className="text-center text-gray-500 dark:text-gray-400 py-4">No comments yet. Start the conversation!</p>
                     ) : (
@@ -66,12 +78,17 @@ export const CommentsThread: React.FC<CommentsThreadProps> = ({ comments, users,
                         <textarea
                             value={newComment}
                             onChange={(e) => setNewComment(e.target.value)}
-                            placeholder="Add a comment..."
+                            onKeyDown={handleKeyDown}
+                            placeholder="Add a comment... (Press ⌘+Enter or Ctrl+Enter to post)"
                             aria-label="Add a comment"
+                            aria-describedby="comment-shortcut-hint"
                             className="w-full p-2 border rounded-lg bg-white dark:bg-charcoal-800 dark:border-gray-600 focus:ring-brand-primary focus:border-brand-primary"
                             rows={2}
                         />
-                        <div className="flex justify-end mt-2">
+                        <div className="flex items-center justify-between mt-2">
+                            <span id="comment-shortcut-hint" className="text-xs text-gray-500 dark:text-gray-400 select-none">
+                                Press <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-gray-100 dark:bg-charcoal-700 border border-gray-300 dark:border-gray-600 rounded">⌘</kbd> / <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-gray-100 dark:bg-charcoal-700 border border-gray-300 dark:border-gray-600 rounded">Ctrl</kbd> + <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-gray-100 dark:bg-charcoal-700 border border-gray-300 dark:border-gray-600 rounded">↵</kbd>
+                            </span>
                             <Button type="submit" size="sm" disabled={!newComment.trim()}>
                                 <Send className="w-4 h-4 mr-2" /> Post Comment
                             </Button>

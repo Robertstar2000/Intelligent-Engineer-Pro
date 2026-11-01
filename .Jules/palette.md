@@ -21,3 +21,7 @@
 ## 2026-04-02 - Associated Labels and ARIA Live Regions for Export Workflow Tool Selectors
 **Learning:** Dropdown `<select>` elements in workflow panels without explicit `<label>` or `htmlFor` bindings fail to describe their target application to screen readers, and dynamic progress log output from asynchronous export generation is ignored by assistive technologies unless wrapped in an `aria-live` region.
 **Action:** Always pair form `<select>` elements with explicit `<label htmlFor="...">` and apply `aria-live="polite"` to containers displaying live status updates from multi-step workflows.
+
+## 2026-04-03 - Keyboard Submission and Live Regions in Collaborative Comment Feeds
+**Learning:** Collaborative discussion threads often force keyboard users to manually tab to the submit button after typing, disrupting conversational flow. Providing `Cmd+Enter` / `Ctrl+Enter` shortcut submission paired with a visible `<kbd>` shortcut hint and linking it via `aria-describedby` creates a fluid interaction, while adding `role="log"` and `aria-live="polite"` ensures new messages are announced to assistive technologies.
+**Action:** When creating text input fields for rapid team comments or chat streams, support `Cmd+Enter`/`Ctrl+Enter` shortcut submissions with visual `<kbd>` hints and mark message streams with `role="log"` and `aria-live="polite"`.
