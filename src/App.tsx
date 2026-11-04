@@ -1,3 +1,5 @@
+import { BillingAccess } from './components/BillingAccess';
+import { auth } from './firebase';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useProject } from './context/ProjectContext';
@@ -479,6 +481,7 @@ export const App = () => {
     return (
         <div className="relative">
             {renderContent()}
+            <BillingAccess getAuthorization={async () => auth.currentUser ? `Bearer ${await auth.currentUser.getIdToken()}` : null} />
             <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} setToast={setToast} />
             <SearchResultsModal 
                 isOpen={isSearchModalOpen}
@@ -518,3 +521,4 @@ export const App = () => {
         </div>
     );
 };
+
